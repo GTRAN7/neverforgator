@@ -66,3 +66,24 @@ def cached_image(parts, produce) -> str:
         return name
 
     return _once(base, run)
+
+
+def lookup_image(parts):
+    """The cached picture for these inputs, or None (doesn't generate anything)."""
+    existing = next(CACHE_DIR.glob(f"{_hash(parts)}.*"), None)
+    return existing.name if existing else None
+
+
+def store_image(parts, data: bytes, ext: str) -> str:
+    name = f"{_hash(parts)}.{ext}"
+    (CACHE_DIR / name).write_bytes(data)
+    return name
+
+
+def lookup_json(parts):
+    path = CACHE_DIR / f"{_hash(parts)}.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def store_json(parts, value) -> None:
+    (CACHE_DIR / f"{_hash(parts)}.json").write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")

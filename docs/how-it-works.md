@@ -112,6 +112,12 @@ frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI
   the idea is `concept`, the scene is `association`. New: `rooms`, `usage_counts` (migration `0002`).
 - **Never pay twice** (`app/studio/cache.py`): every Gemini result is saved in `data/cache/` under a hash of
   its inputs.
+- **Fewer Gemini calls:** pictures are drawn 4 per call (`generate_doodles`), a few stops ahead of where
+  you're walking, and the first batch starts right after a fill. Missed quiz scenes are rewritten in one
+  call at the end of the quiz. At most 3 Gemini calls run at once, server-wide.
+- **Busy Gemini:** "high demand" 503s are common. When the main text model is busy, calls switch to a
+  backup flash-lite model for a minute (`models["backup"]`). A picture that still fails shows a stand-in
+  sketch that isn't saved, so it's drawn for real next time ("draw it again" button).
 - **The Gemini key** is only read in `app/studio/gemini.py`. On startup the server picks the newest
   `gemini-X-flash` text model (override with `GEMINI_TEXT_MODEL` / `GEMINI_IMAGE_MODEL`).
 - **Stops** are a *direction* from the camera in panoramas and photos, or a *3D point* plus camera
