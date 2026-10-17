@@ -33,7 +33,7 @@ export default function RoomStrip({ palace, setPalace, room, setRoomId, run }) {
       {palace.rooms.map((r) => (
         <div key={r.id} className={`room-thumb ${r.id === room?.id ? 'active' : ''}`}>
           <button className="thumb" onClick={() => setRoomId(r.id)}
-            style={r.type === 'panorama' ? { backgroundImage: `url(${fileUrl(palace.id, r.file)})` } : undefined}>
+            style={r.type !== 'splat' ? { backgroundImage: `url(${fileUrl(palace.id, r.file)})` } : undefined}>
             {r.type === 'splat' && <span className="room-kind">3D scan</span>}
             <span className="room-name">{r.name}</span>
           </button>

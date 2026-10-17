@@ -10,7 +10,11 @@ async function request(url, options = {}) {
   const res = await fetch(url, { ...options, headers });
   if (res.status === 204) return null;
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    // FastAPI puts the message in `detail` (a list of field errors for invalid input).
+    const detail = Array.isArray(body.detail) ? body.detail.map((d) => d.msg).join('; ') : body.detail;
+    throw new Error(detail || body.error || `Request failed (${res.status})`);
+  }
   return body;
 }
 

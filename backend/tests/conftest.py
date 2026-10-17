@@ -9,6 +9,8 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_loci.db"
 os.environ["DEV_AUTH"] = "true"
 os.environ["AUTH0_DOMAIN"] = "test-tenant.us.auth0.com"
 os.environ["AUTH0_AUDIENCE"] = "https://loci-api"
+os.environ["GEMINI_API_KEY"] = ""  # tests never call Gemini (mock AI mode)
+os.environ["DATA_DIR"] = "./test_data"
 
 import pytest
 from fastapi.testclient import TestClient

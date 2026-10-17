@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fileUrl } from '../api.js';
 import { useAccount } from '../lib/account.js';
-import { openPalace, startInBuiltIn, openSample } from '../lib/start.js';
+import { firstBuiltIn, openPalace, startInBuiltIn, openSample } from '../lib/start.js';
 import { switchMode } from '../lib/mode.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
@@ -28,9 +28,10 @@ export default function PalaceList() {
     api.listPalaces().then(setPalaces).catch((e) => setError(e.message));
   }, []);
 
-  const builtIn = palaces?.find((p) => p.builtIn);
+  // The first built-in route (the Reitz) leads; other shared routes (the UF campus walk...) follow.
+  const builtIn = firstBuiltIn(palaces ?? []);
   const sample = palaces?.find((p) => p.sample);
-  const routes = palaces?.filter((p) => p.template && !p.builtIn && !p.sample) ?? [];
+  const routes = palaces?.filter((p) => p.template && !p.sample && p !== builtIn) ?? [];
   const mine = palaces?.filter((p) => p.mine && !p.template) ?? [];
 
   async function run(what, action) {
@@ -111,7 +112,7 @@ export default function PalaceList() {
 
       {routes.length > 0 && (
         <section className="home-section">
-          <h2 className="card-title">More campus routes</h2>
+          <h2 className="card-title">More routes</h2>
           <ul className="palace-list">
             {routes.map((t, i) => (
               <li key={t.id}>
@@ -119,7 +120,7 @@ export default function PalaceList() {
                   <Creature number={i + 2} size="md" />
                   <div className="template-text">
                     <strong>{t.name}</strong>
-                    <span>{t.spotCount} stop{t.spotCount === 1 ? '' : 's'} · {t.roomCount} place{t.roomCount === 1 ? '' : 's'}</span>
+                    <span>{t.builtIn && 'built in · '}{t.spotCount} stop{t.spotCount === 1 ? '' : 's'} · {t.roomCount} place{t.roomCount === 1 ? '' : 's'}</span>
                   </div>
                   {t.mine && <a className="link" href={`#/palace/${t.id}`}>edit route</a>}
                   <button className="btn accent" disabled={Boolean(busy)}
