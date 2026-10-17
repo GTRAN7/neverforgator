@@ -12,7 +12,7 @@ import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import AccountMenu from './AccountMenu.jsx';
-import NightToggle from './NightToggle.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import { useAccount } from '../lib/account.js';
 
 const MODES = [
@@ -284,7 +284,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
               <Sparkle /> Fill from notes
             </button>
           )}
-          <NightToggle />
+          <SettingsMenu />
           <AccountMenu account={account} />
         </div>
       </header>
@@ -392,7 +392,9 @@ export default function PalaceEditor({ palaceId, startAction }) {
           </div>
 
           {mode === 'build' && (
-            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run} />
+            // A shared palace (the built-in route, the sample) can't be changed: just switch rooms there.
+            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run}
+              browse={palace.readOnly} />
           )}
           {mode === 'wander' && palace.rooms.length > 1 && (
             // Look around other rooms; the friend's card closes, since that friend isn't there.

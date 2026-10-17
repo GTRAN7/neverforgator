@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { blankPalace, blankRoutePalace, customPalace, seedPalace, tutorialPalace, uid } from '../seed'
-import { createPalace, deletePalace, listPalaces, markTutorialSeen, prepareImage, putImage, tutorialSeen } from '../storage'
+import { createPalace, deletePalace, listPalaces, loadPalace, markTutorialSeen, prepareImage, putImage, savePalace, tutorialSeen } from '../storage'
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import Settings from './Settings'
-import { openAbout } from '../about'
 import { notify, useFileDrop } from '../useFileDrop'
 import { openFromAccount } from '../account'
+import Brand from './Brand'
+import AccountMenu from './AccountMenu'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
@@ -40,6 +41,7 @@ export default function Dashboard({ account, onOpen, prefs }) {
   const [photos, setPhotos] = useState([]) // custom route: { id, file, url, name }
   const [busy, setBusy] = useState(false)
   const [doomed, setDoomed] = useState(null) // palace waiting for delete confirmation
+  const [renaming, setRenaming] = useState(null) // { id, title } while a palace's name is being edited
   // Palaces saved to the account (signed-in users). Ones already in this browser show in "Your palaces".
   const [remote, setRemote] = useState(null)
   const [remoteError, setRemoteError] = useState(null)
@@ -136,27 +138,25 @@ export default function Dashboard({ account, onOpen, prefs }) {
     setDoomed(null)
   }
 
+  function rename(e) {
+    e.preventDefault()
+    const title = renaming.title.trim()
+    const palace = loadPalace(sub, renaming.id)
+    setRenaming(null)
+    if (!title || !palace || title === palace.title) return
+    savePalace(sub, renaming.id, { ...palace, title })
+    setPalaces(listPalaces(sub))
+  }
+
   return (
     <main className="landing dashboard">
       <Sky night={prefs.night} />
       <div className="dashboard-content">
         <header className="dashboard-head">
-          <button className="brand" onClick={openAbout} title="About Never Forgator">Never<span>·</span>Forgator</button>
+          <Brand />
           <div className="row">
             <Settings prefs={prefs} />
-            {account.user ? (
-              <>
-                {account.user.picture && <img className="avatar" src={account.user.picture} alt="" />}
-                <span className="dashboard-user">{account.user.name}</span>
-                <button className="btn btn-small btn-ghost" onClick={account.logout}>Log out</button>
-              </>
-            ) : (
-              <>
-                <span className="dashboard-user">Guest · saved in this browser</span>
-                <button className="btn btn-small" onClick={() => account.login()}>Log in</button>
-                <button className="btn btn-small btn-ghost" onClick={account.exit}>Exit</button>
-              </>
-            )}
+            <AccountMenu account={account} />
           </div>
         </header>
 
@@ -212,10 +212,19 @@ export default function Dashboard({ account, onOpen, prefs }) {
             <ul className="palace-list">
               {palaces.map(p => (
                 <li key={p.id} className="landing-card palace-card">
-                  <h3>{p.title}</h3>
+                  {renaming?.id === p.id ? (
+                    <form className="row palace-rename" onSubmit={rename}>
+                      <input autoFocus maxLength={80} value={renaming.title} aria-label="Palace name"
+                        onChange={e => setRenaming({ id: p.id, title: e.target.value })}
+                        onKeyDown={e => e.key === 'Escape' && setRenaming(null)} />
+                      <button className="btn btn-small">Save</button>
+                      <button type="button" className="btn btn-small btn-ghost" onClick={() => setRenaming(null)}>Cancel</button>
+                    </form>
+                  ) : <h3>{p.title}</h3>}
                   <p className="muted">{p.stops} stops · {p.cards} cards · edited {ago(p.updatedAt)}{p.account && ' · in your account'}</p>
                   <div className="row">
                     <button className="btn btn-small btn-danger" onClick={() => setDoomed(p)}>Delete</button>
+                    <button className="btn btn-small btn-ghost" onClick={() => setRenaming({ id: p.id, title: p.title })}>Rename</button>
                     <button className="btn btn-small" onClick={() => onOpen(p.id)}>Open</button>
                   </div>
                 </li>

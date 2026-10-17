@@ -19,11 +19,11 @@ import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import Settings from './components/Settings'
 import TutorialTour from './components/TutorialTour'
-import { openAbout } from './about'
 import { lookOf, lookStyle, signLayoutOf } from './appearance'
 import { imagesFromDrop, notify } from './useFileDrop'
 import { saveToAccount } from './account'
 import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
+import Brand from './components/Brand'
 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const stripOffset = ({ offset, ...k }) => (offset == null ? k : { ...k, offset: 1 - offset })
@@ -521,7 +521,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       </div>
 
       <header className="hud-top">
-        <button className="brand" onClick={openAbout} title="About Never Forgator">Never<span>·</span>Forgator</button>
+        <Brand />
         <div className="hud-actions">
           <Settings
             prefs={prefs}
