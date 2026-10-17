@@ -1,4 +1,4 @@
-# SwampHacks Project
+# SwampHacks Project  
 Make memorization easier with a AI assisted memory palace creation tool centered around UF campus.
 
 ### Project description
