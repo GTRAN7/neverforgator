@@ -237,7 +237,10 @@ button { font: inherit; color: inherit; }
 }
 .toast.error { background: var(--link); }
 
-/* friends in the 3D scene */
+/* friends in the 3D scene: one layer of pins over the canvas, moved every frame (Viewer.jsx) */
+.sprite-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.sprite-pin { position: absolute; left: 0; top: 0; visibility: hidden; will-change: transform; }
+.sprite-pin .sprite { pointer-events: auto; }
 .sprite {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   background: none; border: 0; padding: 0; cursor: pointer; animation: bob 3.2s ease-in-out infinite;
@@ -295,7 +298,7 @@ button { font: inherit; color: inherit; }
 .quiz-card .btn-row { margin-top: 0; }
 .quiz-card .sticky { margin: 0; padding: 14px 16px; border-radius: 18px; }
 .quiz-card .sticky p { font-weight: 400; }
-.quiz-photo { aspect-ratio: 4 / 3; }
+.quiz-photo { aspect-ratio: auto; height: clamp(90px, 22vh, 160px); flex: none; }
 .quiz-card .btn-row .link { flex: none; align-self: center; }
 .review-note { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--mint); color: var(--mint-ink); font-size: calc(14px * var(--ts)); }
 .review-note small { color: var(--mint-muted); }
@@ -931,3 +934,37 @@ button { font: inherit; color: inherit; }
   --sticky: #FDE9A9; --sand: #F1E5CF; --line: #E8DCC4; --dash: #D2BE9C;
 }
 :root[data-theme='night'] :is(.scene-hint, .walk-hint, .legend) { color: #3B2A1E; }
+
+.card-menu.inline { position: static; min-width: 0; box-shadow: none; border-width: 1.5px; animation: drop-in 0.15s ease-out; }
+
+/* ---- Feed: hatching and ready ---- */
+.hatching-panel, .ready-panel {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  text-align: center; padding: 12px; animation: fade-in 0.3s ease-out;
+}
+.hatching-eggs { display: flex; gap: 10px; }
+.hatching-panel .creature { animation: wobble 0.8s ease-in-out infinite; }
+.hatching-panel .creature:nth-child(2n) { animation-delay: 0.2s; }
+.ready-panel .creature { animation: hop 1.1s ease-in-out infinite; }
+.ready-panel .creature:nth-child(2n) { animation-delay: 0.3s; }
+.hatching-stage { font: 600 calc(18px * var(--ts)) var(--display); color: var(--ink-2); }
+.ready-panel .btn.big { width: 100%; max-width: 380px; }
+.ready-panel .btn-row { width: 100%; max-width: 380px; margin-top: 0; }
+.ready-banner {
+  position: absolute; left: 50%; top: 56px; z-index: 70; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; border-radius: 999px;
+  background: var(--card); border: 2px solid var(--ink); box-shadow: 0 4px 0 var(--edge);
+  font: 600 calc(15px * var(--ts)) var(--display); animation: drop-in 0.3s ease-out;
+}
+
+/* ---- Quiz ---- */
+.quiz-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.quiz-count { font: 600 calc(13px * var(--ts)) var(--display); color: var(--muted); }
+.your-answer { font-style: italic; color: var(--ink-2); margin-bottom: 6px; }
+.overrule {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  font: 600 calc(13px * var(--ts)) var(--display); color: var(--muted);
+}
+.overrule .btn.small { height: 32px; }
+.peek-btn { align-self: center; }
+.quiz-card .scene-text { margin: 0; font-size: calc(19px * var(--ts)); }

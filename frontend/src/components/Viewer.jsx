@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { Html, Instance, Instances, OrbitControls, useProgress } from '@react-three/drei';
+import { Instance, Instances, OrbitControls, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import { fileUrl } from '../api.js';
 import { captureCrop, usePlaceHandler } from '../lib/placing.js';
@@ -126,8 +126,7 @@ function roomHit({ camera, gl, scene, raycaster }, clientX, clientY) {
 // doesn't move is a click (opens its card). While held, onDrag(spot) shows it where it is right now
 // (null when it's put down); letting go calls onMove with a placement, as a click would make.
 const HOLD_MS = 10;
-function useSpotDrag(spot, onDrag, onMove) {
-  const getState = useThree((s) => s.get);
+function useSpotDrag(spot, onDrag, onMove, getState) {
   const moved = useRef(false); // the click that ends a move shouldn't open the card
 
   function onPointerDown(e) {
@@ -177,14 +176,16 @@ function useSpotDrag(spot, onDrag, onMove) {
   return { onPointerDown, wasMoved: () => moved.current };
 }
 
-// A creature pinned to its 3D spot. It's HTML anchored in the 3D scene, so it
-// follows the room as you look around and always faces you, like a sprite.
+// A creature pinned to its 3D spot, like a sprite that always faces you. The pins are plain HTML
+// in one layer over the canvas; SpriteProjector moves them every frame to where their spot is on
+// screen. (drei's <Html> made a separate React root per friend, which under React 19 sometimes
+// left ghost copies behind or lost a friend.)
 // Every 5th stop gets a gold tag, like memory athletes mark every 5th locus to keep count.
-function FriendSprite({ friend, dragging, onClick, onDrag, onMove }) {
+function FriendSprite({ friend, dragging, pinRef, getState, onClick, onDrag, onMove }) {
   const { spot, number, state, tag, active, picture } = friend;
-  const drag = useSpotDrag(spot, onDrag, onMove);
+  const drag = useSpotDrag(spot, onDrag, onMove, getState);
   return (
-    <Html position={spotPosition(spot)} center zIndexRange={[50, 0]}>
+    <div className="sprite-pin" ref={pinRef}>
       <button
         className={`sprite ${state} ${active ? 'active' : ''} ${number % 5 === 0 ? 'fifth' : ''} ${onMove ? 'draggable' : ''} ${dragging ? 'dragging' : ''}`}
         style={{ animationDelay: `${((number * 0.37) % 3).toFixed(2)}s` }}
@@ -202,8 +203,38 @@ function FriendSprite({ friend, dragging, onClick, onDrag, onMove }) {
         <Creature number={number} state={state} size={active || state === 'asking' ? 'lg' : 'md'} />
         <span className="tag">{tag}</span>
       </button>
-    </Html>
+    </div>
   );
+}
+
+// Inside the canvas: every frame, put each friend's pin where its 3D spot is on screen, hide the
+// ones behind you, and stack nearer friends on top. Also hands the R3F state to code outside.
+function SpriteProjector({ friends, pins, stateRef }) {
+  const get = useThree((s) => s.get);
+  stateRef.current = get;
+  const v = new THREE.Vector3();
+  const toSpot = new THREE.Vector3();
+  const forward = new THREE.Vector3();
+  useFrame(({ camera, size }) => {
+    camera.getWorldDirection(forward);
+    for (const { spot } of friends) {
+      const el = pins.current.get(spot.id);
+      if (!el) continue;
+      const position = spotPosition(spot);
+      toSpot.copy(position).sub(camera.position);
+      if (toSpot.dot(forward) <= 0) {
+        el.style.visibility = 'hidden';
+        continue;
+      }
+      v.copy(position).project(camera);
+      const x = ((v.x + 1) / 2) * size.width;
+      const y = ((1 - v.y) / 2) * size.height;
+      el.style.visibility = 'visible';
+      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)`;
+      el.style.zIndex = String(1000 - Math.round(toSpot.length() * 10));
+    }
+  });
+  return null;
 }
 
 // Little 3D dots from each friend to the next. Dots you've already walked are darker.
@@ -323,6 +354,8 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
   ROOM_COLOR.set(roomColor); // shared with the panorama shader's edge fade
   const [splatMessage, setSplatMessage] = useState(null);
   const [dragSpot, setDragSpot] = useState(null); // the friend being dragged, where it is right now
+  const pins = useRef(new Map()); // spot id -> its pin element (see SpriteProjector)
+  const stateRef = useRef(null); // R3F's get(), for dragging from outside the canvas
   const url = fileUrl(palaceId, room.file);
   const panorama = room.type !== 'splat';
   const friends = dragSpot
@@ -342,14 +375,19 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
             : <SplatRoom url={url} flipped={room.flipped} onPlace={onPlace} onStatus={setSplatMessage} />}
         </Suspense>
         <TrailDots friends={friends} panorama={panorama} visitedUpTo={visitedUpTo} />
-        {friends.map((friend) => (
-          <FriendSprite key={friend.spot.id} friend={friend} dragging={dragSpot?.id === friend.spot.id}
-            onClick={() => onFriendClick?.(friend.spot)} onDrag={setDragSpot} onMove={onMoveFriend} />
-        ))}
+        <SpriteProjector friends={friends} pins={pins} stateRef={stateRef} />
         {/* Negative speed: dragging feels like grabbing the room. */}
         <OrbitControls makeDefault target={START_TARGET} enableZoom={false} enablePan={false} rotateSpeed={-0.35} />
         <CameraRig focus={focusSpot} walk={!panorama} />
       </Canvas>
+      <div className="sprite-layer">
+        {friends.map((friend) => (
+          <FriendSprite key={friend.spot.id} friend={friend} dragging={dragSpot?.id === friend.spot.id}
+            pinRef={(el) => (el ? pins.current.set(friend.spot.id, el) : pins.current.delete(friend.spot.id))}
+            getState={() => stateRef.current()}
+            onClick={() => onFriendClick?.(friend.spot)} onDrag={setDragSpot} onMove={onMoveFriend} />
+        ))}
+      </div>
       <LoadingOverlay message={splatMessage} />
       {!panorama && <div className="walk-hint">Drag to look · WASD to walk · Q/E down/up</div>}
     </div>
