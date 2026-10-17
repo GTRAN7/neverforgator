@@ -80,7 +80,7 @@ function LandingContent({ error, onLogin, onSignup, onTour }) {
       </section>
 
       <section className="landing-section">
-        <h2 className="card-title huge">How it works</h2>
+        <h2 className="section-tag">How it works</h2>
         <ol className="steps">
           {STEPS.map((step, i) => (
             <li key={step.title} className="step-card" style={{ '--tilt': `${[-1, 0.8, -0.6][i]}deg` }}>

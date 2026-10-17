@@ -839,12 +839,6 @@ button { font: inherit; color: inherit; }
   background: #fff7d6; box-shadow: 0 0 8px 2px rgb(255 247 214 / 0.6);
 }
 .sky.is-dark .sky-ground, .sky.is-dark .castle { filter: brightness(0.62) saturate(0.85); }
-/* Text that sits right on the sky gets a soft halo so it reads on clouds too. */
-.sky-page .home-hero, .sky-page .landing-hero .hero-copy > :not(.hero-actions) {
-  text-shadow: 0 0 18px var(--paper), 0 0 6px var(--paper);
-}
-.sky-page .home-hero .landing-title, .sky-page .landing-title { color: var(--ink); }
-
 /* ---- Night toggle (header) ---- */
 .night-toggle { width: 38px; padding: 0; justify-content: center; }
 .night-toggle svg { width: 20px; height: 20px; }
@@ -876,3 +870,55 @@ button { font: inherit; color: inherit; }
 }
 .sky-page .guide-step.final { padding: 32px; background: var(--card); border: 2px solid var(--ink); border-radius: 30px; box-shadow: 0 8px 0 var(--edge); }
 .sky-page .guide-art, .sky-page .route-map { border: 2px solid var(--ink); box-shadow: 0 8px 0 var(--edge); }
+
+/* ---- Readability on the sky ----
+   The sky is scenery: every piece of text sits on a surface (bar, card or tag), never on clouds. */
+.sky-page .home-nav, .sky-page .guide-nav, .sky-page .landing-nav {
+  position: relative; z-index: 2; padding: 8px 10px 8px 16px; margin-top: 12px;
+  background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(6px);
+  border: 2px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--edge);
+}
+.sky-page .home-nav .nav-pill, .sky-page .guide-nav .nav-pill, .sky-page .landing-nav .nav-pill,
+.sky-page .account-btn { box-shadow: none; }
+/* Page titles on a card. */
+.sky-page .home-hero, .sky-page .hero-copy {
+  padding: 24px 28px; background: var(--card); border: 2px solid var(--ink); border-radius: 28px;
+  box-shadow: 0 8px 0 var(--edge);
+}
+.sky-page .home-hero { padding: 20px 24px; }
+.sky-page .home-hero .tagline { margin: 6px 0 0; }
+.sky-page .hero-copy { flex-basis: 440px; }
+/* Section headings: a tag pinned above their cards. */
+.section-tag {
+  align-self: flex-start; width: fit-content; margin: 0; padding: 6px 16px;
+  font: 700 calc(18px * var(--ts)) var(--display); color: var(--ink);
+  background: var(--card); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 0 3px 0 var(--edge);
+}
+.landing-section .section-tag { font-size: calc(24px * var(--ts)); padding: 8px 20px; }
+/* Small text that used to float: on pills. */
+.sky-page .landing-foot .scrawl, .sky-page .empty-home, .sky-page .guide-dots {
+  width: fit-content; margin: 0 auto; padding: 6px 16px; border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 92%, transparent); border: 2px solid var(--ink);
+}
+.sky-page .landing-foot .scrawl { color: var(--ink-2); }
+/* The tour's right-hand side: the quiz and the scene cards sit on a card too. */
+.sky-page .guide-quiz, .sky-page .guide-scenes {
+  padding: 20px; background: var(--card); border: 2px solid var(--ink); border-radius: 26px; box-shadow: 0 8px 0 var(--edge);
+}
+.sky-page .guide-scenes .guide-polaroid { box-shadow: 0 6px 18px rgba(59, 42, 30, 0.18); }
+.sky-page .guide-quiz .route-map { box-shadow: none; }
+
+.home { max-width: 860px; }
+.sky-page .home-nav { flex-wrap: nowrap; }
+.sky-page .home-nav .nav-actions { gap: 8px; }
+@media (max-width: 700px) {
+  .sky-page .home-nav { flex-wrap: wrap; border-radius: 24px; justify-content: center; }
+}
+
+/* Friends, tags and hints drawn over the 3D room keep their daytime colors at night:
+   they sit on a photo, not on a dark panel. */
+:root[data-theme='night'] :is(.viewer-canvas, .scene-hint, .walk-hint, .legend, .flip, .bunting) {
+  --card: #FFFDF7; --paper: #FBF4E6; --ink: #3B2A1E; --ink-2: #5E4836; --muted: #7A6450;
+  --sticky: #FDE9A9; --sand: #F1E5CF; --line: #E8DCC4; --dash: #D2BE9C;
+}
+:root[data-theme='night'] :is(.scene-hint, .walk-hint, .legend) { color: #3B2A1E; }

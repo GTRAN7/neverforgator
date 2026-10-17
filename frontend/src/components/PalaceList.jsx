@@ -115,7 +115,7 @@ function PalaceListContent() {
 
       {routes.length > 0 && (
         <section className="home-section">
-          <h2 className="card-title">More routes</h2>
+          <h2 className="section-tag">More routes</h2>
           <ul className="palace-list">
             {routes.map((t, i) => (
               <li key={t.id}>
@@ -152,7 +152,7 @@ function PalaceListContent() {
 
       {mine.length > 0 && (
         <section className="home-section">
-          <h2 className="card-title">Your palaces</h2>
+          <h2 className="section-tag">Your palaces</h2>
           <ul className="palace-list">
             {mine.map((p, i) => (
               <li key={p.id} className="palace-row">
