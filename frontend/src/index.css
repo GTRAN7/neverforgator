@@ -220,11 +220,7 @@ button { font: inherit; color: inherit; }
   font: 600 calc(13px * var(--ts)) var(--display); color: var(--ink); pointer-events: none;
 }
 .walk-hint {
-<<<<<<< HEAD
-  position: absolute; left: 62px; top: 60px; font: 600 12px var(--display); color: var(--ink-2);
-=======
-  position: absolute; left: 16px; top: 52px; font: 600 calc(12px * var(--ts)) var(--display); color: var(--ink-2);
->>>>>>> 6046c169a5b9f63a8e73f301def622f11d4a8eb7
+  position: absolute; left: 62px; top: 60px; font: 600 calc(12px * var(--ts)) var(--display); color: var(--ink-2);
   background: rgba(255, 253, 247, 0.9); padding: 4px 10px; border-radius: 999px; pointer-events: none;
 }
 .flip { position: absolute; right: 16px; top: 52px; z-index: 10; }
