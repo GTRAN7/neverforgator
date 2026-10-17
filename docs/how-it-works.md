@@ -40,7 +40,7 @@ and falls asleep when you don't.
 |---|---|---|
 | Sign in | Auth0 login; palaces belong to the user. The landing page links to the tour | `frontend/src/App.jsx`, `backend/app/auth.py` |
 | Tour | First visit: a 1-minute visual walkthrough that teaches the phases of mitosis on 5 Reitz stops, quizzes you on them, then starts you in the Reitz | `Guide.jsx` (`#/guide`) |
-| Pick a place | **Built in: the Reitz Union** ("Start memorizing here" copies it and opens the notes box), a finished example to explore, the **UF campus walk** (campus mode's building photos as photo rooms), or your own room | `PalaceList.jsx`, `lib/start.js`, `POST /api/palaces/{id}/copy` |
+| Pick a place | **Built in: the Reitz Union** ("Start memorizing here" copies it and opens the notes box), a finished example to explore, or your own room | `PalaceList.jsx`, `lib/start.js`, `POST /api/palaces/{id}/copy` |
 | Build | Upload panoramas, regular photos (shown as a window in front of you) or 3D scans; click to plant eggs (stops). Gemini names each stop. Click an egg to open its card: rename, move, reorder, delete | `RoomStrip.jsx`, `Viewer.jsx`, `SpotCard.jsx`, `lib/placing.js` |
 | Notes in | Paste, **snap a photo or PDF** of your notes (Gemini reads it), **upload a recording**, or **talk** (live speech-to-text in the browser) | `NotesImport.jsx`, `POST /api/import` |
 | Fill from notes | Builds the whole palace. Gemini cuts the notes into ideas (one picture each, as many as the notes need), gives each its own stop (your eggs first, then objects it finds in your panoramas, room by room), and writes a scene + sound-alike "hook" per stop, using the classic technique for each kind of idea (number pegs for numbers and dates, sound-alikes for names and vocabulary, a chain reaction for processes...). If the rooms run out of stops it says how many more you need instead of cramming | `FeedModal.jsx`, `POST /api/palaces/{id}/fill`, `app/studio/fill.py`, `app/studio/gemini.py` |
@@ -82,7 +82,7 @@ isn't duplicated per user.
 
 ```bash
 cd backend
-.venv/bin/python -m app.studio.seed_samples --reitz <folder>   # Reitz Union, mitosis example, UF campus walk
+.venv/bin/python -m app.studio.seed_samples --reitz <folder>   # Reitz Union + the mitosis example
 .venv/bin/python -m app.studio.make_template <palaceId> [off]  # share (or unshare) any palace
 ```
 
@@ -125,7 +125,9 @@ frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI
 ## To-do
 
 - [x] **Onboarding tour** (`Guide.jsx`) and the built-in Reitz route.
-- [x] **Backend in FastAPI** with the team's database; UF campus walk as a second built-in route.
+- [x] **Backend in FastAPI** with the team's database.
+- [ ] **Campus route in panoramas.** Shoot 360° panoramas at the campus stops (Century Tower, Marston...)
+      and make them a second built-in route (flat photos looked bad in 3D, so we dropped them).
 - [ ] **Merge the two modes** into one app (campus mode's dashboard, night mode and accessibility settings
       into the studio, or the studio's AI into campus mode).
 - [ ] **Real pictures.** Turn on billing for the Gemini key and set `PICTURES=gemini` (about $0.03-0.07 per

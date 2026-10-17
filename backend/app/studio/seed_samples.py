@@ -7,9 +7,6 @@
    <folder> is a Reitz palace exported by the old Node server (palace.json + its room files).
 2. "Sample: the phases of mitosis": the same route already filled with a real study example,
    pictures included. The onboarding tour opens it; anyone can walk and quiz it (read-only).
-3. "UF campus walk": the campus buildings from campus mode (Natasha's photos), with stops found
-   by Gemini, as a second built-in route.
-
 They belong to the "system" user, so nobody can change or delete them. Run again to rebuild them.
 Needs GEMINI_API_KEY for real stops and scenes (mock mode works too, with placeholder text).
 """
@@ -23,7 +20,7 @@ from app.db import SessionLocal
 from app.models import Palace, PalaceStop, Room, User
 from app.studio import gemini
 from app.studio.files import link_or_copy, palace_dir
-from app.studio.fill import fill_palace, find_extra_stops, set_order
+from app.studio.fill import fill_palace, set_order
 from app.studio.router import copy_palace
 
 MITOSIS_NOTES = """The phases of mitosis (how one cell splits into two identical cells), in order: P-M-A-T, then cytokinesis.
@@ -32,17 +29,6 @@ Metaphase: the chromosomes line up single file across the middle of the cell (th
 Anaphase: spindle fibers pull the sister chromatids apart, toward opposite ends of the cell.
 Telophase: two new nuclear envelopes form, one around each set of chromosomes.
 Cytokinesis: the cytoplasm pinches in two, leaving two separate, identical daughter cells."""
-
-# Natasha's campus photos (frontend/src/palace/assets/), in walking order.
-CAMPUS = [
-    ("Century Tower", "century-tower.webp"),
-    ("Smathers Library", "smathers.webp"),
-    ("Heavener Hall", "heavener.webp"),
-    ("Malachowsky Hall", "malachowsky.webp"),
-    ("Ben Hill Griffin Stadium", "stadium.webp"),
-]
-CAMPUS_ASSETS = Path(__file__).resolve().parents[3] / "frontend" / "src" / "palace" / "assets"
-
 
 def system_user(db) -> User:
     user = db.scalars(select(User).where(User.auth0_sub == "system")).first()
@@ -122,29 +108,6 @@ def main():
         set_order(db, list(sample.stops))
         db.commit()
         print(f"Sample: id {sample.id}")
-
-        # 3. The UF campus walk, from campus mode's photos.
-        campus = Palace(user_id=system.id, title="UF campus walk", template=True, built_in=True)
-        db.add(campus)
-        db.flush()
-        for i, (name, file) in enumerate(CAMPUS):
-            if (CAMPUS_ASSETS / file).exists():
-                link_or_copy(CAMPUS_ASSETS / file, palace_dir(campus.id) / file)
-                db.add(Room(palace_id=campus.id, position=i, name=name, type="photo", file=file))
-        db.commit()
-        db.refresh(campus)
-        # Three stops per building keeps the walk balanced.
-        per_room: dict[int, int] = {}
-        stops = []
-        for stop in find_extra_stops(campus, [], 100):
-            if per_room.get(stop["room_id"], 0) < 3:
-                per_room[stop["room_id"]] = per_room.get(stop["room_id"], 0) + 1
-                stops.append(stop)
-        for i, stop in enumerate(stops):
-            db.add(PalaceStop(palace_id=campus.id, room_id=stop["room_id"], stop_order=i + 1,
-                              direction=stop["direction"], label=stop["label"]))
-        db.commit()
-        print(f"Built-in route: UF campus walk (id {campus.id}), {len(stops)} stops in {len(campus.rooms)} places")
 
 
 if __name__ == "__main__":
