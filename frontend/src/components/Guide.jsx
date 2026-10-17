@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import Logo from './Logo.jsx';
+import SkyPage from './SkyPage.jsx';
+import NightToggle from './NightToggle.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
@@ -262,7 +264,7 @@ const STEPS = [
 
 // onStart: start memorizing (copy the built-in Reitz). onSample: open the finished example in 3D.
 // Both are missing when logged out; then onSignup is shown instead.
-export default function Guide({ onStart, onSample, onSignup, onClose }) {
+function GuideContent({ onStart, onSample, onSignup, onClose }) {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -298,7 +300,10 @@ export default function Guide({ onStart, onSample, onSignup, onClose }) {
     <div className="guide">
       <header className="guide-nav">
         <Logo />
+        <div className="nav-actions">
+        <NightToggle />
         <button className="nav-pill" onClick={onClose}>{last ? 'Close' : 'Skip the tour'} <span aria-hidden="true">→</span></button>
+        </div>
       </header>
 
       <div className="guide-dots" role="tablist" aria-label="Tour steps">
@@ -344,5 +349,14 @@ export default function Guide({ onStart, onSample, onSignup, onClose }) {
         </section>
       )}
     </div>
+  );
+}
+
+// The page sits in front of campus mode's sky.
+export default function Guide(props) {
+  return (
+    <SkyPage>
+      <GuideContent {...props} />
+    </SkyPage>
   );
 }
