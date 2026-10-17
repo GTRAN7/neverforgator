@@ -160,7 +160,8 @@ NUMBER_RHYMES = ", ".join(f"{d} = {peg}" for d, peg in enumerate(PEGS))
 def number_pegs(text: str) -> str:
     """The digit images for the numbers in an idea, worked out here so the model only has to use
     them: "Hans Krebs found it in 1937" -> '1937 = bun, wine, tree, heaven (an angel)'."""
-    numbers = list(dict.fromkeys(re.findall(r"\b\d{1,4}\b", text)))
+    # Plain numbers and ordinals ("4th Amendment" -> 4 = door).
+    numbers = list(dict.fromkeys(re.findall(r"\b(\d{1,4})(?:st|nd|rd|th)?\b", text)))
     return "; ".join(f"{n} = {', '.join(PEGS[int(d)] for d in n)}" for n in numbers)
 
 
@@ -195,6 +196,8 @@ def scene_rules(flavor: str = "wild") -> str:
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
+- number images come ON TOP of the key terms, never instead of them: the main subject (the planet, the
+  person, the amendment's right) must still be clearly in the scene,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
 imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image."""
@@ -275,7 +278,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v6", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v8", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
