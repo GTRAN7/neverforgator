@@ -5,13 +5,16 @@ import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import Settings from './Settings'
 import { openAbout } from '../about'
-import { useFileDrop } from '../useFileDrop'
+import { notify, useFileDrop } from '../useFileDrop'
+import { openFromAccount } from '../account'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
   { id: 'sample', title: 'Sample palace', text: 'The same route already filled in, to see how it works.' },
   { id: 'custom', title: 'Custom route', text: 'Upload your own photos. Each one becomes a stop, in order.' },
   { id: 'blank', title: 'Blank palace', text: 'Start empty and add your own stops and photos as you go.' },
+  // { id: 'template', title: 'TEMPLATE', text: 'COMMENT OUT LATER.' },
+  // DOESN'T WORK :// 
 ]
 
 // "IMG_cafe-corner.png" → "Img Cafe Corner"
@@ -37,6 +40,26 @@ export default function Dashboard({ account, onOpen, prefs }) {
   const [photos, setPhotos] = useState([]) // custom route: { id, file, url, name }
   const [busy, setBusy] = useState(false)
   const [doomed, setDoomed] = useState(null) // palace waiting for delete confirmation
+  // Palaces saved to the account (signed-in users). Ones already in this browser show in "Your palaces".
+  const [remote, setRemote] = useState(null)
+  const [remoteError, setRemoteError] = useState(null)
+  const [fetching, setFetching] = useState(null) // id of the account palace being downloaded
+  const api = account.api
+  useEffect(() => {
+    if (!api) return
+    api('/palaces').then(setRemote, e => setRemoteError(e.message))
+  }, [api])
+  const here = new Set(palaces.map(p => p.account).filter(Boolean))
+  const accountOnly = (remote ?? []).filter(r => !here.has(r.id))
+  const download = async r => {
+    setFetching(r.id)
+    try {
+      onOpen(createPalace(sub, await openFromAccount(account.api, r.id)))
+    } catch (e) {
+      notify(e.message)
+      setFetching(null)
+    }
+  }
   // Brand-new accounts get a welcome with the tutorial, or skip straight to creating.
   const [welcome, setWelcome] = useState(() => !palaces.length && !tutorialSeen(sub))
   const skipTutorial = () => {
@@ -97,7 +120,17 @@ export default function Dashboard({ account, onOpen, prefs }) {
     }
   }
 
-  const remove = p => {
+  const remove = async p => {
+    if (p.remote) {
+      setDoomed(null)
+      try {
+        await account.api(`/palaces/${p.id}`, { method: 'DELETE' })
+        setRemote(rs => rs.filter(r => r.id !== p.id))
+      } catch (e) {
+        notify(e.message)
+      }
+      return
+    }
     deletePalace(sub, p.id)
     setPalaces(listPalaces(sub))
     setDoomed(null)
@@ -180,10 +213,29 @@ export default function Dashboard({ account, onOpen, prefs }) {
               {palaces.map(p => (
                 <li key={p.id} className="landing-card palace-card">
                   <h3>{p.title}</h3>
-                  <p className="muted">{p.stops} stops · {p.cards} cards · edited {ago(p.updatedAt)}</p>
+                  <p className="muted">{p.stops} stops · {p.cards} cards · edited {ago(p.updatedAt)}{p.account && ' · in your account'}</p>
                   <div className="row">
                     <button className="btn btn-small btn-danger" onClick={() => setDoomed(p)}>Delete</button>
                     <button className="btn btn-small" onClick={() => onOpen(p.id)}>Open</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {account.api && (accountOnly.length > 0 || remoteError) && (
+          <section className="your-palaces">
+            <p className="eyebrow">In your account</p>
+            {remoteError && <p className="landing-card muted">Couldn't load your account's palaces: {remoteError}</p>}
+            <ul className="palace-list">
+              {accountOnly.map(r => (
+                <li key={r.id} className="landing-card palace-card">
+                  <h3>{r.title}</h3>
+                  <p className="muted">{r.stop_count} stops · saved {r.created_at ? ago(Date.parse(r.created_at.endsWith('Z') ? r.created_at : `${r.created_at}Z`)) : ''} · not in this browser yet</p>
+                  <div className="row">
+                    <button className="btn btn-small btn-danger" onClick={() => setDoomed({ ...r, remote: true })}>Delete</button>
+                    <button className="btn btn-small" disabled={fetching === r.id} onClick={() => download(r)}>{fetching === r.id ? 'Opening…' : 'Open'}</button>
                   </div>
                 </li>
               ))}
@@ -194,7 +246,7 @@ export default function Dashboard({ account, onOpen, prefs }) {
       {doomed && (
         <ConfirmDialog
           title={`Delete "${doomed.title}"`}
-          message={<>Deleting will delete ALL of the information inside of <span className="doomed-name">{doomed.title}</span>. Are you sure you want to continue?</>}
+          message={<>Deleting will delete ALL of the information inside of <span className="doomed-name">{doomed.title}</span>{doomed.remote && ' from your account'}. Are you sure you want to continue?</>}
 
           confirmLabel="Delete"
           countdown={3}

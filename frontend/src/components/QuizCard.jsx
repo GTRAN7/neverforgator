@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api.js';
 import Creature from './Creature.jsx';
 import SpotImage from './SpotImage.jsx';
@@ -6,15 +6,18 @@ import { hatchedPath, placeName } from '../lib/path.js';
 import { checkAnswer } from '../lib/grade.js';
 import { readPrefs } from '../lib/prefs.js';
 
-// Quiz: visit each friend in path order with its fact hidden, asking both ways (alternating):
-//   "What lives at your desk?"        → type it; checked instantly in the browser
-//   "Where did you put photosynthesis?" → tap the right friend in 3D, or pick a place
-// Like memory athletes, you check yourself: if the key words don't clearly match, you see the
-// real fact and say whether you had it. Right → the friend bounces. Wrong → it falls asleep, and
-// Gemini dreams up a weirder scene in the background so you can wake it up later.
+// Quiz, in up to two rounds (the "Quiz me by…" setting picks one or both):
+//   Round 1 · Walk the path   "Who lives at your desk?"   in path order, like walking it in your head.
+//                             Type it; it's checked instantly in the browser against the key terms.
+//   Round 2 · Find it         "Where did you put photosynthesis?"   shuffled, so the order of the
+//                             path can't give the answer away. Tap the friend in 3D or pick a place.
+// Like memory athletes, you check yourself: if only some key terms match, you see the fact and say
+// whether you had it, and you can always overrule a verdict. A friend bounces if you got all of
+// its questions right; otherwise it falls asleep and Gemini dreams up a weirder scene for it.
 // At the end the score sets the next spaced review (see /reviews in the backend).
-// `results` ({ spotId: true/false }, or null before starting) lives in PalaceEditor
-// because the 3D sprites and the score in the header need it too.
+// `results` ({ spotId: true/false }, or null before starting) lives in PalaceEditor because the
+// 3D friends and the score in the header need it too.
+
 // "in 3 days", "tomorrow", "in 10 minutes"
 function whenText(iso) {
   const minutes = Math.round((new Date(iso) - Date.now()) / 60000);
@@ -23,48 +26,73 @@ function whenText(iso) {
   return days <= 1 ? 'tomorrow' : `in ${days} days`;
 }
 
-// The "Quiz me by…" preference: both ways (alternating), or just one.
-function questionKind(index) {
+const shuffle = (list) => list.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+const FIND_ROUND_MAX = 6; // with both rounds, round 2 asks about a handful of friends, not all
+
+// [{ kind: 'what' | 'where', at: index in the path }]
+function makeQuestions(path) {
   const { quiz } = readPrefs();
-  if (quiz === 'type') return 'what';
-  if (quiz === 'tap') return 'where';
-  return index % 2 === 1 ? 'where' : 'what';
+  const walk = path.map((_, at) => ({ kind: 'what', at }));
+  const find = shuffle(path.map((_, at) => ({ kind: 'where', at })));
+  if (quiz === 'type') return walk;
+  if (quiz === 'tap') return find;
+  return [...walk, ...(path.length > 1 ? find.slice(0, FIND_ROUND_MAX) : [])];
 }
 
-// The right place plus up to 3 others, mixed in a fixed order (same every time for a question).
-function placeChoices(path, index) {
-  const others = path.filter((_, i) => i !== index);
-  const start = index % Math.max(1, others.length);
-  const choices = [...others.slice(start), ...others.slice(0, start)].slice(0, 3);
-  choices.splice(index % (choices.length + 1), 0, path[index]);
-  return choices;
+// The right place plus up to 3 others, in random order.
+function placeChoices(path, at) {
+  const others = shuffle(path.filter((_, i) => i !== at)).slice(0, 3);
+  return shuffle([...others, path[at]]);
 }
 
 export default function QuizCard({ palace, images, updateSpot, results, setResults, goToSpot, onWake, setFriendPicker }) {
   const path = hatchedPath(palace);
-  const [index, setIndex] = useState(0);
-  const [answer, setAnswer] = useState('');
-  const [graded, setGraded] = useState(null); // { correct, feedback } for the current friend
+  const [questions, setQuestions] = useState([]);
+  const [q, setQ] = useState(0); // which question
+  const [answers, setAnswers] = useState({}); // question index -> true / false
+  const [answer, setAnswer] = useState(''); // what was typed
+  const [graded, setGraded] = useState(null); // { correct: true | false | null (close: you decide) }
   const [showPicture, setShowPicture] = useState(false);
-  const [rewriting, setRewriting] = useState({}); // spotId → true while Gemini rewrites it
-  const [nextReviewAt, setNextReviewAt] = useState(null); // set when the quiz is finished
+  const [rewriting, setRewriting] = useState({}); // spotId -> true while Gemini rewrites it
+  const [nextReviewAt, setNextReviewAt] = useState(null);
+  const [finished, setFinished] = useState(false);
 
-  const done = results && Object.keys(results).length === path.length && !graded;
+  const question = questions[q];
+  const current = question ? path[question.at] : null;
+  const choices = useMemo(() => (question?.kind === 'where' ? placeChoices(path, question.at) : []), [questions, q]);
   const sleepers = path.filter(({ spot }) => results?.[spot.id] === false);
+  const roundTwoStart = questions.findIndex((x) => x.kind === 'where');
+  const twoRounds = roundTwoStart > 0;
 
-  function askAt(i) {
-    setIndex(i);
+  // A friend is happy if every question about it so far was right, sleepy if any was wrong.
+  function setAnswerFor(index, correct) {
+    const next = { ...answers, [index]: correct };
+    setAnswers(next);
+    const perSpot = {};
+    for (const [i, ok] of Object.entries(next)) {
+      const id = path[questions[i].at].spot.id;
+      perSpot[id] = (perSpot[id] ?? true) && ok;
+    }
+    setResults(perSpot);
+  }
+
+  function ask(index, list = questions) {
+    setQ(index);
     setAnswer('');
     setGraded(null);
     setShowPicture(false);
-    // "What lives here?" walks you to the friend. "Where did you put it?" can't, it'd give it away.
-    if (questionKind(i) === 'what') goToSpot(path[i].spot);
+    // "Who lives here?" walks you to the friend. "Where did you put it?" can't: it'd give it away.
+    if (list[index].kind === 'what') goToSpot(path[list[index].at].spot);
   }
 
   function start() {
+    const list = makeQuestions(path);
+    setQuestions(list);
+    setAnswers({});
     setResults({});
+    setFinished(false);
     setNextReviewAt(null);
-    askAt(0);
+    ask(0, list);
   }
 
   async function reimagine(spot) {
@@ -78,63 +106,68 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     }
   }
 
-  // Show the verdict right away. correct: true / false, or null = "close, you decide".
-  function settle(correct, feedback) {
-    const { spot } = path[index];
-    if (questionKind(index) === 'where') goToSpot(spot); // now show where it really lives
-    setGraded({ correct, feedback });
-    if (correct !== null) setResults((r) => ({ ...r, [spot.id]: correct }));
+  // correct: true / false, or null = "close, you decide"
+  function settle(correct) {
+    if (question.kind === 'where') goToSpot(current.spot); // now show where it really lives
+    setGraded({ correct });
+    if (correct !== null) setAnswerFor(q, correct);
   }
 
   // guess: { answer: "typed text" } or { placeId: spotId they picked }
   function submit(guess) {
-    const { spot, number } = path[index];
     if ('placeId' in guess) {
-      const place = `${number} · ${placeName(spot, number)}`;
-      settle(guess.placeId === spot.id, guess.placeId === spot.id ? `Yes! It lives at ${place}.` : `It actually lives at ${place}.`);
+      settle(guess.placeId === current.spot.id);
       return;
     }
-    const verdict = guess.answer.trim() ? checkAnswer(spot.fact, guess.answer, spot.keyTerms) : 'wrong';
-    if (verdict === 'right') settle(true, spot.fact);
-    else if (verdict === 'close') settle(null, spot.fact);
-    else settle(false, spot.fact);
-  }
-
-  // Moving on saves the result. Only then does a miss get its weirder scene, so you can
-  // still overrule the verdict ("I had it") without paying for a rewrite.
-  function next() {
-    const { spot } = path[index];
-    const correct = results[spot.id];
-    if (correct === undefined) return; // still deciding a "close" answer
-    // A shared example can be quizzed, but not changed: no scores, no rewritten scenes.
-    if (!palace.readOnly) {
-      api.recordResult(palace.id, spot.id, correct).catch((e) => console.error('Saving result failed:', e));
-      if (!correct) reimagine(spot); // no await: it runs while you keep going
-    }
-    if (index < path.length - 1) {
-      askAt(index + 1);
-      return;
-    }
-    setGraded(null); // all answered → results screen
-    const score = Object.values(results).filter(Boolean).length;
-    if (palace.readOnly) return;
-    api.addReview(palace.id, score, path.length).then((r) => setNextReviewAt(r.nextReviewAt)).catch(() => {});
+    const verdict = guess.answer.trim() ? checkAnswer(current.spot.fact, guess.answer, current.spot.keyTerms) : 'wrong';
+    settle(verdict === 'right' ? true : verdict === 'close' ? null : false);
   }
 
   function overrule(correct) {
-    setGraded((g) => ({ ...g, correct }));
-    setResults((r) => ({ ...r, [path[index].spot.id]: correct }));
+    setGraded({ correct, overruled: true });
+    setAnswerFor(q, correct);
+  }
+
+  // Moving on saves the result. Only then does a miss get its weirder scene, so you can still
+  // overrule the verdict without paying for a rewrite.
+  function next() {
+    const correct = answers[q];
+    if (correct === undefined) return; // still deciding a "close" answer
+    const { spot } = current;
+    // A shared example can be quizzed, but not changed: no scores, no rewritten scenes.
+    if (!palace.readOnly) {
+      api.recordResult(palace.id, spot.id, correct).catch((e) => console.error('Saving result failed:', e));
+      const missedBefore = Object.entries(answers).some(([i, ok]) => Number(i) < q && !ok && path[questions[i].at].spot.id === spot.id);
+      if (!correct && !missedBefore) reimagine(spot); // no await: it runs while you keep going
+    }
+    if (q < questions.length - 1) {
+      ask(q + 1);
+      return;
+    }
+    setFinished(true);
+    setGraded(null);
+    const happy = path.filter(({ spot: s }) => results?.[s.id] !== false).length;
+    if (!palace.readOnly) {
+      api.addReview(palace.id, happy, path.length).then((r) => setNextReviewAt(r.nextReviewAt)).catch(() => {});
+    }
+  }
+
+  // Peeking draws the picture if it isn't drawn yet.
+  function peek() {
+    setShowPicture((v) => !v);
+    const { spot } = current;
+    if (spot.imagePrompt && !spot.image && !images.status[spot.id]) images.enqueue([spot.id]);
   }
 
   // During a "where" question, tapping a friend in the 3D room answers it.
-  const kind = questionKind(index);
+  const kind = question?.kind;
   useEffect(() => {
-    if (!results || graded || kind !== 'where' || !path[index]) return undefined;
+    if (!results || graded || kind !== 'where' || finished) return undefined;
     setFriendPicker(() => (spot) => submit({ placeId: spot.id }));
     return () => setFriendPicker(null);
-  }, [results, graded, kind, index]);
+  }, [results, graded, kind, q, finished]);
 
-  // After grading, Enter moves on (the guess box is disabled, so it can't hold focus).
+  // After grading, Enter moves on (the guess box is gone, so it can't hold focus).
   useEffect(() => {
     if (!graded) return undefined;
     const onKey = (e) => {
@@ -155,11 +188,13 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
   }
 
   if (!results) {
+    const { quiz } = readPrefs();
     return (
       <div className="float-card quiz-card">
         <span className="chip green">{path.length} friends to visit</span>
         <h2 className="card-title big">Ready to visit your friends?</h2>
-        <p>They’ll hide their facts. At each stop, say who lives there.</p>
+        {quiz !== 'tap' && <p><strong>Walk the path:</strong> at each stop, say who lives there.</p>}
+        {quiz !== 'type' && <p><strong>Find it:</strong> then, a few facts in random order: where did you put them?</p>}
         <button className="btn ink wide" onClick={start}>Start the quiz</button>
         <p className="scrawl">right answers make them bounce, misses put them to sleep</p>
       </div>
@@ -169,13 +204,10 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
   const sleeperStatus = (spot) => {
     if (palace.readOnly) return 'walk past it again in Wander';
     if (rewriting[spot.id]) return 'dreaming…';
-    const status = images.status[spot.id];
-    if (status === 'queued' || status === 'working') return 'drawing its new picture…';
-    if (status === 'error') return 'new scene ready (picture failed)';
-    return 'new scene ready';
+    return 'new, weirder scene ready';
   };
 
-  if (done) {
+  if (finished) {
     const happy = path.length - sleepers.length;
     return (
       <div className="float-card quiz-card">
@@ -185,7 +217,9 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
           <p className="scrawl">everyone’s bouncing. your palace works!</p>
         ) : (
           <>
-            <p>These friends fell asleep. Each one has dreamed up a weirder scene to wake up to:</p>
+            <p>{palace.readOnly
+              ? 'These friends fell asleep. Walk past them again in Wander, then quiz again:'
+              : 'These friends fell asleep. Each one has dreamed up a weirder scene to wake up to:'}</p>
             <ul className="sleeper-list">
               {sleepers.map(({ spot, number }) => (
                 <li key={spot.id}>
@@ -212,12 +246,20 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     );
   }
 
-  const { spot, number } = path[index];
+  const { spot, number } = current;
   const place = placeName(spot, number);
   const where = kind === 'where';
+  const round = where ? 'Find it' : 'Walk the path';
+  const inRound = where && twoRounds ? q - roundTwoStart : q;
+  const roundSize = where && twoRounds ? questions.length - roundTwoStart : twoRounds ? roundTwoStart : questions.length;
+  const verdict = graded?.correct === null ? 'Close! Did you have it?' : graded?.correct ? 'Nailed it!' : 'Zzz… they fell asleep';
+
   return (
     <div className="float-card quiz-card">
-      <span className="chip green">Friend {index + 1} of {path.length}{where && !graded ? '' : ` · ${place}`}</span>
+      <div className="quiz-head">
+        <span className="chip green">{twoRounds ? `Round ${where ? 2 : 1} · ` : ''}{round}</span>
+        <span className="quiz-count">{inRound + 1} / {roundSize}</span>
+      </div>
 
       {where ? (
         <>
@@ -227,7 +269,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
             <>
               <span className="field-label">Tap its friend in the room, or pick a place:</span>
               <div className="choice-row">
-                {placeChoices(path, index).map((c) => (
+                {choices.map((c) => (
                   <button key={c.spot.id} className="style-btn" onClick={() => submit({ placeId: c.spot.id })}>
                     {c.number} · {placeName(c.spot, c.number)}
                   </button>
@@ -238,34 +280,43 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
         </>
       ) : (
         <>
-      <h2 className="card-title big">Who lives at your {place}?</h2>
-      <label htmlFor="guess" className="field-label">Your guess</label>
-      <input
-        id="guess"
-        className="pill-input"
-        autoFocus
-        autoComplete="off"
-        value={answer}
-        disabled={!!graded}
-        onChange={(e) => setAnswer(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && answer.trim() && !graded && submit({ answer })}
-        placeholder="type what you remember…"
-      />
+          <h2 className="card-title big">Who lives at your {place}?</h2>
+          {!graded && (
+            <>
+              <label htmlFor="guess" className="field-label">Your guess</label>
+              <input
+                id="guess"
+                className="pill-input"
+                autoFocus
+                autoComplete="off"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && answer.trim() && submit({ answer })}
+                placeholder="type what you remember…"
+              />
+            </>
+          )}
         </>
       )}
 
       {graded && (
         <div className={`sticky ${graded.correct === false ? 'sleepy' : ''}`}>
-          <span className="sticky-title">
-            {graded.correct === null ? 'Close! Did you have it?' : graded.correct ? 'Nailed it!' : 'Zzz… they fell asleep'}
-          </span>
-          {!where && <span className="sticky-label">The fact</span>}
-          <p>{graded.feedback}</p>
+          <span className="sticky-title">{verdict}</span>
+          {where ? (
+            <p>{graded.correct ? 'Yes! ' : ''}It lives at {number} · {place}.</p>
+          ) : (
+            <>
+              {answer.trim() && <p className="your-answer">You said: “{answer.trim()}”</p>}
+              <span className="sticky-label">The fact</span>
+              <p>{spot.fact}</p>
+            </>
+          )}
         </div>
       )}
 
       {showPicture && (
-        <SpotImage palaceId={palace.id} spot={spot} status={images.status[spot.id]} className="quiz-photo" />
+        <SpotImage palaceId={palace.id} spot={spot} status={images.status[spot.id]}
+          onRetry={() => images.enqueue([spot.id])} className="quiz-photo" />
       )}
 
       {graded?.correct === null ? (
@@ -274,34 +325,35 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
           <button className="btn ink" onClick={() => overrule(true)}>Yes, I had it</button>
         </div>
       ) : graded ? (
-        <div className="btn-row">
-          {!where && answer.trim() && (
-            <button className="link" onClick={() => overrule(!graded.correct)}>
-              {graded.correct ? 'actually, I missed it' : 'actually, I had it'}
+        <>
+          {!where && answer.trim() && !graded.overruled && (
+            <div className="overrule">
+              <span>{graded.correct ? 'Not quite right?' : 'Actually knew it?'}</span>
+              <button className="btn ghost small" onClick={() => overrule(!graded.correct)}>
+                {graded.correct ? 'Count it as missed' : 'Count it as right'}
+              </button>
+            </div>
+          )}
+          <div className="btn-row">
+            <button className="btn ghost" onClick={peek}>{showPicture ? 'Hide the scene' : 'See the scene'}</button>
+            <button className="btn ink" onClick={next}>{q < questions.length - 1 ? 'Next →' : 'See results'}</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="btn-row">
+            <button className="btn ghost" onClick={() => submit(where ? { placeId: null } : { answer: '' })}>I forgot</button>
+            {!where && <button className="btn ink" disabled={!answer.trim()} onClick={() => submit({ answer })}>Check</button>}
+          </div>
+          {!where && (
+            <button className="btn ghost small peek-btn" onClick={peek}>
+              {showPicture ? 'Hide the picture' : 'Stuck? Peek at the picture'}
             </button>
           )}
-          <button className="btn ghost" onClick={() => setShowPicture((v) => !v)}>
-            {showPicture ? 'Hide picture' : 'See its picture'}
-          </button>
-          <button className="btn ink" onClick={next}>
-            {index < path.length - 1 ? 'Next friend' : 'See results'}
-          </button>
-        </div>
-      ) : (
-        <div className="btn-row">
-          <button className="btn ghost" onClick={() => submit(where ? { placeId: null } : { answer: '' })}>I forgot</button>
-          {!where && <button className="btn ink" disabled={!answer.trim()} onClick={() => submit({ answer })}>Check</button>}
-        </div>
-      )}
-      {!graded && !showPicture && !where && (
-        <button className="link" onClick={() => setShowPicture(true)}>peek at the picture</button>
+        </>
       )}
 
-      {sleepers.length > 0 && (
-        <p className="scrawl">
-          {sleepers.length} friend{sleepers.length > 1 ? 's' : ''} fell asleep. Wake them up later with a weirder scene!
-        </p>
-      )}
+      {graded && showPicture && <p className="scrawl scene-text">{spot.scene}</p>}
     </div>
   );
 }

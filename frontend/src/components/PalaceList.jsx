@@ -146,7 +146,7 @@ function PalaceListContent() {
             placeholder="e.g. my dorm room" />
           <button className="btn ink" type="submit" disabled={Boolean(busy)}>Build it</button>
         </div>
-        <span className="hint-text">You’ll add a 360° photo, a phone panorama or a 3D scan of it.</span>
+        <span className="hint-text">You’ll add a 360° photo, a phone panorama, or a 3D scan of it.</span>
       </form>
       {error && <p className="error-text">{error}</p>}
 

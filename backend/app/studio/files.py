@@ -25,8 +25,11 @@ def new_name(prefix: str, ext: str) -> str:
 
 def link_or_copy(src: Path, dst: Path) -> None:
     """Hard-link (a 95 MB scan isn't duplicated per user), or copy if linking isn't possible."""
-    if dst.exists():
-        return
+    if dst.exists() and os.path.samefile(src, dst):
+        return  # already linked
+    # A failed copy is rolled back in the database but leaves its files, and the next palace can
+    # get the same id (and folder), so replace leftovers instead of failing on them.
+    dst.unlink(missing_ok=True)
     try:
         os.link(src, dst)
     except OSError:
