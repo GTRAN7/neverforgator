@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mind Palace, quiz mode</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@400;600;800&amp;family=Caveat:wght@600&amp;display=swap">
+<style>
+body{margin:0;background:#FBF4E6}
+a{color:#B04A2E}a:hover{color:#7E3320}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px)}}
+@keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="height: 900px; display: flex; flex-direction: column; background: #FBF4E6; color: #3B2A1E; font-family: 'Nunito', sans-serif">
+
+<header style="flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="width: 36px; height: 34px; border-radius: 50% 50% 46% 46%; background: {{accent}}; display: flex; align-items: center; justify-content: center; gap: 7px; border: 2px solid #3B2A1E">
+<span style="width: 5px; height: 7px; border-radius: 50%; background: #3B2A1E"></span>
+<span style="width: 5px; height: 7px; border-radius: 50%; background: #3B2A1E"></span>
+</div>
+<span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px">Mind Palace</span>
+<span style="font-family: 'Caveat', cursive; font-size: 24px; color: #7A6450">my dorm room</span>
+</div>
+<div style="display: flex; padding: 5px; gap: 4px; background: #F1E5CF; border-radius: 999px">
+<button style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: #5E4836; font: 600 15px 'Fredoka', sans-serif">Build</button>
+<button style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: #5E4836; font: 600 15px 'Fredoka', sans-serif">Wander</button>
+<button style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #3B2A1E; color: #FFFDF7; font: 600 15px 'Fredoka', sans-serif">Quiz</button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 6px 16px; background: #FFFDF7; border: 2px solid #3B2A1E; border-radius: 999px">
+<span style="font: 600 14px 'Fredoka', sans-serif; color: #5E4836">Happy friends</span>
+<span style="font: 700 22px 'Fredoka', sans-serif">2 / 3</span>
+</div>
+</header>
+
+<main style="flex: 1; min-height: 0; margin: 0 16px 16px; position: relative; overflow: hidden; background: #F3E3C8; border: 2px solid #E8DCC4; border-radius: 24px">
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 32%; background: #E2C9A3"></div>
+<div style="position: absolute; left: 24%; bottom: 6%; width: 46%; height: 16%; border-radius: 50%; background: #EBB7A3"></div>
+<div style="position: absolute; left: 54%; top: 11%; width: 20%; height: 30%; background: #BFE0EA; border: 6px solid #FFFDF7; border-radius: 18px; overflow: hidden">
+<div style="position: absolute; right: 16%; top: 14%; width: 46px; height: 46px; border-radius: 50%; background: #FFD86B"></div>
+</div>
+<div style="position: absolute; left: 6%; top: 28%; width: 15%; height: 12px; background: #C99B6E; border-radius: 6px"></div>
+<div style="position: absolute; left: 22%; bottom: 32%; width: 24%; height: 16px; background: #C99B6E; border-radius: 8px"></div>
+<div style="position: absolute; left: 50%; bottom: 20%; width: 32%; height: 15%; background: #A9C9AE; border-radius: 22px"></div>
+<div style="position: absolute; right: 3%; bottom: 32%; width: 11%; height: 50%; background: #D9B48A; border: 6px solid #FFFDF7; border-radius: 22px 22px 6px 6px"></div>
+
+<div style="position: absolute; left: 0; right: 0; top: 4%; height: 2px; background: #C99B6E"></div>
+<sc-for list="{{flags}}" as="f" hint-placeholder-count="16">
+<div style="{{f.style}}"></div>
+</sc-for>
+
+<sc-for list="{{sprites}}" as="o" hint-placeholder-count="8">
+<div style="{{o.wrap}}">
+<sc-if value="{{o.zzz}}" hint-placeholder-val="{{ false }}">
+<span style="font: 700 16px 'Fredoka', sans-serif; color: #5E4836; margin-bottom: -4px">z z z</span>
+</sc-if>
+<sc-if value="{{o.ask}}" hint-placeholder-val="{{ false }}">
+<span style="font: 700 20px 'Fredoka', sans-serif; color: #3B2A1E; background: #FFFDF7; border: 2px solid #3B2A1E; width: 34px; height: 34px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 2px">?</span>
+</sc-if>
+<sc-if value="{{o.star}}" hint-placeholder-val="{{ false }}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="#FFD86B" stroke="#3B2A1E" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"></path></svg>
+</sc-if>
+<div style="{{o.body}}">
+<div style="{{o.eyes}}"><span style="{{o.eye}}"></span><span style="{{o.eye}}"></span></div>
+<div style="{{o.cheeks}}"><span style="{{o.cheek}}"></span><span style="{{o.cheek}}"></span></div>
+</div>
+<div style="{{o.tag}}">{{o.label}}</div>
+</div>
+</sc-for>
+
+<div style="position: absolute; left: 20px; bottom: 16px; display: flex; flex-wrap: wrap; gap: 16px; font: 600 13px 'Fredoka', sans-serif; color: #3B2A1E">
+<span>Bouncing = remembered</span>
+<span>Sleeping = missed</span>
+<span>Eggs = still ahead</span>
+</div>
+
+<div style="position: absolute; right: 28px; top: 40px; width: 360px; max-width: calc(100% - 56px); transform: rotate(1.5deg); background: #FFFDF7; color: #3B2A1E; border: 2px solid #3B2A1E; border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 8px 0 #3B2A1E">
+<span style="align-self: flex-start; font: 600 13px 'Fredoka', sans-serif; padding: 4px 12px; border-radius: 999px; background: #E3EEDF; color: #2F5238">Friend 4 of 8 · Desk</span>
+<h2 style="margin: 0; font-family: 'Fredoka', sans-serif; font-size: 28px; line-height: 1.15">Who lives at your desk?</h2>
+<label for="answer" style="font: 600 14px 'Fredoka', sans-serif">Your guess</label>
+<input id="answer" value="ribosomes!! building proteins" style="height: 50px; padding: 0 18px; border: 2px solid #3B2A1E; border-radius: 999px; background: #FFFFFF; color: #3B2A1E; font: 600 16px 'Nunito', sans-serif">
+<div style="padding: 14px 16px; background: #FDE9A9; border-radius: 18px; transform: rotate(-1.5deg)">
+<span style="font: 700 18px 'Fredoka', sans-serif">Nailed it!</span>
+<p style="margin: 4px 0 0; font-size: 15px; line-height: 1.45">Ribosomes build proteins from amino acids. Your desk friend is doing a happy dance.</p>
+</div>
+<div style="display: flex; gap: 10px">
+<button style="flex: 1; height: 46px; border: 2px solid #3B2A1E; border-radius: 999px; background: #FFFDF7; color: #3B2A1E; font: 600 15px 'Fredoka', sans-serif">See its picture</button>
+<button style="flex: 1; height: 46px; border: 0; border-radius: 999px; background: #3B2A1E; color: #FFFDF7; font: 600 15px 'Fredoka', sans-serif">Next friend</button>
+</div>
+<p style="margin: 0; font-family: 'Caveat', cursive; font-size: 21px; color: #5E4836">1 friend fell asleep. Wake them up later with a weirder scene!</p>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F08A6C","options":["#F08A6C","#7FA98B","#FFD86B"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#F08A6C';
+    var colors = ['#FFB38A', '#8CCBFF', '#FFD86B', '#8FE3C6', '#C7B5FF', '#FF9EC4', '#FFB38A', '#8CCBFF'];
+    var pts = [[88, 64, 'happy'], [62, 28, 'happy'], [44, 32, 'sleep'], [32, 56, 'now'], [12, 18, 'egg'], [10, 72, 'egg'], [52, 72, 'egg'], [74, 86, 'egg']];
+    var sprites = pts.map(function (p, i) {
+      var s = p[2];
+      var egg = s === 'egg', on = s === 'now';
+      var w = on ? 64 : egg ? 34 : 46, h = on ? 60 : egg ? 42 : 43;
+      var eyeStyle = s === 'happy' ? 'width: 9px; height: 5px; box-sizing: border-box; border-top: 3px solid #3B2A1E; border-radius: 9px 9px 0 0;'
+        : s === 'sleep' ? 'width: 9px; height: 0; border-top: 3px solid #3B2A1E;'
+        : egg ? 'display: none;'
+        : 'width: 8px; height: 12px; border-radius: 50%; background: #3B2A1E;';
+      var anim = s === 'happy' ? 'animation: hop 1.1s ease-in-out ' + (i * 0.3) + 's infinite;' : s === 'sleep' || egg ? '' : 'animation: bob 2.4s ease-in-out infinite;';
+      return {
+        zzz: s === 'sleep', ask: on, star: s === 'happy',
+        label: egg ? '?' : String(i + 1),
+        wrap: 'position: absolute; left: calc(' + p[0] + '% - ' + w / 2 + 'px); top: calc(' + p[1] + '% - ' + h / 2 + 'px); display: flex; flex-direction: column; align-items: center; gap: 5px; ' + anim,
+        body: 'width: ' + w + 'px; height: ' + h + 'px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; ' + (egg
+          ? 'border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #FFFDF7; border: 2px dashed #8C7358;'
+          : 'border-radius: 50% 50% 46% 46%; background: ' + (s === 'sleep' ? '#D8CDBE' : colors[i]) + '; border: 2px solid #3B2A1E; box-shadow: 0 ' + (on ? 10 : 6) + 'px 0 rgba(59,42,30,0.18);'),
+        eyes: 'display: flex; gap: ' + (on ? 14 : 10) + 'px;',
+        eye: eyeStyle,
+        cheeks: egg ? 'display: none;' : 'display: flex; gap: ' + (on ? 22 : 16) + 'px;',
+        cheek: 'width: 7px; height: 4px; border-radius: 50%; background: rgba(230,80,110,0.5);',
+        tag: 'font: 600 12px Fredoka, sans-serif; color: #3B2A1E; background: #FFFDF7; border: 1.5px solid #3B2A1E; padding: 1px 9px; border-radius: 999px;'
+      };
+    });
+    var bunting = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
+    var flags = [];
+    for (var k = 0; k < 16; k++) {
+      flags.push({ style: 'position: absolute; left: ' + (2 + k * 6.2).toFixed(1) + '%; top: 4%; width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-top: 24px solid ' + bunting[k % 5] + '; transform-origin: top center; animation: sway 3s ease-in-out ' + (k * 0.2).toFixed(1) + 's infinite;' });
+    }
+    return { accent: accent, sprites: sprites, flags: flags };
+  }
+}
+</script>
+</body>
+</html>

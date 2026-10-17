@@ -1,0 +1,7 @@
+node_modules/
+# palaces, uploads and cached Gemini results stay on each machine
+data/
+# the Gemini key lives here, never commit it
+.env
+.env.*
+!.env.example
