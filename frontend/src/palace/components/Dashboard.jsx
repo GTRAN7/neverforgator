@@ -4,6 +4,7 @@ import { createPalace, deletePalace, listPalaces, prepareImage, putImage } from 
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import Settings from './Settings'
+import { openAbout } from '../about'
 import { useFileDrop } from '../useFileDrop'
 
 const TEMPLATES = [
@@ -28,7 +29,7 @@ const ago = ms => {
 
 // First page after signing in: create a palace, or reopen one you made before.
 // Brand-new users only see the create card.
-export default function Dashboard({ account, onOpen, night, onToggleNight }) {
+export default function Dashboard({ account, onOpen, prefs }) {
   const sub = account.user?.sub
   const [palaces, setPalaces] = useState(() => listPalaces(sub))
   const [title, setTitle] = useState('')
@@ -94,12 +95,12 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
 
   return (
     <main className="landing dashboard">
-      <Sky night={night} />
+      <Sky night={prefs.night} />
       <div className="dashboard-content">
         <header className="dashboard-head">
-          <div className="brand">UF<span>·</span>MP</div>
+          <button className="brand" onClick={openAbout} title="About UF Memory Palace">UF<span>·</span>MP</button>
           <div className="row">
-            <Settings night={night} onToggleNight={onToggleNight} />
+            <Settings prefs={prefs} />
             {account.user ? (
               <>
                 {account.user.picture && <img className="avatar" src={account.user.picture} alt="" />}
@@ -183,7 +184,8 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
       {doomed && (
         <ConfirmDialog
           title={`Delete "${doomed.title}"`}
-          message="Deleting will delete ALL of the information inside of this wonderful palace. Are you sure you want to continue?"
+          message={<>Deleting will delete ALL of the information inside of <span className="doomed-name">{doomed.title}</span>. Are you sure you want to continue?</>}
+
           confirmLabel="Delete"
           countdown={3}
           onConfirm={() => remove(doomed)}

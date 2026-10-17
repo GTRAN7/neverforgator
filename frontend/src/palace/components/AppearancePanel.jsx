@@ -1,9 +1,45 @@
-import { CURSORS, DEFAULT_LOOK, SIGN_COLORS, SKIES, signLayoutOf } from '../appearance'
+import { useState } from 'react'
+import { CURSORS, DEFAULT_LOOK, SIGN_COLORS, SKIES, normalizeHex, signLayoutOf } from '../appearance'
 import { useFileDrop } from '../useFileDrop'
 import SignLayoutEditor from './SignLayoutEditor'
 
+// Color control: a hex-code box with a small color square inside it. Typing a
+// code ("#7b2cbf", "7b2cbf" or "#7bc") applies it once valid; clicking the
+// square opens the color wheel.
+function ColorField({ value, onSet, label }) {
+  const [text, setText] = useState(value)
+  const [last, setLast] = useState(value)
+  if (value !== last) {
+    // Changed elsewhere (wheel, preset): show the new code.
+    setLast(value)
+    setText(value)
+  }
+  const valid = normalizeHex(text)
+  return (
+    <span className={`color-field${valid || !text ? '' : ' is-bad'}`}>
+      <label className="color-chip" style={{ background: valid ?? value }} title="Open the color wheel">
+        <span className="sr-only">Open the color wheel for {label}</span>
+        <input type="color" value={valid ?? value} onChange={e => onSet(e.target.value)} />
+      </label>
+      <input
+        className="hex-field"
+        aria-label={`${label} hex code`}
+        placeholder="#hex"
+        value={text}
+        maxLength={7}
+        spellCheck={false}
+        onChange={e => {
+          setText(e.target.value)
+          const hex = normalizeHex(e.target.value)
+          if (hex) onSet(hex)
+        }}
+      />
+    </span>
+  )
+}
+
 // Advanced mode: how this palace looks. Changes apply right away and are saved with the palace.
-export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signArt, onPickSignArt, onResetSignArt, onPickCursor, onClose }) {
+export default function AppearancePanel({ look, night, onChange, onPickSkyPhoto, signArt, onPickSignArt, onResetSignArt, onPickCursor, onClose }) {
   const drop = useFileDrop(files => onPickSkyPhoto(files[0]))
   const signDrop = useFileDrop(files => onPickSignArt(files[0]))
   const cursorDrop = useFileDrop(files => onPickCursor(files[0]))
@@ -33,10 +69,11 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
       </header>
 
       <h3>Background</h3>
+      <p className="hint">Auto shows day, or night when night mode is on{night ? ' (it is now)' : ''}. Any other sky stays as you pick it in both modes.</p>
       <div className="seg" role="radiogroup" aria-label="Sky">
         {SKIES.map(s => (
           <button key={s.id} type="button" role="radio" aria-checked={look.sky === s.id} className={`sky-swatch sky-${s.id}${look.sky === s.id ? ' is-on' : ''}`}
-            onClick={() => (s.id === 'image' && !look.skyImageId ? document.getElementById('sky-photo').click() : onChange({ sky: s.id }))}>
+            onClick={() => (s.id === 'image' && !look.skyImageId ? document.getElementById('sky-photo').click() : onChange({ sky: s.id, skyPicked: true }))}>
             <span>{s.label}</span>
           </button>
         ))}
@@ -51,6 +88,16 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
         {toggle('sun')}
         {toggle('hills')}
       </div>
+
+      <h3>Card pins</h3>
+      <div className="pin-color-row">
+        <ColorField label="Pin color" value={look.pinColor ?? '#f4a43c'} onSet={pinColor => onChange({ pinColor })} />
+        {look.pinColor && <button type="button" className="link" onClick={() => onChange({ pinColor: null, pinColorAll: false })}>Reset</button>}
+      </div>
+      <label className="check">
+        <input type="checkbox" checked={look.pinColorAll} disabled={!look.pinColor} onChange={e => onChange({ pinColorAll: e.target.checked })} />
+        Same color for every pin (hides the remembered / missed colors)
+      </label>
 
       <h3>Quiz</h3>
       <label className="check">
@@ -68,11 +115,12 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
             <span className="sr-only">{c.label}</span>
           </button>
         ))}
-        <label className={`swatch wheel${look.signColor === 'custom' ? ' is-on' : ''}`} title="Pick any color">
-          <span className="sr-only">Pick any sign color</span>
-          <input type="color" value={look.signTint} onChange={e => onChange({ signColor: 'custom', signTint: e.target.value })} />
-        </label>
       </div>
+      <ColorField
+        label="Sign color"
+        value={look.signColor === 'custom' ? look.signTint : (SIGN_COLORS.find(c => c.id === look.signColor) ?? SIGN_COLORS[0]).swatch}
+        onSet={signTint => onChange({ signColor: 'custom', signTint })}
+      />
       <p className="field-label">Side</p>
       {choice('signSide', [['left', 'Left'], ['right', 'Right']])}
       <p className="field-label">Size</p>
@@ -100,11 +148,12 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
       <label className="check"><input type="checkbox" checked={layout.topic.show} onChange={e => setBox('topic', { show: e.target.checked })} /> Show the subject</label>
       <p className="field-label">Letters</p>
       <div className="seg">
+        <ColorField
+          label="Letter color"
+          value={{ light: '#faf3e8', dark: '#1d140c' }[look.signText] ?? look.signTextColor}
+          onSet={signTextColor => onChange({ signText: 'custom', signTextColor })}
+        />
         {choice('signText', [['light', 'Light'], ['dark', 'Dark']])}
-        <label className={`swatch wheel${look.signText === 'custom' ? ' is-on' : ''}`} title="Pick any letter color">
-          <span className="sr-only">Pick any letter color</span>
-          <input type="color" value={look.signTextColor} onChange={e => onChange({ signText: 'custom', signTextColor: e.target.value })} />
-        </label>
       </div>
       <label className="slider">
         <span>Place name size <b>{Math.round(look.signNameScale * 100)}%</b></span>
@@ -143,7 +192,7 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
 
       <footer className="drawer-save">
         <span className="muted">Changes save automatically</span>
-        <button className="btn btn-small btn-ghost" onClick={() => onChange({ ...DEFAULT_LOOK, skyImageId: look.skyImageId, signImageId: look.signImageId, signAr: look.signAr, cursorUrl: look.cursorUrl })}>Back to default</button>
+        <button className="btn btn-small btn-ghost" onClick={() => onChange({ ...DEFAULT_LOOK, skyPicked: false, skyImageId: look.skyImageId, signImageId: look.signImageId, signAr: look.signAr, cursorUrl: look.cursorUrl })}>Back to default</button>
       </footer>
     </aside>
   )

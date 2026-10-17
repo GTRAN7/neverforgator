@@ -19,6 +19,8 @@ function App() {
   } = useAuth0()
   const [guest, setGuest] = useState(false)
   const [night, toggleNight] = useNightMode()
+  // Display preferences shared by every page's Settings panel.
+  const prefs = { night, toggleNight }
 
   // A file dropped anywhere that isn't a drop area would make the browser
   // open the image and leave the app; ignore those drops instead.
@@ -59,15 +61,15 @@ function App() {
         history.replaceState(null, '', location.pathname)
         setOpenId(null)
       }
-      return <PalaceApp key={openId} account={account} palaceId={openId} onExit={exit} night={night} onToggleNight={toggleNight} />
+      return <PalaceApp key={openId} account={account} palaceId={openId} onExit={exit} prefs={prefs} />
     }
-    return <Dashboard account={account} onOpen={setOpenId} night={night} onToggleNight={toggleNight} />
+    return <Dashboard account={account} onOpen={setOpenId} prefs={prefs} />
   }
 
   return (
     <main className="landing">
       <Sky night={night} castle />
-      <Settings night={night} onToggleNight={toggleNight} className="landing-corner" />
+      <Settings prefs={prefs} className="landing-corner" />
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />

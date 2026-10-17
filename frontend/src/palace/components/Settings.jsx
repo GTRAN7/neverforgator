@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { TEXT_SIZES, useColorblind, useComicFont, useTextSize } from '../fontPref'
+import AboutDialog from './AboutDialog'
 
 const Sun = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -40,8 +41,17 @@ function Switch({ label, hint, on, onToggle, knob }) {
 
 // Gear button + panel with the app's preferences. `onAppearance` (inside a
 // palace) adds a row that opens Advanced appearance.
-export default function Settings({ night, onToggleNight, onAppearance, className = '' }) {
+export default function Settings({ prefs, onAppearance, className = '' }) {
+  const { night, toggleNight } = prefs
   const [open, setOpen] = useState(false)
+  const [about, setAbout] = useState(false)
+
+  // The logo (or anything else) can ask for the About dialog.
+  useEffect(() => {
+    const show = () => { setOpen(false); setAbout(true) }
+    addEventListener('uf-mp:about', show)
+    return () => removeEventListener('uf-mp:about', show)
+  }, [])
   const [comic, toggleComic] = useComicFont()
   const [textSize, setTextSize] = useTextSize()
   const [colorblind, toggleColorblind] = useColorblind()
@@ -75,9 +85,9 @@ export default function Settings({ night, onToggleNight, onAppearance, className
           <p className="eyebrow">Settings</p>
           <Switch
             label="Night mode"
-            hint="Moonlit sky and dark panels"
+            hint="Dark panels, and a night sky unless a palace picks its own"
             on={night}
-            onToggle={onToggleNight}
+            onToggle={toggleNight}
             knob={night ? <Moon /> : <Sun />}
           />
           <Switch
@@ -117,6 +127,13 @@ export default function Settings({ night, onToggleNight, onAppearance, className
               ))}
             </div>
           </div>
+          <div className="setting">
+            <span className="setting-text">
+              <b>About</b>
+              <small>What this is, how to use it, who made it</small>
+            </span>
+            <button className="btn btn-small btn-ghost" onClick={() => { setOpen(false); setAbout(true) }}>Open</button>
+          </div>
           {onAppearance && (
             <div className="setting">
               <span className="setting-text">
@@ -128,6 +145,7 @@ export default function Settings({ night, onToggleNight, onAppearance, className
           )}
         </section>
       )}
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
     </div>
   )
 }

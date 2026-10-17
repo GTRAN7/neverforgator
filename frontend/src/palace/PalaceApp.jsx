@@ -14,6 +14,7 @@ import AddLocationDialog from './components/AddLocationDialog'
 import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import Settings from './components/Settings'
+import { openAbout } from './about'
 import { lookOf, lookStyle, signLayoutOf } from './appearance'
 import { imagesFromDrop } from './useFileDrop'
 import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
@@ -43,7 +44,7 @@ const isTyping = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA
 
 // `account` comes from the Auth0 gate in src/App.jsx: { user, logout } when
 // signed in, or { guest, login, exit } for the sample palace.
-export default function PalaceApp({ account, palaceId, onExit, night, onToggleNight }) {
+export default function PalaceApp({ account, palaceId, onExit, prefs }) {
   const sub = account.user?.sub
   const [palace, setPalace] = useState(() => upgradePalace(loadPalace(sub, palaceId) ?? seedPalace()))
   useEffect(() => savePalace(sub, palaceId, palace), [palace, sub, palaceId])
@@ -384,7 +385,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
         imagesFromDrop(e.dataTransfer).then(([image]) => image && setPhoto(stopId, image))
       }}
     >
-      <Sky look={look} imageUrl={look.skyImageId ? imageUrls[look.skyImageId] : null} night={night} />
+      <Sky look={look} imageUrl={look.skyImageId ? imageUrls[look.skyImageId] : null} night={prefs.night} />
       <div className="stage">
         {layers.map(({ i, ref }) => {
           const l = locs[i]
@@ -418,11 +419,10 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       </div>
 
       <header className="hud-top">
-        <div className="brand">UF<span>·</span>MP</div>
+        <button className="brand" onClick={openAbout} title="About UF Memory Palace">UF<span>·</span>MP</button>
         <div className="hud-actions">
           <Settings
-            night={night}
-            onToggleNight={onToggleNight}
+            prefs={prefs}
             onAppearance={() => {
               setMenuOpen(false)
               switchMode(null)
@@ -600,7 +600,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
           }}
           onReset={() => ask({
             title: 'Reset palace',
-            message: 'Resetting will reset ALL of the information inside of this wonderful palace. Are you sure you want to continue?',
+            message: 'Resetting will reset ALL of the information inside of this palace. Are you sure you want to continue?',
             confirmLabel: 'Reset',
             countdown: 5,
           }, () => {
@@ -626,6 +626,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       {appearanceOpen && (
         <AppearancePanel
           look={look}
+          night={prefs.night}
           onChange={setLook}
           onPickSkyPhoto={async file => {
             try {
@@ -633,7 +634,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
               const id = uid()
               await putImage(id, blob)
               if (look.skyImageId) deleteImage(look.skyImageId)
-              setLook({ sky: 'image', skyImageId: id })
+              setLook({ sky: 'image', skyPicked: true, skyImageId: id })
             } catch {
               alert('That image could not be read. Try a JPG or PNG.')
             }

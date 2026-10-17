@@ -87,12 +87,21 @@ function Castle() {
   )
 }
 
+// Craters are clipped to the crescent and drawn before its outline, so none
+// can poke over the dark edge.
+const MOON_PATH = 'M66 10 A42 42 0 1 0 90 72 A34 34 0 1 1 66 10 Z'
 function Moon() {
   return (
     <svg className="sky-moon" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M66 10 A42 42 0 1 0 90 72 A34 34 0 1 1 66 10 Z" fill="#f4efd9" stroke="#3b2a1e" strokeWidth="4" strokeLinejoin="round" />
-      <circle cx="40" cy="58" r="5" fill="#e3dcc0" />
-      <circle cx="52" cy="78" r="3.5" fill="#e3dcc0" />
+      <defs>
+        <clipPath id="moon-shape"><path d={MOON_PATH} /></clipPath>
+      </defs>
+      <path d={MOON_PATH} fill="#f4efd9" />
+      <g clipPath="url(#moon-shape)" fill="#e3dcc0">
+        <circle cx="40" cy="58" r="5" />
+        <circle cx="52" cy="78" r="3.5" />
+      </g>
+      <path d={MOON_PATH} fill="none" stroke="#3b2a1e" strokeWidth="4" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -101,16 +110,19 @@ const STARS = [[8, 10], [18, 28], [27, 8], [41, 18], [55, 6], [63, 26], [72, 12]
 
 // `look` comes from the palace's Advanced appearance settings (see appearance.js);
 // the landing page and dashboard use the defaults.
-// `night` (the app-wide night mode) turns any sky into a moonlit one.
+// `night` (the app-wide night mode) decides the Auto sky: day normally, night in
+// night mode. Any sky you pick yourself (Day included) is shown as chosen.
+
 // `castle` is only turned on for the start-up page.
 export default function Sky({ look = {}, imageUrl = null, night = false, castle = false }) {
   const { clouds = true, birds = true, sun = true, hills = true } = look
   const photo = look.sky === 'image' && imageUrl
-  const sky = night && !photo ? 'night' : (look.sky ?? 'day')
+  const chosen = look.sky ?? 'auto'
+  const sky = photo ? 'image' : chosen === 'auto' ? (night ? 'night' : 'day') : chosen
   const dark = sky === 'night'
   return (
     <div
-      className={`sky sky-${sky}${night && photo ? ' is-dimmed' : ''}`}
+      className={`sky sky-${sky}${dark ? ' is-dark' : ''}`}
       style={photo ? { backgroundImage: `url(${imageUrl})` } : undefined}
       aria-hidden="true"
     >
@@ -140,10 +152,15 @@ export default function Sky({ look = {}, imageUrl = null, night = false, castle 
           </div>
         ))}
       </div>
-      {castle && hills && <Castle />}
+      {/* Far hill, then the castle (standing on it), then the front ridge over its base. */}
       {hills && (
         <svg className="sky-ground" viewBox="0 0 1600 300" preserveAspectRatio="none">
           <path d="M0 120 Q200 60 420 100 T860 80 T1300 90 T1600 70 V300 H0 Z" fill="#9cb878" stroke="#3b2a1e" strokeWidth="4" />
+        </svg>
+      )}
+      {castle && hills && <Castle />}
+      {hills && (
+        <svg className="sky-ground" viewBox="0 0 1600 300" preserveAspectRatio="none">
           <path d="M0 190 Q160 140 330 170 T700 160 T1100 175 T1600 150 V300 H0 Z" fill="#6f9a4c" stroke="#3b2a1e" strokeWidth="4" />
         </svg>
       )}

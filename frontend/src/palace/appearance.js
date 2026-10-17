@@ -1,7 +1,8 @@
 // Advanced appearance settings, saved per palace as `palace.appearance`.
 
 export const DEFAULT_LOOK = {
-  sky: 'day', // 'day' | 'sunset' | 'night' | 'overcast' | 'image'
+  sky: 'auto', // 'auto' (day, or night in night mode) | 'day' | 'sunset' | 'night' | 'overcast' | 'image'
+  skyPicked: false, // true once a sky is picked by hand
   skyImageId: null, // IndexedDB id of a custom background photo
   clouds: true,
   birds: true,
@@ -21,6 +22,8 @@ export const DEFAULT_LOOK = {
   signTint: '#d94f8c', // sign color when signColor is 'custom' (picked on the wheel)
   signNameScale: 1, // place-name text size on the sign
   signTopicScale: 1, // subject text size on the sign
+  pinColor: null, // card pin color (hex); null = UF orange
+  pinColorAll: false, // true = every pin uses pinColor (hides remembered/missed colors)
   signLayout: null, // where the name / subject sit on the sign (null = DEFAULT_SIGN_LAYOUT)
 }
 
@@ -67,9 +70,15 @@ const cursorCss = look =>
     ? `url("${look.cursorUrl}") 4 4, auto`
     : CURSORS.find(c => c.id === look.cursor)?.css ?? null
 
-export const lookOf = palace => ({ ...DEFAULT_LOOK, ...palace.appearance })
+export function lookOf(palace) {
+  const look = { ...DEFAULT_LOOK, ...palace.appearance }
+  // Palaces saved before Auto existed stored 'day' without anyone choosing it.
+  if (look.sky === 'day' && !look.skyPicked) look.sky = 'auto'
+  return look
+}
 
 export const SKIES = [
+  { id: 'auto', label: 'Auto' },
   { id: 'day', label: 'Day' },
   { id: 'sunset', label: 'Sunset' },
   { id: 'night', label: 'Night' },
@@ -90,6 +99,21 @@ export const SIGN_COLORS = [
 export const SIGN_SIZES = { small: 0.75, medium: 1, large: 1.3 }
 
 // CSS variables + classes the app root applies.
+// "#abc" / "abc" / "#aabbcc" → "#aabbcc", or null if it isn't a hex color.
+export function normalizeHex(value) {
+  const m = String(value).trim().replace(/^#/, '').match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (!m) return null
+  const h = m[1].length === 3 ? [...m[1]].map(c => c + c).join('') : m[1]
+  return `#${h.toLowerCase()}`
+}
+
+// Dark or light text, whichever reads better on this background color.
+function textOn(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.25 ? '#2a1d12' : '#faf3e8'
+}
+
 export function lookStyle(look) {
   const color = SIGN_COLORS.find(c => c.id === look.signColor) ?? SIGN_COLORS[0]
   const cursor = cursorCss(look)
@@ -97,12 +121,13 @@ export function lookStyle(look) {
   const lettering = look.signText === 'dark' ? '#1d140c' : look.signText === 'custom' ? look.signTextColor : 'var(--light)'
   const tinted = !customSign && look.signColor === 'custom'
   return {
-    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}${tinted ? ' sign-tinted' : ''}`,
+    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}${tinted ? ' sign-tinted' : ''}${look.pinColor ? ' has-pin-color' : ''}${look.pinColor && look.pinColorAll ? ' pins-one-color' : ''}`,
     style: {
       ...(cursor && { '--cursor': cursor }),
       '--sign-ar': look.signAr ?? DEFAULT_LOOK.signAr,
       '--sign-text': lettering,
       '--sign-tint': look.signTint,
+      ...(look.pinColor && { '--pin-color': look.pinColor, '--pin-text': textOn(look.pinColor) }),
       '--sign-name-scale': look.signNameScale ?? 1,
       '--sign-topic-scale': look.signTopicScale ?? 1,
       // Sign colors only recolor the built-in campus sign.

@@ -34,11 +34,12 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { height: 100%; margin: 0; overscroll-behavior: none; }
 body {
   font-family: var(--font);
   font-variation-settings: 'CASL' 0.6;
-  background: #86b9df;
+  /* Sky above, grass below: if the page ever bounces, the edges match the scene. */
+  background: linear-gradient(#86b9df 0 50%, #6f9a4c 50% 100%);
   color: var(--ink);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -74,7 +75,8 @@ button:disabled { cursor: default; opacity: 0.45; }
 .flock { width: 120px; height: 60px; transform: scale(var(--s)); transform-origin: left top; }
 .bird { position: absolute; display: block; }
 .bird svg { display: block; }
-.sky-ground { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 26%; }
+/* Hangs a few px past the bottom edge so no sliver of sky shows under the grass. */
+.sky-ground { position: absolute; left: 0; right: 0; bottom: -6px; width: 100%; height: calc(26% + 6px); }
 
 /* ---------- scenes & the fly-forward transition ---------- */
 .stage, .layer { position: absolute; inset: 0; }
@@ -416,7 +418,7 @@ button:disabled { cursor: default; opacity: 0.45; }
 .plaque-close { position: absolute; top: 10px; right: 10px; }
 .plaque-q { margin: 4px 30px 14px 0; font-size: calc(22px * var(--text-scale)); line-height: 1.25; font-variation-settings: 'CASL' 0.8; }
 .plaque-a { margin: 0; font-size: calc(17px * var(--text-scale)); line-height: 1.45; }
-.eyebrow { margin: 0; font-size: calc(12px * var(--text-scale)); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange-deep); }
+.eyebrow { margin: 0; font-size: calc(12px * var(--text-scale)); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label, var(--orange-deep)); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 .plaque-form { display: grid; gap: 10px; }
 .plaque-form label, .field { display: grid; gap: 4px; font-size: calc(12px * var(--text-scale)); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
@@ -622,7 +624,7 @@ input, textarea {
   /* Bigger, and planted: its posts reach down into the grass. */
   height: clamp(280px, 62dvh, 580px);
   align-self: flex-end;
-  margin-bottom: -2dvh;
+  margin-bottom: 0;
   cursor: default;
 }
 .sign.landing-sign:hover, .sign.landing-sign:focus { transform: none; }
@@ -803,8 +805,9 @@ input, textarea {
 /* ---------- advanced appearance ---------- */
 .sky-sunset { background: linear-gradient(#f0a46e 0%, #f6c79a 45%, #fbe6cf 80%); }
 .sky-night { background: linear-gradient(#1d2b53 0%, #3b4a7a 50%, #6f6f9c 85%); }
-.sky-night .sky-sun { background: #f4f1e3; box-shadow: 0 0 0 18px rgb(244 241 227 / 0.12), 0 0 0 40px rgb(244 241 227 / 0.06); }
-.sky-night .cloud svg path:first-child { fill: #c8cbe0; }
+
+.sky.is-dark .sky-sun { background: #f4f1e3; box-shadow: 0 0 0 18px rgb(244 241 227 / 0.12), 0 0 0 40px rgb(244 241 227 / 0.06); }
+.sky.is-dark .cloud svg path:first-child { fill: #c8cbe0; }
 .sky-overcast { background: linear-gradient(#9fadba 0%, #c9d2da 50%, #e6e9e4 85%); }
 .sky-image { background: #86b9df center / cover no-repeat; }
 
@@ -883,11 +886,12 @@ input, textarea {
   --shadow: #0b1020;
   --accent: #3399ff;
   --accent-deep: #1f7ad9;
+  --label: #a9d4ff; /* section labels: a light, cool blue instead of dark orange */
   /* Dark text reads better than white on this lighter blue. */
   --on-accent: #0b1630;
   color-scheme: dark;
 }
-:root[data-theme='night'] body { background: #1d2b53; }
+:root[data-theme='night'] body { background: linear-gradient(#1d2b53 0 50%, #4d6b35 50% 100%); }
 :root[data-theme='night'] .quiz-progress { background: #33416a; }
 :root[data-theme='night'] .dots span { background: #4a5680; }
 :root[data-theme='night'] .photo-drop small { color: var(--muted); }
@@ -899,11 +903,11 @@ input, textarea {
 .castle {
   position: absolute;
   left: 87%;
-  bottom: 16%; /* base tucked just into the far hill */
+  bottom: 11.5%; /* standing at ground level, base just behind the front ridge */
   width: clamp(70px, 8vw, 130px);
   filter: drop-shadow(0 4px 0 rgb(59 42 30 / 0.15));
 }
-.sky-night .castle-window { fill: #ffd76a; }
+.sky.is-dark .castle-window { fill: #ffd76a; }
 .sky-moon {
   position: absolute;
   top: 7%;
@@ -919,10 +923,9 @@ input, textarea {
   background: #fff7d6;
   box-shadow: 0 0 8px 2px rgb(255 247 214 / 0.6);
 }
-.sky.is-dimmed::after { content: ''; position: absolute; inset: 0; background: rgb(14 22 48 / 0.55); }
 
-.sky-night .sky-ground, .sky-night .castle { filter: brightness(0.62) saturate(0.85); }
-.sky-night .castle-window { filter: drop-shadow(0 0 4px #ffd76a); }
+.sky.is-dark .sky-ground, .sky.is-dark .castle { filter: brightness(0.62) saturate(0.85); }
+.sky.is-dark .castle-window { filter: drop-shadow(0 0 4px #ffd76a); }
 /* Light-colored buttons keep dark text in both modes. */
 .btn-ai { color: var(--outline); }
 .btn-hit, .pin-good .pin-num { color: var(--on-good); }
@@ -1211,3 +1214,103 @@ input, textarea {
 .adv-section summary::after { content: '▾'; transition: transform 0.3s; }
 .adv-section[open] summary::after { transform: rotate(180deg); }
 .adv-section[open] { display: grid; gap: 10px; }
+
+/* ---------- card pin color (Advanced appearance) ---------- */
+.pin-new .pin-num { background: var(--pin-color, var(--orange)); color: var(--pin-text, var(--outline)); }
+.pins-one-color .pin .pin-num { background: var(--pin-color) !important; color: var(--pin-text) !important; }
+.pin-color-row { display: flex; align-items: center; gap: 10px; }
+.pin-preview {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--outline);
+  color: var(--pin-text, var(--outline));
+  font-weight: 900;
+}
+.hex-field { width: 92px; padding: 6px 10px; font-family: ui-monospace, monospace; font-size: calc(14px * var(--text-scale)); }
+.hex-field.is-bad { border-color: var(--red); }
+/* A pin color you picked wins over colorblind mode's neutral "new" pins. */
+:root[data-colorblind='on'] .has-pin-color .pin-new .pin-num { background: var(--pin-color); color: var(--pin-text); }
+
+/* Hex color box with the wheel square inside it */
+.color-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 4px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--field);
+}
+.color-field.is-bad { border-color: var(--red); }
+.color-field .hex-field { width: 84px; border: 0; padding: 4px 4px; background: transparent; }
+.color-field .hex-field:focus-visible { outline: none; }
+.color-field:focus-within { outline: 3px solid var(--uf-orange); outline-offset: 2px; }
+.color-chip {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 2px solid var(--outline);
+  cursor: pointer;
+  overflow: hidden;
+}
+.color-chip input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+
+/* Color boxes keep their natural width in the panel. */
+.appearance .color-field { align-self: flex-start; }
+
+/* "Auto" sky swatch: half day, half night */
+.sky-swatch.sky-auto { background: linear-gradient(115deg, #86b9df 0 50%, #1d2b53 50% 100%); }
+
+/* Start page / dashboard: the sky stays put and always fills the window, so
+   scrolling (when there's more content than fits) never runs past the ground. */
+.landing { overscroll-behavior: none; }
+.landing .sky { position: fixed; }
+
+/* The Day sky (and its swatch) — the same blue gradient as the default sky. */
+.sky-day, .sky-swatch.sky-day { background: linear-gradient(#86b9df 0%, #b9d6ea 45%, #eef2e6 80%); }
+.sky-swatch.sky-sunset { background: linear-gradient(#f0a46e 0%, #f6c79a 45%, #fbe6cf 80%); }
+.sky-swatch.sky-night { background: linear-gradient(#1d2b53 0%, #3b4a7a 50%, #6f6f9c 85%); }
+.sky-swatch.sky-overcast { background: linear-gradient(#9fadba 0%, #c9d2da 50%, #e6e9e4 85%); }
+@media (max-width: 720px) {
+  .sign.landing-sign { height: clamp(200px, 36dvh, 320px); align-self: center; }
+  .landing-content { padding-top: 64px; gap: 20px; }
+}
+
+/* ---------- logo button + About dialog ---------- */
+button.brand { padding: 0; border: 0; background: none; cursor: pointer; transition: transform 0.15s; }
+button.brand:hover { transform: rotate(-4deg) scale(1.06); }
+.plaque.about { width: min(560px, calc(100vw - 32px)); }
+.about p { margin: 0 0 10px; line-height: 1.5; font-size: calc(15px * var(--text-scale)); }
+.about h3 { margin: 14px 0 6px; font-size: calc(16px * var(--text-scale)); }
+.about-steps, .about-team { margin: 0 0 6px; padding-left: 20px; display: grid; gap: 6px; font-size: calc(14.5px * var(--text-scale)); line-height: 1.45; }
+.about-team { list-style: '🐊  '; }
+
+/* ---------- edge-pinned header (dashboard) + start-page corner ---------- */
+/* Same spacing as the palace view: logo top-left, buttons top-right. */
+.dashboard-head {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 10;
+  padding: 18px 24px;
+  pointer-events: none;
+}
+.dashboard-head > * { pointer-events: auto; }
+.dashboard-content { padding-top: 84px; }
+.landing-corner { top: 18px; right: 24px; }
+@media (max-width: 720px) {
+  .dashboard-head { padding: 14px 16px; }
+  .landing-corner { top: 14px; right: 16px; }
+}
+@media (max-width: 720px) {
+  .dashboard-user { display: none; }
+  .dashboard-head .row { flex-wrap: nowrap; gap: 6px; }
+  .dashboard-head .avatar { width: 34px; height: 34px; }
+  .dashboard-content { padding-top: 72px; }
+}
+
+.doomed-name { color: var(--red); }
