@@ -303,6 +303,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       eyebrow: `${stepLoc.name}${pin?.topic ? ` · ${pin.topic}` : ''}`,
       question: pin?.question || 'What lives at this spot?',
       image: pin?.imageId ? imageUrls[pin.imageId] : null,
+      imageWithAnswer: pin?.photoWith === 'answer',
       answer: pin?.answer || <em>No answer saved.</em>,
       starred: pin?.starred,
       onStar: pin ? () => updatePin(step.locId, step.pinId, { starred: !pin.starred }) : null,

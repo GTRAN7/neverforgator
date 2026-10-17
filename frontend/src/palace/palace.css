@@ -861,9 +861,10 @@ input, textarea {
 .campus-thumb { position: relative; display: block; height: 72px; border-radius: 9px; overflow: hidden; background: linear-gradient(#86b9df, #eef2e6); }
 .campus-thumb img, .campus-thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right bottom; }
 
-.card-edit { position: relative; }
-.card-close { position: absolute; top: -4px; right: -4px; width: 28px; height: 28px; font-size: calc(15px * var(--text-scale)); }
-.card-edit > input:first-of-type { margin-right: 30px; width: calc(100% - 30px); }
+/* Topic, star and close share the card's top line. */
+.card-edit-top { display: flex; align-items: center; gap: 6px; }
+.card-edit-top input { flex: 1; min-width: 0; }
+.card-close { flex: none; width: 28px; height: 28px; font-size: calc(15px * var(--text-scale)); }
 
 /* ---------- night mode ---------- */
 .btn, .chip-primary, .arrow { color: var(--on-accent); }
@@ -1083,7 +1084,7 @@ input, textarea {
 .star-btn span { font-size: 1.2em; line-height: 1; }
 .star-btn.is-on { background: #ffd76a; color: var(--outline); }
 .star-btn.is-small { padding: 2px 8px; }
-.plaque-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-right: 34px; }
+.plaque-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -10px 34px 8px 0; min-height: 34px; }
 .card-star { color: #e0a800; }
 .pin.is-starred .pin-num::before {
   content: '★';
@@ -1109,6 +1110,8 @@ input, textarea {
   outline-offset: 3px;
   background: var(--highlight);
 }
+.photo-when { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.photo-when .chip { padding: 4px 10px; font-size: calc(12.5px * var(--text-scale)); }
 .card-photo .row small { align-self: center; font-size: calc(12px * var(--text-scale)); }
 
 /* Short messages (e.g. a website blocked copying its image) */

@@ -122,13 +122,16 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
             <span className="card-num">{i + 1}</span>
             {openCard === pin.id ? (
               <div className="card-edit">
-                <button type="button" className="icon-btn card-close" onClick={closeCard} aria-label="Close card">×</button>
-                <input value={pin.topic} placeholder="Topic" onChange={e => setPin(pin.id, { topic: e.target.value })} />
+                <div className="card-edit-top">
+                  <input value={pin.topic} placeholder="Topic" onChange={e => setPin(pin.id, { topic: e.target.value })} />
+                  <StarButton small starred={pin.starred} onToggle={() => setPin(pin.id, { starred: !pin.starred })} />
+                  <button type="button" className="icon-btn card-close" onClick={closeCard} aria-label="Close card">×</button>
+                </div>
                 <textarea autoFocus={!pin.question} rows={2} value={pin.question} placeholder="Question" onChange={e => setPin(pin.id, { question: e.target.value })} />
                 <textarea rows={2} value={pin.answer} placeholder="Answer" onChange={e => setPin(pin.id, { answer: e.target.value })} />
-                <CardPhoto url={photoUrl(pin)} onPick={file => pickPhoto(pin.id, file)} onRemove={() => setPin(pin.id, { imageId: null })} />
+                <CardPhoto url={photoUrl(pin)} onPick={file => pickPhoto(pin.id, file)} onRemove={() => setPin(pin.id, { imageId: null })}
+                  withAnswer={pin.photoWith === 'answer'} onWithAnswer={a => setPin(pin.id, { photoWith: a ? 'answer' : 'question' })} />
                 <div className="row">
-                  <StarButton starred={pin.starred} onToggle={() => setPin(pin.id, { starred: !pin.starred })} />
                   <button className="btn btn-small btn-danger" onClick={() => edit({ pins: draft.pins.filter(p => p.id !== pin.id) })}>Delete card</button>
                   <button className="btn btn-small btn-ghost" onClick={closeCard}>Done</button>
                 </div>
