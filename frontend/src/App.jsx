@@ -41,15 +41,17 @@ function App() {
           <img src={signUrl} alt="" />
           <h1 className="sign-name is-long">UF Memory Palace</h1>
           <div className="sign-topic">
-            <p className="sign-subject">Study by walking campus</p>
+            <p className="sign-subject is-long">Walk through campus and learn the method of loci</p>
           </div>
         </div>
         <section className="landing-card">
           <p className="eyebrow">SwampHacks 2026</p>
           <h2>Turn your notes into a walk across UF.</h2>
           <p className="muted">
-            Each concept lives at a campus landmark. Walk the route to learn it,
-            then quiz yourself both ways: what's at each stop, and where you put each idea.
+            The method of loci is a memory trick: put each idea somewhere you know, then
+            walk past it in your mind. Here every concept lives at a UF landmark. Walk the
+            route to learn it, then quiz yourself both ways: what's at each stop, and where
+            you put each idea.
           </p>
           {error && <p className="error">Error: {error.message}</p>}
           <div className="row landing-actions">

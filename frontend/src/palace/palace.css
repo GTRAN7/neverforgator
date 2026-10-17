@@ -154,6 +154,7 @@ button:disabled { cursor: default; opacity: 0.45; }
   transform: rotate(-0.6deg);
 }
 .sign-subject { margin: 0; font-size: 9cqw; font-weight: 800; line-height: 1.05; color: var(--orange); }
+.sign-subject.is-long { font-size: 7cqw; line-height: 1.12; }
 .sign-count {
   justify-self: center;
   margin: 0;
@@ -424,6 +425,7 @@ input, textarea {
 .btn-ghost { background: var(--paper); }
 .btn-small { padding: 6px 14px; font-size: 13px; }
 .btn-hit { background: var(--green); }
+.btn-danger { background: var(--red); color: var(--paper); }
 .btn-miss { background: var(--red); color: var(--paper); }
 .icon-btn {
   width: 34px;
@@ -457,7 +459,7 @@ input, textarea {
   width: min(380px, 100vw);
   z-index: 15;
   overflow: auto;
-  padding: 20px 22px 120px;
+  padding: 20px 22px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -480,7 +482,29 @@ input, textarea {
 .card-stats { margin: 0; font-size: 12px; color: var(--muted); }
 .card-edit { flex: 1; display: grid; gap: 6px; cursor: auto; }
 .card-edit input, .card-edit textarea { padding: 6px 10px; font-size: 14px; }
-.card-edit .link { justify-self: start; }
+.card-edit .row { justify-content: space-between; margin-top: 2px; }
+.card-view {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.drawer-delete { align-self: flex-start; margin-top: 8px; }
+.drawer-save {
+  position: sticky;
+  bottom: 0;
+  margin: auto -22px 0;
+  padding: 12px 22px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border-top: 3px solid var(--ink);
+}
+.drawer-save .muted { flex: 1; font-size: 13px; font-weight: 700; }
 
 .menu {
   position: fixed;

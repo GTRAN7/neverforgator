@@ -104,8 +104,11 @@ export default function PalaceApp({ account }) {
   }
 
   // ---- navigation: fly forward into the distance ----------------------
+  const notesDirty = useRef(false)
   const goTo = useCallback((to, dir) => {
     if (trans || to === index || to < 0 || to >= n) return
+    if (notesDirty.current && !confirm('Discard your unsaved stop notes?')) return
+    notesDirty.current = false
     setActivePinId(null)
     if (reducedMotion()) return setIndex(to)
     setTrans({ from: index, to, dir: dir ?? (to > index ? 'next' : 'prev') })
@@ -145,13 +148,20 @@ export default function PalaceApp({ account }) {
   }, [trans])
 
   // ---- walkthrough ------------------------------------------------------
-  const startWalk = () => {
-    setEditing(false)
-    setNotesOpen(false)
+  // Notes, Edit, Walk and Quiz are modes: only one can be on at a time.
+  const mode = quiz ? 'quiz' : walking ? 'walk' : editing ? 'edit' : notesOpen ? 'notes' : null
+  const switchMode = m => {
+    if (quiz?.stage === 'run' && quiz.i > 0 && m !== 'quiz' && !confirm('End the quiz? Your progress will be lost.')) return
+    if (notesDirty.current && m !== 'notes' && !confirm('Discard your unsaved stop notes?')) return
+    notesDirty.current = false
     setActivePinId(null)
-    setWalking(true)
-    if (index !== 0) goTo(0, 'prev')
+    setNotesOpen(m === 'notes')
+    setEditing(m === 'edit')
+    setWalking(m === 'walk')
+    setQuiz(m === 'quiz' ? q => q ?? { stage: 'start' } : null)
+    if (m === 'walk' && index !== 0) goTo(0, 'prev')
   }
+  const toggleMode = m => switchMode(mode === m ? null : m)
 
   // ---- quiz ------------------------------------------------------------
   // Questions go both ways (README): "What's at <stop>?" on the walk, then
@@ -296,10 +306,11 @@ export default function PalaceApp({ account }) {
 
       <nav className="hud-bottom">
         <div className="toolbar">
-          <button className={`chip${notesOpen ? ' is-on' : ''}`} onClick={() => setNotesOpen(o => !o)} disabled={busy}>Notes</button>
-          <button className={`chip${editing ? ' is-on' : ''}`} onClick={() => { setEditing(e => !e); setActivePinId(null) }} disabled={busy}>Edit</button>
-          <button className={`chip${walking ? ' is-on' : ''}`} onClick={() => (walking ? setWalking(false) : startWalk())} disabled={!!quiz} title="Guided walkthrough of the route">Walk</button>
-          <button className="chip chip-primary" onClick={() => { setWalking(false); setQuiz({ stage: 'start' }) }} disabled={!!quiz}>Quiz</button>
+          {[['notes', 'Notes'], ['edit', 'Edit'], ['walk', 'Walk'], ['quiz', 'Quiz']].map(([m, label]) => (
+            <button key={m} className={`chip${m === 'quiz' ? ' chip-primary' : ''}${mode === m ? ' is-on' : ''}`} aria-pressed={mode === m} onClick={() => toggleMode(m)}>
+              {label}
+            </button>
+          ))}
           <div className="dots" aria-hidden="true">
             {locs.map((l, i) => <span key={l.id} className={i === (trans ? trans.to : index) ? 'is-on' : ''} />)}
           </div>
@@ -310,7 +321,7 @@ export default function PalaceApp({ account }) {
         </div>
       </nav>
 
-      {activePin && !busy && (
+      {activePin && !busy && !notesOpen && (
         <PinPlaque
           key={activePin.id}
           pin={activePin}
@@ -347,8 +358,8 @@ export default function PalaceApp({ account }) {
           total={n}
           onPrev={prev}
           onNext={next}
-          onQuiz={() => { setWalking(false); setQuiz({ stage: 'start' }) }}
-          onStop={() => setWalking(false)}
+          onQuiz={() => switchMode('quiz')}
+          onStop={() => switchMode(null)}
         />
       )}
       {quiz?.stage === 'done' && (
@@ -362,14 +373,12 @@ export default function PalaceApp({ account }) {
 
       {notesOpen && !busy && (
         <NotesDrawer
+          key={cur.id}
           loc={cur}
-          editing={editing}
           activePinId={activePinId}
-          onChange={patch => updateLoc(cur.id, patch)}
-          onPinChange={(id, patch) => updatePin(cur.id, id, patch)}
+          onSave={patch => updateLoc(cur.id, patch)}
+          onDirty={d => { notesDirty.current = d }}
           onSelectPin={id => setActivePinId(id)}
-          onAddCard={() => { setEditing(true); addPin(40 + Math.random() * 20, 40 + Math.random() * 20) }}
-          onDeletePin={deletePin}
           onUpload={() => askUpload(cur.id)}
           onRemovePhoto={removePhoto}
           onDeleteLocation={() => {
@@ -378,7 +387,7 @@ export default function PalaceApp({ account }) {
             setPalace(p => ({ ...p, locations: p.locations.filter(l => l.id !== cur.id) }))
             setIndex(i => Math.max(0, Math.min(i, n - 2)))
           }}
-          onClose={() => setNotesOpen(false)}
+          onClose={() => switchMode(null)}
         />
       )}
 
@@ -401,8 +410,7 @@ export default function PalaceApp({ account }) {
             setPalace(p => ({ ...p, locations: [...p.locations, newLocation(p.locations.length)] }))
             setMenuOpen(false)
             setIndex(n)
-            setEditing(true)
-            setNotesOpen(true)
+            switchMode('notes')
           }}
           onExport={() => exportPalace(palace)}
           onImport={async file => {
