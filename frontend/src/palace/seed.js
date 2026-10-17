@@ -103,7 +103,8 @@ export function resetPalace(palace) {
   if (palace.template === 'route') return blankRoutePalace(title)
   if (palace.template === 'blank') return blankPalace(title)
   if (palace.template === 'tutorial') return tutorialPalace()
-  if (palace.template === 'custom') return { ...palace, locations: clearStops(palace.locations) }
+  // Your own photos, or a palace opened from your account: keep the stops, clear what's written.
+  if (palace.template === 'custom' || palace.template === 'account') return { ...palace, locations: clearStops(palace.locations) }
   return { ...seedPalace(), title }
 }
 
@@ -118,12 +119,15 @@ export function blankPalace(title) {
   }
 }
 
-// The new-user tutorial. Placeholder until its example photos and steps are added.
+// The new-user tutorial: three filled-in example stops (a campus place, a city
+// skyline and a diagram) that the guided tour (TutorialTour.jsx) walks through.
+const TUTORIAL_STOPS = ['Century Tower', 'Pudong District', 'The Brain']
 export function tutorialPalace() {
+  const samples = seedPalace().locations
   return {
     ...blankPalace('Tutorial'),
     template: 'tutorial',
-    locations: [newLocation({ name: 'Example stop', description: 'The tutorial example is coming soon' }, 0)],
+    locations: TUTORIAL_STOPS.map(name => samples.find(l => l.name === name)),
   }
 }
 
@@ -164,6 +168,10 @@ function builtinLocations() {
 // Bring a palace saved by an older version up to date: add new built-in
 // locations and fill in stop fields (concept / association / stats).
 export function upgradePalace(palace) {
+  // Tutorials made before it had content held one empty placeholder stop.
+  if (palace.template === 'tutorial' && palace.locations.length === 1 && palace.locations[0].name === 'Example stop' && !palace.locations[0].pins.length) {
+    return { ...tutorialPalace(), account: palace.account }
+  }
   const known = new Set(palace.builtinsAdded ?? palace.locations.map(l => l.builtin).filter(Boolean))
   const locations = [...palace.locations]
   const fresh = builtinLocations().filter(l => !known.has(l.builtin))

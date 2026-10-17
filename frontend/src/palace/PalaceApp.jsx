@@ -18,9 +18,11 @@ import AddLocationDialog from './components/AddLocationDialog'
 import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import Settings from './components/Settings'
+import TutorialTour from './components/TutorialTour'
 import { openAbout } from './about'
 import { lookOf, lookStyle, signLayoutOf } from './appearance'
-import { imagesFromDrop } from './useFileDrop'
+import { imagesFromDrop, notify } from './useFileDrop'
+import { saveToAccount } from './account'
 import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -49,12 +51,32 @@ const LEAVE = [HERE, PASSING, PAST]
 
 const isTyping = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
 
-// `account` comes from the Auth0 gate in src/App.jsx: { user, logout } when
+// `account` comes from the Auth0 gate in src/App.jsx: { user, logout, api } when
 // signed in, or { guest, login, exit } for the sample palace.
 export default function PalaceApp({ account, palaceId, onExit, prefs }) {
   const sub = account.user?.sub
   const [palace, setPalace] = useState(() => upgradePalace(loadPalace(sub, palaceId) ?? seedPalace()))
   useEffect(() => savePalace(sub, palaceId, palace), [palace, sub, palaceId])
+  // The tutorial palace opens with a guided tour (until it's finished or skipped).
+  const [touring, setTouring] = useState(() => palace.template === 'tutorial' && !palace.tourDone)
+  const endTour = () => {
+    setTouring(false)
+    setPalace(p => ({ ...p, tourDone: true }))
+  }
+  // Signed-in users can keep a copy in their account (see account.js).
+  const [savingAccount, setSavingAccount] = useState(false)
+  const saveAccount = async () => {
+    setSavingAccount(true)
+    try {
+      const link = await saveToAccount(account.api, palace)
+      setPalace(p => ({ ...p, account: link }))
+      notify('Saved to your account')
+    } catch (e) {
+      notify(e.message)
+    } finally {
+      setSavingAccount(false)
+    }
+  }
   const locs = palace.locations
   const n = locs.length
 
@@ -346,6 +368,13 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       updateLoc(step.locId, l => ({ stats: bump(l.stats, ok) }))
     }
     const results = [...quiz.results, { ...step, ok }]
+    // A finished quiz goes into the account copy's score history.
+    if (quiz.i + 1 >= quiz.queue.length && palace.account?.id && account.api) {
+      account.api(`/palaces/${palace.account.id}/attempts`, {
+        method: 'POST',
+        body: { score: results.filter(r => r.ok).length, total: results.length },
+      }).catch(e => console.warn('Quiz score not saved to the account:', e.message))
+    }
     setQuiz(q => (q.i + 1 >= q.queue.length
       ? { ...q, stage: 'done', results }
       : { ...q, i: q.i + 1, results, revealed: false }))
@@ -517,7 +546,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       <nav className="hud-bottom">
         <div className="toolbar">
           {[['notes', 'Notes'], ['edit', 'Edit'], ['walk', 'Walk'], ['quiz', 'Quiz']].map(([m, label]) => (
-            <button key={m} className={`chip${m === 'quiz' ? ' chip-primary' : ''}${mode === m ? ' is-on' : ''}`} aria-pressed={mode === m} onClick={() => toggleMode(m)}>
+            <button key={m} data-tour={m} className={`chip${m === 'quiz' ? ' chip-primary' : ''}${mode === m ? ' is-on' : ''}`} aria-pressed={mode === m} onClick={() => toggleMode(m)}>
               {label}
             </button>
           ))}
@@ -628,6 +657,10 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
         />
       )}
 
+      {touring && !trans && (
+        <TutorialTour onDone={endTour} onMakeOwn={() => { endTour(); onExit() }} />
+      )}
+
       {menuOpen && (
         <MenuOverlay
           locations={locs}
@@ -671,6 +704,9 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
             setIndex(n)
           }}
           onExport={() => exportPalace(palace)}
+          onSaveAccount={account.api ? saveAccount : null}
+          accountSavedAt={palace.account?.savedAt}
+          savingAccount={savingAccount}
           onImport={async file => {
             try {
               setPalace(upgradePalace(await importPalace(file)))
@@ -697,10 +733,16 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
             setNotesOpen(false)
             setActivePinId(null)
             setEndCard(false)
-            setPalace(fresh)
+            setPalace({ ...fresh, account: palace.account })
             setIndex(0)
             setMenuOpen(false)
           })}
+          onReplayTour={palace.template === 'tutorial' ? () => {
+            setMenuOpen(false)
+            switchMode(null)
+            setActivePinId(null)
+            setTouring(true)
+          } : null}
           onClose={() => setMenuOpen(false)}
         />
       )}

@@ -19,10 +19,11 @@ export class ApiError extends Error {
 // X-Dev-User header instead, so local testing works without a token.
 export function useApi() {
   const { getAccessTokenSilently, user } = useAuth0()
+  const sub = user?.sub
   return useCallback(async (path, { method = 'GET', body } = {}) => {
     const headers = { Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    if (import.meta.env.DEV && user?.sub) headers['X-Dev-User'] = user.sub
+    if (import.meta.env.DEV && sub) headers['X-Dev-User'] = sub
     if (AUDIENCE) {
       try {
         headers.Authorization = `Bearer ${await getAccessTokenSilently({ authorizationParams: { audience: AUDIENCE } })}`
@@ -43,5 +44,5 @@ export function useApi() {
       throw new ApiError(message, res.status)
     }
     return res.status === 204 ? null : res.json()
-  }, [getAccessTokenSilently, user?.sub])
+  }, [getAccessTokenSilently, sub])
 }

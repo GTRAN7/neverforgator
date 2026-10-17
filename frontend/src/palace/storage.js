@@ -31,6 +31,7 @@ const summary = (id, palace, prev) => ({
   title: palace.title || 'My UF palace',
   stops: palace.locations.length,
   cards: palace.locations.reduce((n, l) => n + l.pins.length, 0),
+  account: palace.account?.id ?? null, // id of its copy in the account (see account.js)
   createdAt: prev?.createdAt ?? Date.now(),
   updatedAt: Date.now(),
 })

@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import PalaceApp from './palace/PalaceApp.jsx'
 import Dashboard from './palace/components/Dashboard.jsx'
 import { loadPalace } from './palace/storage'
+import { useApi } from './palace/api'
 import { useNightMode } from './palace/night'
 import Settings from './palace/components/Settings.jsx'
 import Sky from './palace/components/Sky.jsx'
@@ -18,6 +19,12 @@ function App() {
     user,
   } = useAuth0()
   const [guest, setGuest] = useState(false)
+  const api = useApi()
+  // The first request from a new account creates its row on the server.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    api('/me').catch(e => console.warn('Account not reached on the server:', e.message))
+  }, [isAuthenticated, api])
   const [night, toggleNight] = useNightMode()
   // Display preferences shared by every page's Settings panel.
   const prefs = { night, toggleNight }
@@ -53,7 +60,7 @@ function App() {
 
   if (isAuthenticated || guest) {
     const account = isAuthenticated
-      ? { user, logout }
+      ? { user, logout, api }
       : { guest: true, login, exit: () => { setGuest(false); setOpenId(null) } }
     const sub = account.user?.sub
     if (openId && loadPalace(sub, openId)) {

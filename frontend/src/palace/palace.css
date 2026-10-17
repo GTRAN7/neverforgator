@@ -1365,3 +1365,22 @@ button.brand:hover { transform: rotate(-4deg) scale(1.06); }
 }
 
 .doomed-name { color: var(--red); }
+/* ---------- tutorial tour ---------- */
+/* Covers the page so clicks go to the tour; the spotlight dims everything but its target. */
+.tour { position: fixed; inset: 0; z-index: 50; }
+.tour-dim { position: absolute; inset: 0; background: rgb(20 15 10 / 0.5); }
+.tour-spot {
+  position: absolute;
+  border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgb(20 15 10 / 0.5);
+  outline: 3px solid var(--uf-orange);
+  outline-offset: 2px;
+  pointer-events: none;
+  transition: top 0.3s, left 0.3s, width 0.3s, height 0.3s;
+}
+.plaque.tour-card { bottom: auto; transform: none; max-height: calc(100dvh - 32px); animation: none; z-index: 51; }
+.plaque.tour-card.is-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.tour-card p:not(.eyebrow) { margin: 0; line-height: 1.5; }
+.tour-card .plaque-q { margin-right: 0; }
+.tour-card .row { align-items: center; }
+.tour-skip { margin-right: auto; }
