@@ -18,7 +18,8 @@ npm test                               # backend tests (mock AI, throwaway datab
 ```
 
 The built-in Reitz route and the mitosis example are created on startup from `backend/app/data/reitz/`
-(three panoramas, the stops, and the finished example with its doodles), so nobody needs Gemini for them.
+(three panoramas, two 3D scans, the stops, and the finished example with its doodles), so nobody needs
+Gemini for them.
 
 - No `GEMINI_API_KEY`: **Mock AI** mode (placeholder facts and scenes), shown as a "mock AI" chip.
 - `DEV_AUTH=true` in `backend/.env` skips Auth0 (local testing only); run the frontend without
@@ -88,8 +89,10 @@ cd backend
 .venv/bin/python -m app.studio.make_template <palaceId> [off]  # share (or unshare) any palace
 ```
 
-The built-ins come from `backend/app/data/reitz/` and belong to the `system` user. The 3D scans of the
-Reitz aren't in git (180 MB); add them to your own copy with "+ Add a room".
+The built-ins come from `backend/app/data/reitz/` and belong to the `system` user: three panoramas and
+two 3D scans. The scans are compressed from the raw ~90 MB `.ply` exports (in the gitignored `maps/`) to
+~22 MB each with `npx @playcanvas/splat-transform in.ply out.compressed.ply`. Don't use its `.spz`
+output: it writes a newer SPZ version than our Spark (2.3) can read.
 
 ## How it fits together
 

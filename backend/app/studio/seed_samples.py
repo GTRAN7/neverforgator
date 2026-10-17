@@ -1,8 +1,9 @@
 """The shared palaces everyone sees on the studio home screen, built from files in the repo
 (app/data/reitz/), so every teammate gets them without any Gemini calls:
 
-1. "Reitz Union" (built in): three panoramas with their stops, no facts. "Start memorizing" gives each
-   user their own copy, so they can paste notes right away without taking any photos.
+1. "Reitz Union" (built in): three panoramas with their stops, plus two 3D scans (compressed .ply, about 4× smaller),
+   no facts. "Start memorizing" gives each user their own copy, so they can paste notes right away
+   without taking any photos.
 2. "Sample: the phases of mitosis": the same route already filled with a real study example
    (scenes, hooks and doodles included). The onboarding tour opens it; anyone can walk and quiz it.
 
@@ -13,6 +14,7 @@ startup if they're missing; to rebuild them by hand, from backend/:
 """
 import json
 import logging
+import shutil
 from pathlib import Path
 
 from sqlalchemy import select
@@ -42,7 +44,8 @@ def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **
     room_ids = []
     for i, room in enumerate(rooms):
         link_or_copy(DATA / room["file"], folder / room["file"])
-        new = Room(palace_id=palace.id, position=i, name=room["name"], type=room["type"], file=room["file"])
+        new = Room(palace_id=palace.id, position=i, name=room["name"], type=room["type"], file=room["file"],
+                   flipped=room.get("flipped", False))  # most scan exports come in upside down
         db.add(new)
         db.flush()
         room_ids.append(new.id)
@@ -67,6 +70,7 @@ def seed(db) -> None:
     system = system_user(db)
     for old in db.scalars(select(Palace).where(Palace.user_id == system.id)).all():
         db.delete(old)
+        shutil.rmtree(palace_dir(old.id), ignore_errors=True)
     db.commit()
 
     route = json.loads((DATA / "route.json").read_text())

@@ -25,6 +25,8 @@ def new_name(prefix: str, ext: str) -> str:
 
 def link_or_copy(src: Path, dst: Path) -> None:
     """Hard-link (a 95 MB scan isn't duplicated per user), or copy if linking isn't possible."""
+    if dst.exists():
+        return
     try:
         os.link(src, dst)
     except OSError:
