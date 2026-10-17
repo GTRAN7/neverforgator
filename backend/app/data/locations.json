@@ -1,0 +1,65 @@
+[
+  {
+    "route_order": 1,
+    "name": "Library West",
+    "lat": 29.6513,
+    "lng": -82.3429,
+    "description": "Humanities and social sciences library on the north side of the Plaza of the Americas."
+  },
+  {
+    "route_order": 2,
+    "name": "Smathers Library",
+    "lat": 29.6508,
+    "lng": -82.3417,
+    "description": "UF's oldest library building, with its Collegiate Gothic reading room."
+  },
+  {
+    "route_order": 3,
+    "name": "Plaza of the Americas",
+    "lat": 29.6503,
+    "lng": -82.3427,
+    "description": "The big open lawn in the middle of the historic campus."
+  },
+  {
+    "route_order": 4,
+    "name": "Turlington Hall",
+    "lat": 29.6494,
+    "lng": -82.3436,
+    "description": "Busy classroom building next to the Plaza; lots of foot traffic."
+  },
+  {
+    "route_order": 5,
+    "name": "University Auditorium",
+    "lat": 29.6491,
+    "lng": -82.3423,
+    "description": "Gothic-style auditorium next to Century Tower."
+  },
+  {
+    "route_order": 6,
+    "name": "Century Tower",
+    "lat": 29.6488,
+    "lng": -82.3429,
+    "description": "The carillon bell tower, the symbol of campus."
+  },
+  {
+    "route_order": 7,
+    "name": "Marston Science Library",
+    "lat": 29.648,
+    "lng": -82.3439,
+    "description": "The science library and 24-hour study spot."
+  },
+  {
+    "route_order": 8,
+    "name": "Reitz Union",
+    "lat": 29.6463,
+    "lng": -82.3478,
+    "description": "The student union: food, study spaces and event rooms."
+  },
+  {
+    "route_order": 9,
+    "name": "Lake Alice",
+    "lat": 29.6436,
+    "lng": -82.3606,
+    "description": "Campus lake known for its alligators and bat houses."
+  }
+]

@@ -1,17 +1,18 @@
 import Creature, { Sparkle } from './Creature.jsx';
+import Logo from './Logo.jsx';
 
 const STEPS = [
   {
     title: 'Pick a place',
-    text: 'Walk a ready-made UF campus route, or snap a panorama of your own room. Every stop along the way can hold one thing to remember.',
+    text: 'The Reitz Union is built in, stops and all, so you can start memorizing right away. Or snap a panorama of your own room.',
   },
   {
     title: 'Feed it your notes',
-    text: 'Paste your notes or a topic. Gemini picks the key facts and hatches a little friend at each stop, acting out a weird, vivid scene.',
+    text: 'Paste a chapter, snap a photo of your notes or just talk. It cuts them into bite-size ideas and hatches a friend at each stop, acting out a weird, vivid scene.',
   },
   {
     title: 'Wander, then quiz',
-    text: 'Walk the route and meet each friend. In the quiz they hide their facts: remember one and it bounces; forget one and it dreams up an even weirder scene.',
+    text: 'Walk the route and meet each friend, then quiz yourself. Forgotten friends dream up weirder scenes, and it tells you when to walk it again.',
   },
 ];
 
@@ -43,16 +44,16 @@ function HeroScene() {
   );
 }
 
-// The front door: what Mind Palace is, why it works, and log in / sign up.
-export default function Landing({ error, onLogin, onSignup }) {
+// The front door: what NeverForgator is, why it works, and log in / sign up.
+export default function Landing({ error, onLogin, onSignup, onTour }) {
   return (
     <div className="landing">
       <header className="landing-nav">
-        <span className="brand-link">
-          <Creature color="#F08A6C" size="logo" />
-          <span className="wordmark">Mind Palace</span>
-        </span>
-        <button className="btn ghost small" onClick={onLogin}>Log in</button>
+        <Logo />
+        <div className="nav-actions">
+          {onTour && <button className="nav-pill" onClick={onTour}><span aria-hidden="true">?</span> 1-minute tour</button>}
+          <button className="nav-pill solid" onClick={onLogin}>Log in</button>
+        </div>
       </header>
 
       <section className="landing-hero">
@@ -60,15 +61,17 @@ export default function Landing({ error, onLogin, onSignup }) {
           <span className="chip yellow">built for UF students · SwampHacks</span>
           <h1 className="landing-title">Remember anything by taking a walk.</h1>
           <p className="landing-lead">
-            Mind Palace turns your notes into little friends that live along a real place you know:
+            NeverForgator turns your notes into little friends that live along a real place you know:
             the Reitz, your dorm, your route to class. Walk it again in your head and the facts come right back.
           </p>
           {error && <p className="error-text">Couldn’t sign in: {error.message}</p>}
           <div className="hero-actions">
             <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Build my first palace</button>
-            <button className="btn ghost big" onClick={onLogin}>I have an account</button>
+            {onTour
+              ? <button className="btn ghost big" onClick={onTour}>Show me how it works</button>
+              : <button className="btn ghost big" onClick={onLogin}>I have an account</button>}
           </div>
-          <p className="scrawl">free, and your first palace takes about two minutes</p>
+          <p className="scrawl">free · the Reitz Union is built in, so you can start in under a minute</p>
         </div>
         <HeroScene />
       </section>
@@ -97,14 +100,14 @@ export default function Landing({ error, onLogin, onSignup }) {
           </p>
           <p>
             It’s been used since ancient Greece, and it’s still the go-to technique of competitive memory athletes.
-            The hard part has always been building the palace. Mind Palace does that part for you.
+            The hard part has always been building the palace. NeverForgator does that part for you.
           </p>
         </div>
       </section>
 
       <footer className="landing-foot">
         <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Start remembering</button>
-        <span className="scrawl">made with too much coffee at SwampHacks</span>
+        <span className="scrawl">made by gators, with too much coffee, at SwampHacks</span>
       </footer>
     </div>
   );

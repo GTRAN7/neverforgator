@@ -1,15 +1,40 @@
 // Every call to the backend goes through here.
 
-// Set by App once the user is logged in: returns an Auth0 access token for the backend.
+// Set by App once the user is logged in: (options) => an Auth0 access token for the backend.
 let getToken = null;
 export const setTokenGetter = (fn) => { getToken = fn; };
 
+// The login stopped working (token rejected, or Auth0 can't give us one): App shows a
+// "log in again" card. `detail` is the reason, for the card's fine print.
+const loginFailed = (detail) => window.dispatchEvent(new CustomEvent('login-failed', { detail }));
+
+async function authHeader(fresh) {
+  if (!getToken) return {};
+  try {
+    return { Authorization: `Bearer ${await getToken(fresh ? { cacheMode: 'off' } : undefined)}` };
+  } catch (e) {
+    loginFailed(e.message);
+    throw new Error('Your login expired. Log in again.');
+  }
+}
+
 async function request(url, options = {}) {
-  const headers = { ...options.headers };
-  if (getToken) headers.Authorization = `Bearer ${await getToken()}`;
-  const res = await fetch(url, { ...options, headers });
+  const call = async (fresh) => fetch(url, { ...options, headers: { ...options.headers, ...(await authHeader(fresh)) } });
+  let res = await call(false);
+  // A rejected token is often just a stale one: get a fresh token and try once more.
+  if (res.status === 401 && getToken) res = await call(true);
+  if (res.status === 401 && getToken) {
+    const body = await res.json().catch(() => ({}));
+    loginFailed(body.detail);
+    throw new Error('Your login expired. Log in again.');
+  }
+  if (res.status === 204) return null;
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    // FastAPI puts the message in `detail` (a list of field errors for invalid input).
+    const detail = Array.isArray(body.detail) ? body.detail.map((d) => d.msg).join('; ') : body.detail;
+    throw new Error(detail || body.error || `Request failed (${res.status})`);
+  }
   return body;
 }
 
@@ -28,6 +53,16 @@ export const api = {
   createPalace: (name) => request('/api/palaces', send('POST', { name })),
   copyPalace: (id) => request(`${palaceUrl(id)}/copy`, { method: 'POST' }),
   getPalace: (id) => request(palaceUrl(id)),
+  renamePalace: (id, name) => request(palaceUrl(id), send('PATCH', { name })),
+  deletePalace: (id) => request(palaceUrl(id), { method: 'DELETE' }),
+  usage: () => request('/api/usage'),
+
+  // A photo of notes, a PDF or a voice recording → { text } for the notes box.
+  importNotes: (blob, name) => {
+    const form = new FormData();
+    form.append('file', blob, name);
+    return request('/api/import', { method: 'POST', body: form });
+  },
 
   uploadRooms: (id, files) => {
     const form = new FormData();
@@ -40,13 +75,17 @@ export const api = {
   addSpot: (id, spot) => request(`${palaceUrl(id)}/spots`, send('POST', spot)),
   labelSpot: (id, spotId) => request(`${spotUrl(id, spotId)}/label`, { method: 'POST' }),
   renameSpot: (id, spotId, label) => request(spotUrl(id, spotId), send('PATCH', { label })),
+  // placement: { direction } or { point, viewFrom }, plus the new crop
+  moveSpot: (id, spotId, placement) => request(spotUrl(id, spotId), send('PATCH', placement)),
+  editIdea: (id, spotId, fact) => request(`${spotUrl(id, spotId)}/idea`, send('PUT', { fact })),
   deleteSpot: (id, spotId) => request(spotUrl(id, spotId), { method: 'DELETE' }),
   reorderSpots: (id, ids) => request(`${palaceUrl(id)}/spots/order`, send('PUT', { ids })),
 
-  fill: (id, notes, style) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style })),
+  fill: (id, notes, style, flavor) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style, flavor })),
   generateImage: (id, spotId) => request(`${spotUrl(id, spotId)}/image`, { method: 'POST' }),
-  // answer: what the user typed ("what's here?"), or placeId: the spot they picked ("where did you put it?")
-  grade: (id, spotId, answer) => request(`${spotUrl(id, spotId)}/grade`, send('POST', answer)),
+  // Quiz answers are checked in the browser; these just keep score.
+  recordResult: (id, spotId, correct) => request(`${spotUrl(id, spotId)}/result`, send('POST', { correct })),
+  addReview: (id, score, total) => request(`${palaceUrl(id)}/reviews`, send('POST', { score, total })),
   makeWeirder: (id, spotId) => request(`${spotUrl(id, spotId)}/weirder`, { method: 'POST' }),
 };
 

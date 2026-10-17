@@ -1,0 +1,10 @@
+fastapi[standard]>=0.115
+sqlalchemy>=2.0.40
+alembic>=1.14
+pg8000>=1.31
+python-jose>=3.5
+rsa>=4.9
+httpx>=0.28
+python-dotenv>=1.0
+pytest>=8.0
+google-genai>=1.40

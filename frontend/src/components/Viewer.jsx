@@ -30,12 +30,46 @@ function spotView(spot) {
   return { position, look: new THREE.Vector3(...spot.point).sub(position).normalize() };
 }
 
-// ---- Panorama room ----
+// ---- Panorama and photo rooms ----
+
+// A flat photo (e.g. a campus building) is shown as a curved window this wide (radians) in front
+// of you. Keep in sync with PHOTO_FOV in backend/app/studio/panorama.py.
+const PHOTO_FOV = 1.75;
+
+// Phone panoramas rarely line up where the two ends meet, so turning around showed a hard jump.
+// This blends both ends into their blurred average over the last few percent of the photo
+// (textureLod reads a small mipmap = a blurred copy). A panorama that doesn't cover the whole
+// sphere also fades its top and bottom edges into the room color instead of cutting off.
+const ROOM_COLOR = new THREE.Color('#F3E3C8');
+// A flat photo fades out on all four sides instead.
+function softenEdges(shader, partial, photo) {
+  shader.uniforms.edgeColor = { value: ROOM_COLOR };
+  shader.fragmentShader = shader.fragmentShader
+    .replace('void main() {', 'uniform vec3 edgeColor;\nvoid main() {')
+    .replace('#include <map_fragment>', photo ? `
+      #ifdef USE_MAP
+        vec4 texel = texture2D( map, vMapUv );
+        float edge = min( min( vMapUv.x, 1.0 - vMapUv.x ), min( vMapUv.y, 1.0 - vMapUv.y ) );
+        texel.rgb = mix( edgeColor, texel.rgb, texel.a * smoothstep( 0.0, 0.04, edge ) );
+        texel.a = 1.0;
+        diffuseColor *= texel;
+      #endif` : `
+      #ifdef USE_MAP
+        vec4 texel = texture2D( map, vMapUv );
+        float seamDistance = min( vMapUv.x, 1.0 - vMapUv.x );
+        if ( seamDistance < 0.025 ) {
+          vec4 seam = 0.5 * ( textureLod( map, vec2( 0.003, vMapUv.y ), 5.0 ) + textureLod( map, vec2( 0.997, vMapUv.y ), 5.0 ) );
+          texel = mix( seam, texel, smoothstep( 0.0, 0.025, seamDistance ) );
+        }
+        ${partial ? 'texel.rgb = mix( edgeColor, texel.rgb, smoothstep( 0.0, 0.06, min( vMapUv.y, 1.0 - vMapUv.y ) ) );' : ''}
+        diffuseColor *= texel;
+      #endif`);
+}
 // Wraps the photo around the camera on the inside of a sphere.
 // A 360° photo sphere is 2:1 and covers the whole sphere. A wider phone
 // panorama (e.g. 6:1) still goes all the way around but only covers a band
 // around the horizon: its height on the sphere is 360° × height/width.
-function PanoramaRoom({ url, onPlace }) {
+function PanoramaRoom({ url, photo, onPlace }) {
   const texture = useLoader(THREE.TextureLoader, url);
   texture.colorSpace = THREE.SRGBColorSpace;
   const handleClick = usePlaceHandler(onPlace, (e) => ({
@@ -43,14 +77,21 @@ function PanoramaRoom({ url, onPlace }) {
   }));
 
   const { width, height } = texture.image;
-  const verticalAngle = Math.min(Math.PI, (2 * Math.PI * height) / width);
+  // Panoramas go all the way around; a photo is a window in front of you (centered on -z).
+  const horizontalAngle = photo ? PHOTO_FOV : Math.PI * 2;
+  const startAngle = photo ? 1.5 * Math.PI - PHOTO_FOV / 2 : 0;
+  const verticalAngle = photo
+    ? Math.min(Math.PI * 0.9, (PHOTO_FOV * height) / width)
+    : Math.min(Math.PI, (2 * Math.PI * height) / width);
   const topAngle = (Math.PI - verticalAngle) / 2; // center the band on the horizon
+  const partial = verticalAngle < Math.PI - 0.01;
 
   return (
     // scale x = -1 mirrors the sphere so the photo isn't backwards when seen from inside.
     <mesh scale={[-1, 1, 1]} onClick={handleClick}>
-      <sphereGeometry args={[PANO_RADIUS, 64, 32, 0, Math.PI * 2, topAngle, verticalAngle]} />
-      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+      <sphereGeometry args={[PANO_RADIUS, 64, 32, startAngle, horizontalAngle, topAngle, verticalAngle]} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} customProgramCacheKey={() => `pano-${partial}-${photo}`}
+        onBeforeCompile={(shader) => softenEdges(shader, partial, photo)} />
     </mesh>
   );
 }
@@ -65,18 +106,26 @@ function Star() {
   );
 }
 
+// Pointer events on a sprite stay on the sprite. Without this they bubble down to the
+// 3D scene too, so clicking an egg also planted a new egg (or started dragging the view).
+const keepToSprite = (e) => e.stopPropagation();
+
 // A creature pinned to its 3D spot. It's HTML anchored in the 3D scene, so it
 // follows the room as you look around and always faces you, like a sprite.
+// Every 5th stop gets a gold tag, like memory athletes mark every 5th locus to keep count.
 function FriendSprite({ friend, onClick }) {
-  const { spot, number, state, tag, active } = friend;
+  const { spot, number, state, tag, active, picture } = friend;
   return (
     <Html position={spotPosition(spot)} center zIndexRange={[50, 0]}>
       <button
-        className={`sprite ${state} ${active ? 'active' : ''}`}
+        className={`sprite ${state} ${active ? 'active' : ''} ${number % 5 === 0 ? 'fifth' : ''}`}
         style={{ animationDelay: `${((number * 0.37) % 3).toFixed(2)}s` }}
-        onClick={onClick}
+        onPointerDown={keepToSprite}
+        onPointerUp={keepToSprite}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
         aria-label={`Friend ${number}`}
       >
+        {picture && <img className="sprite-picture" src={picture} alt="" />}
         {state === 'sleepy' && <span className="zzz">z z z</span>}
         {state === 'asking' && <span className="ask">?</span>}
         {state === 'happy' && <Star />}
@@ -210,7 +259,7 @@ export default function Viewer({ palaceId, room, friends, focusSpot, visitedUpTo
         <color attach="background" args={['#F3E3C8']} />
         <Suspense fallback={null}>
           {panorama
-            ? <PanoramaRoom url={url} onPlace={onPlace} />
+            ? <PanoramaRoom url={url} photo={room.type === 'photo'} onPlace={onPlace} />
             : <SplatRoom url={url} flipped={room.flipped} onPlace={onPlace} onStatus={setSplatMessage} />}
         </Suspense>
         <TrailDots friends={friends} panorama={panorama} visitedUpTo={visitedUpTo} />

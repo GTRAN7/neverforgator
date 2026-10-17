@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { api, imageUrl } from '../api.js';
+import { startInBuiltIn } from '../lib/start.js';
 import { useImageQueue } from '../lib/useImageQueue.js';
 import Viewer from './Viewer.jsx';
 import RoomStrip from './RoomStrip.jsx';
@@ -7,7 +8,11 @@ import PathList from './PathList.jsx';
 import WanderCard from './WanderCard.jsx';
 import QuizCard from './QuizCard.jsx';
 import FeedModal from './FeedModal.jsx';
+import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
+import Logo from './Logo.jsx';
+import AccountMenu from './AccountMenu.jsx';
+import { useAccount } from '../lib/account.js';
 
 const MODES = [
   { id: 'build', label: 'Build' },
@@ -17,23 +22,39 @@ const MODES = [
 
 const BUNTING = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
 
-export default function PalaceEditor({ palaceId }) {
+// startAction (from the URL): 'feed' opens the notes box, 'wander' starts walking.
+export default function PalaceEditor({ palaceId, startAction }) {
   const [palace, setPalace] = useState(null);
-  const [mode, setMode] = useState('build');
+  const [mode, setMode] = useState(startAction === 'wander' ? 'wander' : 'build');
   const [roomId, setRoomId] = useState(null);
   const [focusId, setFocusId] = useState(null); // the spot the camera turns to
   const [selectedId, setSelectedId] = useState(null); // the highlighted spot
+  const [inspecting, setInspecting] = useState(false); // Build: the selected spot's card is open
+  const [movingId, setMovingId] = useState(null); // Build: the next click in the room moves this spot
   const [feeding, setFeeding] = useState(false); // "Fill from notes" modal open
   const [quizResults, setQuizResults] = useState(null); // { spotId: true/false } once a quiz starts
   const [friendPicker, setFriendPicker] = useState(null); // set while the quiz asks "where did you put X?"
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [mock, setMock] = useState(false);
-  const [sketchesOnly, setSketchesOnly] = useState(false); // pictures are placeholder sketches for now
+  const account = useAccount();
+  const [roomBanner, setRoomBanner] = useState(null); // "walking into Room 2" for a moment after changing rooms
+  const lastRoom = useRef(null);
+
+  // Changing rooms: show where you're walking to, so the route feels like one walk.
+  useEffect(() => {
+    if (lastRoom.current && roomId && lastRoom.current !== roomId) setRoomBanner(roomId);
+    if (roomId) lastRoom.current = roomId;
+  }, [roomId]);
 
   useEffect(() => {
-    api.getPalace(palaceId).then(setPalace).catch((e) => setError(e.message));
-    api.status().then((s) => { setMock(s.mock); setSketchesOnly(s.placeholderPictures); }).catch(() => {});
+    api.getPalace(palaceId).then((p) => {
+      setPalace(p);
+      if (startAction === 'feed' && !p.readOnly) setFeeding(true);
+      if (p.sample) setMode('wander'); // the finished example opens walking
+      if (startAction) window.history.replaceState(null, '', `#/palace/${palaceId}`); // a reload shouldn't reopen it
+    }).catch((e) => setError(e.message));
+    api.status().then((s) => { setMock(s.mock); }).catch(() => {});
   }, [palaceId]);
 
   // Replace one spot in state (used when the server returns a single updated spot).
@@ -65,6 +86,8 @@ export default function PalaceEditor({ palaceId }) {
 
   const switchMode = useCallback((next) => {
     if (next === 'quiz') setQuizResults(null); // every visit to Quiz starts fresh
+    setInspecting(false);
+    setMovingId(null);
     setMode(next);
   }, []);
 
@@ -104,6 +127,8 @@ export default function PalaceEditor({ palaceId }) {
         state: friendState(spot),
         tag: friendTag(spot, number),
         active: mode !== 'quiz' && spot.id === selectedId,
+        // In Wander the friend you're visiting shows its picture right at its stop.
+        picture: mode === 'wander' && spot.id === selectedId && spot.image ? imageUrl(spot.image) : null,
       };
     });
   const focusSpot = palace.spots.find((s) => s.id === focusId && s.roomId === room?.id);
@@ -113,7 +138,21 @@ export default function PalaceEditor({ palaceId }) {
 
   // ---- Build actions ----
 
+  // A click in the room: moves a spot ("Move it"), closes the open card, or plants a new egg.
   function handlePlace(placement) {
+    if (movingId) {
+      const id = movingId;
+      setMovingId(null);
+      run('Moving…', async () => {
+        updateSpot(await api.moveSpot(palace.id, id, { ...placement }));
+        api.labelSpot(palace.id, id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
+      });
+      return;
+    }
+    if (inspecting) {
+      setInspecting(false);
+      return;
+    }
     run('Planting an egg…', async () => {
       const spot = await api.addSpot(palace.id, { roomId: room.id, ...placement });
       setPalace((p) => ({ ...p, spots: [...p.spots, spot] }));
@@ -135,12 +174,13 @@ export default function PalaceEditor({ palaceId }) {
   }
 
   function removeSpot(spot) {
+    if (spot.id === selectedId) setInspecting(false);
     run('Deleting…', async () => setPalace(await api.deleteSpot(palace.id, spot.id)));
   }
 
   function startOwnCopy() {
     run('Setting up your copy…', async () => {
-      window.location.hash = `#/palace/${(await api.copyPalace(palace.id)).id}`;
+      window.location.hash = `#/palace/${(await api.copyPalace(palace.id)).id}/feed`;
     });
   }
 
@@ -155,16 +195,19 @@ export default function PalaceEditor({ palaceId }) {
     }
     if (mode === 'wander' && !spot.fact) return;
     goToSpot(spot);
+    if (mode === 'build') {
+      setInspecting(true);
+      setMovingId(null);
+    }
   }
+
+  const inspected = mode === 'build' && inspecting ? palace.spots.find((s) => s.id === selectedId) : null;
 
   return (
     <div className={`editor mode-${mode}`}>
       <header className="topbar">
         <div className="brand">
-          <a href="#/" className="brand-link" title="All palaces">
-            <Creature color="#F08A6C" size="logo" />
-            <span className="wordmark">Mind Palace</span>
-          </a>
+          <Logo href="#/" />
           <span className="scrawl palace-name">{palace.name}</span>
           {mock && <span className="chip yellow tiny" title="Set GEMINI_API_KEY in .env for real AI">mock AI</span>}
         </div>
@@ -178,10 +221,13 @@ export default function PalaceEditor({ palaceId }) {
               </button>
             ))}
           </nav>
-          {palace.readOnly ? (
+          {palace.readOnly && mode !== 'quiz' ? (
             <div className="readonly-banner">
-              Shared campus route
-              <button className="btn accent small" onClick={startOwnCopy}>Start my own copy</button>
+              {palace.sample ? 'A finished example' : 'Shared campus route'}
+              <button className="btn accent small"
+                onClick={palace.sample ? () => run('Setting up…', () => startInBuiltIn()) : startOwnCopy}>
+                {palace.sample ? 'Make one with my notes' : 'Start my own copy'}
+              </button>
             </div>
           ) : mode === 'quiz' ? (
             <div className="score-pill">
@@ -189,18 +235,19 @@ export default function PalaceEditor({ palaceId }) {
               <strong>{answered.filter(Boolean).length} / {answered.length}</strong>
             </div>
           ) : (
-            <button className="btn accent" disabled={!palace.spots.length} onClick={() => setFeeding(true)}
-              title={palace.spots.length ? '' : 'Place some spots first'}>
+            <button className="btn accent" disabled={!palace.rooms.length} onClick={() => setFeeding(true)}
+              title={palace.rooms.length ? '' : 'Add a room first'}>
               <Sparkle /> Fill from notes
             </button>
           )}
+          <AccountMenu account={account} />
         </div>
       </header>
 
       <div className="workspace">
         {mode !== 'quiz' && (
           <PathList palace={palace} mode={mode} selectedId={selectedId} friendState={friendState}
-            onSelect={goToSpot} onRename={renameSpot} onMove={moveSpot} onRemove={removeSpot} />
+            onSelect={handleFriendClick} onRename={renameSpot} onMove={moveSpot} onRemove={removeSpot} />
         )}
 
         <main className="stage">
@@ -232,7 +279,17 @@ export default function PalaceEditor({ palaceId }) {
 
             {mode === 'build' && room && (
               <>
-                <span className="scene-hint">Click anywhere in your room to plant an egg</span>
+                <span className="scene-hint">
+                  {movingId ? 'Click where this stop should go' : inspected ? 'Click the room to close the card' : 'Click your room to plant an egg · click an egg to open it'}
+                </span>
+                {inspected && (
+                  <SpotCard palace={palace} spot={inspected} number={numberOf(inspected)} moving={movingId === inspected.id}
+                    onRename={renameSpot} onRemove={() => removeSpot(inspected)}
+                    onShift={(delta) => moveSpot(numberOf(inspected) - 1, delta)}
+                    onMoveStart={() => setMovingId((id) => (id ? null : inspected.id))}
+                    onEditIdea={(fact) => run('Writing a new scene…', async () => updateSpot(await api.editIdea(palace.id, inspected.id, fact)))}
+                    onClose={() => setInspecting(false)} />
+                )}
                 {room.type === 'splat' && (
                   <button className="btn ghost small flip" onClick={flipRoom}>Flip scan upside down</button>
                 )}
@@ -244,7 +301,7 @@ export default function PalaceEditor({ palaceId }) {
             )}
             {mode === 'quiz' && (
               <>
-                <QuizCard palace={palace} images={images} updateSpot={updateSpot} run={run}
+                <QuizCard palace={palace} images={images} updateSpot={updateSpot}
                   results={quizResults} setResults={setQuizResults} goToSpot={goToSpot} setFriendPicker={setFriendPicker}
                   onWake={(spot) => { switchMode('wander'); goToSpot(spot); }} />
                 {quizResults && (
@@ -257,6 +314,9 @@ export default function PalaceEditor({ palaceId }) {
               </>
             )}
 
+            {roomBanner && room?.id === roomBanner && (
+              <div key={roomBanner} className="room-banner">walking into <strong>{room.name}</strong></div>
+            )}
             {(busy || error) && (
               <div className={`toast ${error ? 'error' : ''}`} onClick={() => setError('')}>{error || busy}</div>
             )}
@@ -269,7 +329,7 @@ export default function PalaceEditor({ palaceId }) {
       </div>
 
       {feeding && (
-        <FeedModal palace={palace} setPalace={setPalace} images={images} sketchesOnly={sketchesOnly} onClose={closeFeed}
+        <FeedModal palace={palace} setPalace={setPalace} onClose={closeFeed}
           onDone={() => { setFeeding(false); switchMode('wander'); }} />
       )}
     </div>
