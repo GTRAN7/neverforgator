@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePrefs } from '../lib/prefs.js';
 import { FONTS, TEXT_SIZES, useDisplay } from '../lib/display.js';
+import { switchMode } from '../lib/mode.js';
 
 // Gear button + settings panel, styled like campus mode's (src/palace/components/Settings.jsx) so
 // both modes look and work the same. It drops down from the gear instead of opening a full-screen
@@ -116,6 +117,12 @@ export default function SettingsMenu() {
             onPick={(font) => setDisplay({ font })} />
           <Choices label="Text size" hint={TEXT_SIZES.find(([id]) => id === display.textSize)?.[1]} sizes
             value={display.textSize} options={TEXT_SIZES} onPick={(textSize) => setDisplay({ textSize })} />
+
+          <p className="gear-eyebrow">Other mode</p>
+          <div className="gear-setting">
+            <span className="gear-setting-text"><b>NeverForgator (2D)</b><small>The UF campus walk with photo signs and pins</small></span>
+            <button className="btn ghost small" onClick={() => switchMode('campus')}>Open</button>
+          </div>
 
           {/* <div className="gear-setting">
             <span className="gear-setting-text"><b>How it works</b><small>Take the 1-minute tour again</small></span>
