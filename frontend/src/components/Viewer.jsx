@@ -315,16 +315,12 @@ function LoadingOverlay({ message }) {
 // ---- The viewer ----
 // friends: [{ spot, number, state, tag, active }] for this room (see PalaceEditor).
 // onPlace: set only while placing spots. visitedUpTo: trail is "walked" up to this friend number.
-<<<<<<< HEAD
 // onMoveFriend(spot, placement): set when friends can be dragged to a new spot (Build).
 export default function Viewer({ palaceId, room, friends: placed, focusSpot, visitedUpTo = 0, onPlace, onFriendClick, onMoveFriend }) {
-=======
-export default function Viewer({ palaceId, room, friends, focusSpot, visitedUpTo = 0, onPlace, onFriendClick }) {
   // The space around a room (and the fade at photo edges) follows night mode.
   const [{ night }] = useDisplay();
   const roomColor = night ? ROOM_NIGHT : ROOM_DAY;
   ROOM_COLOR.set(roomColor); // shared with the panorama shader's edge fade
->>>>>>> 6046c169a5b9f63a8e73f301def622f11d4a8eb7
   const [splatMessage, setSplatMessage] = useState(null);
   const [dragSpot, setDragSpot] = useState(null); // the friend being dragged, where it is right now
   const url = fileUrl(palaceId, room.file);
