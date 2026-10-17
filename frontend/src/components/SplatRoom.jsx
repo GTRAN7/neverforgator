@@ -38,6 +38,7 @@ export default function SplatRoom({ url, flipped, onPlace, onStatus }) {
   useEffect(() => {
     let cancelled = false;
     const mesh = new SplatMesh({ url });
+    mesh.userData.room = true; // friends dragged in Build land on it (Viewer.jsx)
     mesh.rotation.x = flipped ? Math.PI : 0;
     setSplat(mesh);
     onStatus('Loading 3D scan…');

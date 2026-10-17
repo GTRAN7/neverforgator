@@ -40,6 +40,19 @@ export default function PalaceEditor({ palaceId, startAction }) {
   const account = useAccount();
   const [roomBanner, setRoomBanner] = useState(null); // "walking into Room 2" for a moment after changing rooms
   const lastRoom = useRef(null);
+  const sceneRef = useRef(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // The room view can fill the screen (its cards and hints go with it). Esc also leaves.
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === sceneRef.current && !!sceneRef.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else sceneRef.current?.requestFullscreen().catch((e) => setError(`Couldn't go full screen: ${e.message}`));
+  };
 
   // Changing rooms: show where you're walking to, so the route feels like one walk.
   useEffect(() => {
@@ -143,10 +156,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
     if (movingId) {
       const id = movingId;
       setMovingId(null);
-      run('Moving…', async () => {
-        updateSpot(await api.moveSpot(palace.id, id, { ...placement }));
-        api.labelSpot(palace.id, id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
-      });
+      moveTo(id, placement);
       return;
     }
     if (inspecting) {
@@ -160,6 +170,22 @@ export default function PalaceEditor({ palaceId, startAction }) {
       // Gemini names it in the background; if that fails, the user can type a name.
       api.labelSpot(palace.id, spot.id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
     });
+  }
+
+  // Move a spot ("Move it", or dragging it in the room). It's on a new object now, so Gemini renames it.
+  function moveTo(id, placement) {
+    run('Moving…', async () => {
+      updateSpot(await api.moveSpot(palace.id, id, { ...placement }));
+      api.labelSpot(palace.id, id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
+    });
+  }
+
+  // A friend dropped somewhere new: show it there right away, then save.
+  function dropSpot(spot, placement) {
+    const { crop: _crop, ...where } = placement;
+    updateSpot({ ...spot, direction: null, point: null, viewFrom: null, ...where });
+    setMovingId(null);
+    moveTo(spot.id, placement);
   }
 
   function moveSpot(index, delta) {
@@ -251,7 +277,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
         )}
 
         <main className="stage">
-          <div className="scene-frame">
+          <div className="scene-frame" ref={sceneRef}>
             {room ? (
               <Viewer
                 key={room.id}
@@ -262,6 +288,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 visitedUpTo={visitedUpTo}
                 onPlace={mode === 'build' && !palace.readOnly ? handlePlace : undefined}
                 onFriendClick={handleFriendClick}
+                onMoveFriend={mode === 'build' && !palace.readOnly ? dropSpot : undefined}
               />
             ) : (
               <div className="center empty-room">
@@ -269,6 +296,17 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 <p className="card-title">Start with a room you know by heart</p>
                 <p className="scrawl">a 360° photo, a phone panorama, or a 3D scan</p>
               </div>
+            )}
+
+            {room && document.fullscreenEnabled && (
+              <button className="fullscreen-btn" onClick={toggleFullscreen}
+                aria-label={fullscreen ? 'Exit full screen' : 'Full screen'} title={fullscreen ? 'Exit full screen (Esc)' : 'Full screen'}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  {fullscreen
+                    ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                    : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
+                </svg>
+              </button>
             )}
 
             <div className="bunting" aria-hidden="true">
@@ -280,7 +318,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
             {mode === 'build' && room && (
               <>
                 <span className="scene-hint">
-                  {movingId ? 'Click where this stop should go' : inspected ? 'Click the room to close the card' : 'Click your room to plant an egg · click an egg to open it'}
+                  {movingId ? 'Click where this stop should go' : inspected ? 'Click the room to close the card' : 'Click your room to plant an egg · click an egg to open it · drag an egg to move it'}
                 </span>
                 {inspected && (
                   <SpotCard palace={palace} spot={inspected} number={numberOf(inspected)} moving={movingId === inspected.id}
@@ -315,7 +353,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
             )}
 
             {roomBanner && room?.id === roomBanner && (
-              <div key={roomBanner} className="room-banner">walking into <strong>{room.name}</strong></div>
+              <div key={`banner-${roomBanner}`} className="room-banner">walking into <strong>{room.name}</strong></div>
             )}
             {(busy || error) && (
               <div className={`toast ${error ? 'error' : ''}`} onClick={() => setError('')}>{error || busy}</div>
