@@ -62,7 +62,12 @@ export async function listPalaces(userId) {
       createdAt: p.createdAt,
       roomCount: p.rooms.length,
       spotCount: p.spots.length,
+      friendCount: p.spots.filter((s) => s.fact).length,
+      nextReviewAt: p.nextReviewAt ?? null,
       template: Boolean(p.template),
+      builtIn: Boolean(p.builtIn),
+      sample: Boolean(p.sample),
+      cover: p.rooms.find((r) => r.type === 'panorama')?.file ?? null,
       mine: canWrite(p, userId),
     }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -94,6 +99,12 @@ export async function copyPalace(source, owner) {
   copy.copiedFrom = source.id;
   await writePalace(copy);
   return copy;
+}
+
+// Deletes the folder (rooms, crops and all). Waits for pending saves so none recreates it.
+export async function deletePalace(id) {
+  await (queues.get(id) ?? Promise.resolve());
+  await fs.rm(palaceDir(id), { recursive: true, force: true });
 }
 
 // Read-modify-write, one at a time per palace. Later we'll generate many spots

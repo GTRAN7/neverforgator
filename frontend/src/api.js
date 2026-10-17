@@ -8,6 +8,7 @@ async function request(url, options = {}) {
   const headers = { ...options.headers };
   if (getToken) headers.Authorization = `Bearer ${await getToken()}`;
   const res = await fetch(url, { ...options, headers });
+  if (res.status === 204) return null;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
   return body;
@@ -28,6 +29,16 @@ export const api = {
   createPalace: (name) => request('/api/palaces', send('POST', { name })),
   copyPalace: (id) => request(`${palaceUrl(id)}/copy`, { method: 'POST' }),
   getPalace: (id) => request(palaceUrl(id)),
+  renamePalace: (id, name) => request(palaceUrl(id), send('PATCH', { name })),
+  deletePalace: (id) => request(palaceUrl(id), { method: 'DELETE' }),
+  usage: () => request('/api/usage'),
+
+  // A photo of notes, a PDF or a voice recording → { text } for the notes box.
+  importNotes: (blob, name) => {
+    const form = new FormData();
+    form.append('file', blob, name);
+    return request('/api/import', { method: 'POST', body: form });
+  },
 
   uploadRooms: (id, files) => {
     const form = new FormData();
@@ -40,13 +51,17 @@ export const api = {
   addSpot: (id, spot) => request(`${palaceUrl(id)}/spots`, send('POST', spot)),
   labelSpot: (id, spotId) => request(`${spotUrl(id, spotId)}/label`, { method: 'POST' }),
   renameSpot: (id, spotId, label) => request(spotUrl(id, spotId), send('PATCH', { label })),
+  // placement: { direction } or { point, viewFrom }, plus the new crop
+  moveSpot: (id, spotId, placement) => request(spotUrl(id, spotId), send('PATCH', placement)),
+  editIdea: (id, spotId, fact) => request(`${spotUrl(id, spotId)}/idea`, send('PUT', { fact })),
   deleteSpot: (id, spotId) => request(spotUrl(id, spotId), { method: 'DELETE' }),
   reorderSpots: (id, ids) => request(`${palaceUrl(id)}/spots/order`, send('PUT', { ids })),
 
   fill: (id, notes, style) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style })),
   generateImage: (id, spotId) => request(`${spotUrl(id, spotId)}/image`, { method: 'POST' }),
-  // answer: what the user typed ("what's here?"), or placeId: the spot they picked ("where did you put it?")
-  grade: (id, spotId, answer) => request(`${spotUrl(id, spotId)}/grade`, send('POST', answer)),
+  // Quiz answers are checked in the browser; these just keep score.
+  recordResult: (id, spotId, correct) => request(`${spotUrl(id, spotId)}/result`, send('POST', { correct })),
+  addReview: (id, score, total) => request(`${palaceUrl(id)}/reviews`, send('POST', { score, total })),
   makeWeirder: (id, spotId) => request(`${spotUrl(id, spotId)}/weirder`, { method: 'POST' }),
 };
 

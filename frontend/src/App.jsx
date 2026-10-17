@@ -4,11 +4,16 @@ import { setTokenGetter } from './api.js'
 import PalaceList from './components/PalaceList.jsx'
 import PalaceEditor from './components/PalaceEditor.jsx'
 import Landing from './components/Landing.jsx'
+import Guide from './components/Guide.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { AccountContext } from './lib/account.js'
+import { startInBuiltIn, openSample } from './lib/start.js'
 
 // Tiny hash router. Using the URL hash means a page reload keeps you where you were.
-//   #/palace/<id> → that palace    #/about → the landing page ("how it works")    else → the list
+//   #/palace/<id>[/feed|/wander] → that palace (optionally opening the notes box or Wander)
+//   #/guide → the onboarding tour    #/about → the landing page    else → the list
 const readRoute = () => window.location.hash
+const home = () => { window.location.hash = '#/' }
 
 function Pages() {
   const [route, setRoute] = useState(readRoute)
@@ -19,12 +24,12 @@ function Pages() {
     return () => window.removeEventListener('hashchange', onChange)
   }, [])
 
-  const palaceId = route.match(/^#\/palace\/([a-f0-9]+)/)?.[1]
-  if (palaceId) return <PalaceEditor key={palaceId} palaceId={palaceId} />
-  if (route === '#/about') {
-    const home = () => { window.location.hash = '#/' }
-    return <Landing onLogin={home} onSignup={home} />
+  const [, palaceId, action] = route.match(/^#\/palace\/([a-f0-9]+)(?:\/(\w+))?/) ?? []
+  if (palaceId) return <PalaceEditor key={palaceId} palaceId={palaceId} startAction={action} />
+  if (route === '#/guide') {
+    return <Guide onStart={() => startInBuiltIn()} onSample={() => openSample()} onClose={home} />
   }
+  if (route === '#/about') return <Landing onLogin={home} onSignup={home} onTour={() => { window.location.hash = '#/guide' }} />
   return <PalaceList />
 }
 
@@ -34,11 +39,17 @@ function AuthGate() {
 
   if (isLoading) return <div className="center">Loading…</div>
   if (!isAuthenticated) {
+    const signup = () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })
+    // The tour works before signing up too (the last step asks you to make an account).
+    if (window.location.hash === '#/guide') {
+      return <Guide onSignup={signup} onClose={() => { window.location.hash = '#/'; window.location.reload() }} />
+    }
     return (
       <Landing
+        onTour={() => { window.location.hash = '#/guide'; window.location.reload() }}
         error={error}
         onLogin={() => loginWithRedirect()}
-        onSignup={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}
+        onSignup={signup}
       />
     )
   }
@@ -58,5 +69,5 @@ function AuthGate() {
 }
 
 export default function App({ authDisabled }) {
-  return authDisabled ? <Pages /> : <AuthGate />
+  return <ErrorBoundary>{authDisabled ? <Pages /> : <AuthGate />}</ErrorBoundary>
 }

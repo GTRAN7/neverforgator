@@ -17,11 +17,13 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
     if (found === -1 && path.length) goToSpot(path[0].spot);
   }, []);
 
-  // If this friend has no picture yet (e.g. the page was reloaded mid-generation), draw it now.
+  // Pictures are drawn on the way: this friend and the next two, each only once (then cached).
+  // So you only pay for pictures of friends you actually visit.
   useEffect(() => {
-    const spot = current?.spot;
-    if (spot?.imagePrompt && !spot.image && !images.status[spot.id]) images.enqueue([spot.id]);
-  }, [current?.spot.id]);
+    const ahead = path.slice(index, index + 3).map(({ spot }) => spot)
+      .filter((spot) => spot.imagePrompt && !spot.image && !images.status[spot.id]);
+    if (ahead.length) images.enqueue(ahead.map((spot) => spot.id));
+  }, [current?.spot.id, current?.spot.imagePrompt]);
 
   const go = (i) => goToSpot(path[Math.max(0, Math.min(path.length - 1, i))].spot);
 
@@ -46,12 +48,16 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
   }
 
   const { spot } = current;
+  // The next friend lives in another room: say so, so the walk between rooms is part of the route.
+  const nextSpot = path[index + 1]?.spot;
+  const nextRoom = nextSpot && nextSpot.roomId !== spot.roomId ? palace.rooms.find((r) => r.id === nextSpot.roomId) : null;
   return (
     <div className="float-card polaroid" key={spot.id}>
       <div className="tape" />
       <SpotImage palaceId={palace.id} spot={spot} status={images.status[spot.id]}
         onRetry={() => images.enqueue([spot.id])} className="polaroid-photo" />
       <p className="scrawl scene-text">{spot.scene}</p>
+      {spot.hook && <span className="hook">hook: {spot.hook}</span>}
       <div className="sticky">
         <span className="sticky-label">Remember this</span>
         <p>{spot.fact}</p>
@@ -60,7 +66,7 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
         <button className="btn ghost" disabled={index === 0} onClick={() => go(index - 1)}>Back</button>
         {last
           ? <button className="btn ink" onClick={onQuiz}>Quiz me!</button>
-          : <button className="btn ink" onClick={() => go(index + 1)}>Next friend</button>}
+          : <button className="btn ink" onClick={() => go(index + 1)}>{nextRoom ? `Walk to ${nextRoom.name} →` : 'Next friend'}</button>}
       </div>
       <span className="card-foot">{index + 1} of {path.length} · ← → keys work too</span>
     </div>

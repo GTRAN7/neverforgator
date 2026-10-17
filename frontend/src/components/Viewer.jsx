@@ -65,18 +65,26 @@ function Star() {
   );
 }
 
+// Pointer events on a sprite stay on the sprite. Without this they bubble down to the
+// 3D scene too, so clicking an egg also planted a new egg (or started dragging the view).
+const keepToSprite = (e) => e.stopPropagation();
+
 // A creature pinned to its 3D spot. It's HTML anchored in the 3D scene, so it
 // follows the room as you look around and always faces you, like a sprite.
+// Every 5th stop gets a gold tag, like memory athletes mark every 5th locus to keep count.
 function FriendSprite({ friend, onClick }) {
-  const { spot, number, state, tag, active } = friend;
+  const { spot, number, state, tag, active, picture } = friend;
   return (
     <Html position={spotPosition(spot)} center zIndexRange={[50, 0]}>
       <button
-        className={`sprite ${state} ${active ? 'active' : ''}`}
+        className={`sprite ${state} ${active ? 'active' : ''} ${number % 5 === 0 ? 'fifth' : ''}`}
         style={{ animationDelay: `${((number * 0.37) % 3).toFixed(2)}s` }}
-        onClick={onClick}
+        onPointerDown={keepToSprite}
+        onPointerUp={keepToSprite}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
         aria-label={`Friend ${number}`}
       >
+        {picture && <img className="sprite-picture" src={picture} alt="" />}
         {state === 'sleepy' && <span className="zzz">z z z</span>}
         {state === 'asking' && <span className="ask">?</span>}
         {state === 'happy' && <Star />}

@@ -3,14 +3,25 @@ import { api } from '../api.js';
 import Creature from './Creature.jsx';
 import SpotImage from './SpotImage.jsx';
 import { hatchedPath, placeName } from '../lib/path.js';
+import { checkAnswer } from '../lib/grade.js';
 
-// Quiz: visit each friend with its fact hidden, asking both ways (alternating):
-//   "What lives at your desk?"        → type it; Gemini grades the guess
+// Quiz: visit each friend in path order with its fact hidden, asking both ways (alternating):
+//   "What lives at your desk?"        → type it; checked instantly in the browser
 //   "Where did you put photosynthesis?" → tap the right friend in 3D, or pick a place
-// Right → the friend bounces. Wrong → it falls asleep, and Gemini dreams up a
-// weirder scene + picture in the background so you can wake it up later.
+// Like memory athletes, you check yourself: if the key words don't clearly match, you see the
+// real fact and say whether you had it. Right → the friend bounces. Wrong → it falls asleep, and
+// Gemini dreams up a weirder scene in the background so you can wake it up later.
+// At the end the score sets the next spaced review (see /reviews in the backend).
 // `results` ({ spotId: true/false }, or null before starting) lives in PalaceEditor
 // because the 3D sprites and the score in the header need it too.
+// "in 3 days", "tomorrow", "in 10 minutes"
+function whenText(iso) {
+  const minutes = Math.round((new Date(iso) - Date.now()) / 60000);
+  if (minutes < 60) return `in ${Math.max(1, minutes)} minutes: walk the sleepy friends, then quiz again`;
+  const days = Math.round(minutes / 1440);
+  return days <= 1 ? 'tomorrow' : `in ${days} days`;
+}
+
 const questionKind = (index) => (index % 2 === 1 ? 'where' : 'what');
 
 // The right place plus up to 3 others, mixed in a fixed order (same every time for a question).
@@ -22,13 +33,14 @@ function placeChoices(path, index) {
   return choices;
 }
 
-export default function QuizCard({ palace, images, updateSpot, run, results, setResults, goToSpot, onWake, setFriendPicker }) {
+export default function QuizCard({ palace, images, updateSpot, results, setResults, goToSpot, onWake, setFriendPicker }) {
   const path = hatchedPath(palace);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState('');
   const [graded, setGraded] = useState(null); // { correct, feedback } for the current friend
   const [showPicture, setShowPicture] = useState(false);
   const [rewriting, setRewriting] = useState({}); // spotId → true while Gemini rewrites it
+  const [nextReviewAt, setNextReviewAt] = useState(null); // set when the quiz is finished
 
   const done = results && Object.keys(results).length === path.length && !graded;
   const sleepers = path.filter(({ spot }) => results?.[spot.id] === false);
@@ -44,14 +56,14 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
 
   function start() {
     setResults({});
+    setNextReviewAt(null);
     askAt(0);
   }
 
   async function reimagine(spot) {
     setRewriting((r) => ({ ...r, [spot.id]: true }));
     try {
-      updateSpot(await api.makeWeirder(palace.id, spot.id));
-      images.enqueue([spot.id]);
+      updateSpot(await api.makeWeirder(palace.id, spot.id)); // its new picture is drawn when you wander past
     } catch (err) {
       console.error('Re-imagining failed:', err);
     } finally {
@@ -59,20 +71,52 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
     }
   }
 
-  // guess: { answer: "typed text" } or { placeId: spotId they picked }
-  async function submit(guess) {
+  // Show the verdict right away. correct: true / false, or null = "close, you decide".
+  function settle(correct, feedback) {
     const { spot } = path[index];
-    const result = await run('Checking your guess…', () => api.grade(palace.id, spot.id, guess));
-    if (!result) return;
     if (questionKind(index) === 'where') goToSpot(spot); // now show where it really lives
-    setGraded(result);
-    setResults((r) => ({ ...r, [spot.id]: result.correct }));
-    if (!result.correct) reimagine(spot); // no await: it runs while you keep going
+    setGraded({ correct, feedback });
+    if (correct !== null) setResults((r) => ({ ...r, [spot.id]: correct }));
   }
 
+  // guess: { answer: "typed text" } or { placeId: spotId they picked }
+  function submit(guess) {
+    const { spot, number } = path[index];
+    if ('placeId' in guess) {
+      const place = `${number} · ${placeName(spot, number)}`;
+      settle(guess.placeId === spot.id, guess.placeId === spot.id ? `Yes! It lives at ${place}.` : `It actually lives at ${place}.`);
+      return;
+    }
+    const verdict = guess.answer.trim() ? checkAnswer(spot.fact, guess.answer, spot.keyTerms) : 'wrong';
+    if (verdict === 'right') settle(true, spot.fact);
+    else if (verdict === 'close') settle(null, spot.fact);
+    else settle(false, spot.fact);
+  }
+
+  // Moving on saves the result. Only then does a miss get its weirder scene, so you can
+  // still overrule the verdict ("I had it") without paying for a rewrite.
   function next() {
-    if (index < path.length - 1) askAt(index + 1);
-    else setGraded(null); // all answered → results screen
+    const { spot } = path[index];
+    const correct = results[spot.id];
+    if (correct === undefined) return; // still deciding a "close" answer
+    // A shared example can be quizzed, but not changed: no scores, no rewritten scenes.
+    if (!palace.readOnly) {
+      api.recordResult(palace.id, spot.id, correct).catch((e) => console.error('Saving result failed:', e));
+      if (!correct) reimagine(spot); // no await: it runs while you keep going
+    }
+    if (index < path.length - 1) {
+      askAt(index + 1);
+      return;
+    }
+    setGraded(null); // all answered → results screen
+    const score = Object.values(results).filter(Boolean).length;
+    if (palace.readOnly) return;
+    api.addReview(palace.id, score, path.length).then((r) => setNextReviewAt(r.nextReviewAt)).catch(() => {});
+  }
+
+  function overrule(correct) {
+    setGraded((g) => ({ ...g, correct }));
+    setResults((r) => ({ ...r, [path[index].spot.id]: correct }));
   }
 
   // During a "where" question, tapping a friend in the 3D room answers it.
@@ -87,7 +131,8 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
   useEffect(() => {
     if (!graded) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') next();
+      // Not from the guess box: the Enter that submitted the answer would skip right past it.
+      if (e.key === 'Enter' && !['BUTTON', 'INPUT'].includes(e.target.tagName) && graded.correct !== null) next();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -115,6 +160,7 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
   }
 
   const sleeperStatus = (spot) => {
+    if (palace.readOnly) return 'walk past it again in Wander';
     if (rewriting[spot.id]) return 'dreaming…';
     const status = images.status[spot.id];
     if (status === 'queued' || status === 'working') return 'drawing its new picture…';
@@ -145,6 +191,10 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
             </ul>
           </>
         )}
+        {!palace.readOnly && <p className="review-note">
+          <strong>Next review:</strong> {nextReviewAt ? whenText(nextReviewAt) : 'saving…'}
+          <small>Memory athletes re-walk a palace after 1, 3, 7 and 21 days. Each good quiz stretches the gap.</small>
+        </p>}
         <div className="btn-row">
           {sleepers.length > 0 && (
             <button className="btn ghost" onClick={() => onWake(sleepers[0].spot)}>Wake them up</button>
@@ -198,8 +248,11 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
       )}
 
       {graded && (
-        <div className={`sticky ${graded.correct ? '' : 'sleepy'}`}>
-          <span className="sticky-title">{graded.correct ? 'Nailed it!' : 'Zzz… they fell asleep'}</span>
+        <div className={`sticky ${graded.correct === false ? 'sleepy' : ''}`}>
+          <span className="sticky-title">
+            {graded.correct === null ? 'Close! Did you have it?' : graded.correct ? 'Nailed it!' : 'Zzz… they fell asleep'}
+          </span>
+          {!where && <span className="sticky-label">The fact</span>}
           <p>{graded.feedback}</p>
         </div>
       )}
@@ -208,12 +261,22 @@ export default function QuizCard({ palace, images, updateSpot, run, results, set
         <SpotImage palaceId={palace.id} spot={spot} status={images.status[spot.id]} className="quiz-photo" />
       )}
 
-      {graded ? (
+      {graded?.correct === null ? (
         <div className="btn-row">
+          <button className="btn ghost" onClick={() => overrule(false)}>No, I missed it</button>
+          <button className="btn ink" onClick={() => overrule(true)}>Yes, I had it</button>
+        </div>
+      ) : graded ? (
+        <div className="btn-row">
+          {!where && answer.trim() && (
+            <button className="link" onClick={() => overrule(!graded.correct)}>
+              {graded.correct ? 'actually, I missed it' : 'actually, I had it'}
+            </button>
+          )}
           <button className="btn ghost" onClick={() => setShowPicture((v) => !v)}>
             {showPicture ? 'Hide picture' : 'See its picture'}
           </button>
-          <button className="btn ink" autoFocus onClick={next}>
+          <button className="btn ink" onClick={next}>
             {index < path.length - 1 ? 'Next friend' : 'See results'}
           </button>
         </div>

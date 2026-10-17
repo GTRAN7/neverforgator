@@ -3,10 +3,11 @@
 const MAX_WIDTH = 8192;
 const MAX_PIXELS = 16_000_000; // Safari refuses to draw canvases bigger than ~16.7M pixels
 
-export async function resizeForUpload(file) {
+// maxWidth: smaller for photos of notes, which Gemini reads just as well at 2400 px.
+export async function resizeForUpload(file, maxWidth = MAX_WIDTH) {
   const bitmap = await createImageBitmap(file); // also applies EXIF rotation
   const { width, height } = bitmap;
-  const scale = Math.min(1, MAX_WIDTH / width, Math.sqrt(MAX_PIXELS / (width * height)));
+  const scale = Math.min(1, maxWidth / width, Math.sqrt(MAX_PIXELS / (width * height)));
 
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
