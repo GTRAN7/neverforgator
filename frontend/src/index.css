@@ -968,3 +968,6 @@ button { font: inherit; color: inherit; }
 .overrule .btn.small { height: 32px; }
 .peek-btn { align-self: center; }
 .quiz-card .scene-text { margin: 0; font-size: calc(19px * var(--ts)); }
+.spot-image-wrap { position: relative; display: block; overflow: hidden; border-radius: 3px; }
+.spot-image-wrap .spot-image { height: 100%; }
+.spot-image-wrap .redraw { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); white-space: nowrap; }

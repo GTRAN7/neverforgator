@@ -1,46 +1,48 @@
 import { useCallback, useRef, useState } from 'react';
 import { api } from '../api.js';
 
-const MAX_PARALLEL = 3; // fast enough, without hitting Gemini rate limits
+const BATCH = 4; // pictures per request: the backend draws them in one Gemini call
 
-// Generates spot images a few at a time.
+// Draws spot pictures in the background, a batch at a time (one request in flight), so walking
+// through a palace never fires a burst of Gemini calls.
 // status[spotId] is 'queued' | 'working' | 'error' (missing = done or never asked).
 export function useImageQueue(palaceId, onSpotUpdated) {
   const [status, setStatus] = useState({});
   const [lastError, setLastError] = useState(''); // e.g. Gemini's quota message, shown in the UI
   const queue = useRef([]);
-  const running = useRef(0);
+  const running = useRef(false);
   const onSpotRef = useRef(onSpotUpdated);
   onSpotRef.current = onSpotUpdated;
 
-  const setOne = (id, value) =>
+  const setMany = (ids, value) =>
     setStatus((prev) => {
       const next = { ...prev };
-      if (value) next[id] = value;
-      else delete next[id];
+      for (const id of ids) {
+        if (value) next[id] = value;
+        else delete next[id];
+      }
       return next;
     });
 
-  const pump = useCallback(() => {
-    while (running.current < MAX_PARALLEL && queue.current.length) {
-      const id = queue.current.shift();
-      running.current += 1;
-      setOne(id, 'working');
-      api.generateImage(palaceId, id)
-        .then((spot) => {
-          onSpotRef.current(spot);
-          setOne(id, null);
-        })
-        .catch((err) => {
-          console.error(err);
-          setLastError(err.message);
-          setOne(id, 'error');
-        })
-        .finally(() => {
-          running.current -= 1;
-          pump();
-        });
-    }
+  const pump = useCallback(function pump() {
+    if (running.current || !queue.current.length) return;
+    const ids = queue.current.splice(0, BATCH);
+    running.current = true;
+    setMany(ids, 'working');
+    api.drawPictures(palaceId, ids)
+      .then((spots) => {
+        spots.forEach((spot) => onSpotRef.current(spot));
+        setMany(ids, null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLastError(err.message);
+        setMany(ids, 'error');
+      })
+      .finally(() => {
+        running.current = false;
+        pump();
+      });
   }, [palaceId]);
 
   const enqueue = useCallback((ids) => {
@@ -48,7 +50,7 @@ export function useImageQueue(palaceId, onSpotUpdated) {
     for (const id of ids) {
       if (!queue.current.includes(id)) {
         queue.current.push(id);
-        setOne(id, 'queued');
+        setMany([id], 'queued');
       }
     }
     pump();

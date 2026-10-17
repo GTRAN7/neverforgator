@@ -4,12 +4,14 @@ With no key set, MOCK mode returns simple placeholder results so the app still w
 Every result is cached (cache.py), so the same notes, photo or scene never cost twice."""
 import json
 import logging
+import random
 import re
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 from app import config
-from app.studio.cache import cached_image, cached_json
+from app.studio.cache import cached_image, cached_json, lookup_image, lookup_json, store_image, store_json
 from app.studio.placeholder import placeholder_image
 
 log = logging.getLogger("loci.gemini")
@@ -31,11 +33,13 @@ if not MOCK:
 # pick the newest "flash-lite" text model (it has by far the biggest free quota; the bigger "flash"
 # models allow only ~20 requests a day, which one palace fill can nearly use up) and the newest
 # "flash-image" model.
-models = {"text": config.GEMINI_TEXT_MODEL, "image": config.GEMINI_IMAGE_MODEL}
+models = {"text": config.GEMINI_TEXT_MODEL, "image": config.GEMINI_IMAGE_MODEL, "backup": None}
 
 
 def choose_models():
-    if MOCK or (models["text"] and models["image"]):
+    """Also picks a backup text model: when the main one is overloaded ("high demand" 503s, which
+    happen a lot), calls go to the backup instead of failing."""
+    if MOCK:
         return models
     try:
         names = [m.name.removeprefix("models/") for m in _client.models.list()]
@@ -51,6 +55,9 @@ def choose_models():
     models["text"] = (models["text"] or newest(r"gemini-[\d.]+-flash-lite") or newest(r"gemini-[\d.]+-flash")
                       or "gemini-2.5-flash-lite")
     models["image"] = models["image"] or newest(r"gemini-[\d.]+-flash-image") or "gemini-2.5-flash-image"
+    lites = sorted((n for n in names if re.fullmatch(r"gemini-[\d.]+-flash-lite", n) and n != models["text"]),
+                   key=lambda n: [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", n)])
+    models["backup"] = lites[-1] if lites else None
     return models
 
 
@@ -66,18 +73,38 @@ def _readable(err) -> GeminiError:
     return GeminiError(f"Gemini: {message}")
 
 
-def _with_retry(call):
-    """Retry on rate limits / "high demand" / hung calls (after 2 s, then 5 s), because a single
-    503 shouldn't kill the demo."""
-    for wait in (2, 5, None):
+def _busy(err) -> bool:
+    """Gemini overloaded, rate-limited or too slow: worth retrying (or trying the backup model)."""
+    code = getattr(err, "code", None)
+    timed_out = "timeout" in type(err).__name__.lower() or "timed out" in str(err).lower() or "deadline" in str(err).lower()
+    return timed_out or code in (429, 500, 503, 504)
+
+
+# At most this many Gemini calls at once, from the whole server. Bursts (a fill plus a few pictures
+# plus someone's quiz) are what trigger "high demand" 503s and per-minute limits; queuing them a
+# little is much better than failing.
+_gate = threading.BoundedSemaphore(3)
+_busy_until: dict[str, float] = {}  # model -> when to try it again after it was overloaded
+
+
+def _with_retry(call, model: str | None = None, backup: str | None = None):
+    """call(model) -> response. When Gemini is busy, switches to the backup model (and stays on it for
+    a minute), retrying after ~2 s and ~5 s; the jitter keeps parallel retries from landing at once.
+    Without a backup it retries the same model. A "high demand" spell shouldn't stop the demo."""
+    attempts = [(model, 1), (backup, 2), (backup, 5), (model, None)] if backup else [(model, 2), (model, 5), (model, 10), (model, None)]
+    if backup and _busy_until.get(model, 0) > time.monotonic():
+        attempts = [(backup, 2), (backup, 5), (model, None)]  # it was just busy: go straight to the backup
+    for which, wait in attempts:
         try:
-            return call()
+            with _gate:
+                return call(which)
         except Exception as err:
-            code = getattr(err, "code", None)
-            timed_out = "timeout" in type(err).__name__.lower() or "timed out" in str(err).lower()
-            if wait is None or not (timed_out or code in (429, 500, 503, 504)):
+            if wait is None or not _busy(err):
                 raise _readable(err) from err
-            time.sleep(wait)
+            if backup and which == model:
+                _busy_until[model] = time.monotonic() + 60  # skip it for a minute
+                log.info("Gemini %s is busy (%s), using %s for a minute", model, getattr(err, "code", err), backup)
+            time.sleep(wait + random.random())
 
 
 def _image_part(data: bytes, mime_type: str = "image/jpeg"):
@@ -87,11 +114,11 @@ def _image_part(data: bytes, mime_type: str = "image/jpeg"):
 def _generate_json(prompt: str, schema: dict, image: bytes | None = None, mime_type: str = "image/jpeg"):
     """Ask for JSON that matches `schema`; Gemini guarantees the shape."""
     contents = [_image_part(image, mime_type), prompt] if image else prompt
-    res = _with_retry(lambda: _client.models.generate_content(
-        model=models["text"],
+    res = _with_retry(lambda model: _client.models.generate_content(
+        model=model,
         contents=contents,
         config=types.GenerateContentConfig(response_mime_type="application/json", response_json_schema=schema),
-    ))
+    ), models["text"], models["backup"])
     return json.loads(res.text)
 
 
@@ -337,6 +364,50 @@ key words impossible to miss. Technique for this kind of idea ({kind}): {TECHNIQ
     return cached_json(["weirder-v5", models["text"], fact, kind, label, scene, level, flavor], produce)
 
 
+def weirder_scenes(stops: list[dict], flavor: str = "wild") -> list[dict]:
+    """Weirder scenes for several missed stops in one call (end of a quiz). Each stop:
+    {fact, label, scene, level, kind}. Results already cached are reused."""
+    keys = [["weirder-v5", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
+    results = [None] * len(stops)
+    todo = []
+    for i, key in enumerate(keys):
+        cached = lookup_json(key)
+        if cached:
+            results[i] = cached
+        else:
+            todo.append(i)
+    if todo and MOCK:
+        for i in todo:
+            results[i] = weirder_scene(stops[i]["fact"], stops[i]["label"], stops[i]["scene"], stops[i]["level"])
+        todo = []
+    if todo:
+        lines = "\n".join(
+            f'{n + 1}. Fact: {stops[i]["fact"]} | Location: {stops[i]["label"]} | Weirdness level {stops[i]["level"]} of 5 '
+            f'| Kind: {stops[i]["kind"]} | The scene that did not stick: {stops[i]["scene"]}' for n, i in enumerate(todo))
+        kinds = list(dict.fromkeys(stops[i]["kind"] for i in todo))
+        techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
+        result = _generate_json(
+            f"""A student forgot these facts during a memory-palace quiz:
+{lines}
+
+For each, write a NEW scene at the same location that is far weirder and more vivid (at its weirdness level):
+more absurd, bigger, louder, more emotional, more personal. Use a DIFFERENT hook than before and make the
+key words impossible to miss.
+Techniques by kind of idea:
+{techniques}
+
+{scene_rules(flavor)}""",
+            _obj(items={"type": "array", "items": _obj(number={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
+        )
+        by_number = {item["number"]: item for item in result["items"]}
+        for n, i in enumerate(todo):
+            item = by_number.get(n + 1)
+            if item:
+                results[i] = {"scene": item["scene"], "hook": item["hook"], "imagePrompt": item["imagePrompt"]}
+                store_json(keys[i], results[i])
+    return results
+
+
 # ---- 4. A picture per stop (cached) ----
 
 PICTURE_STYLES = {
@@ -354,19 +425,19 @@ DOODLE_LOOK = {
 }
 
 
-def generate_image(prompt: str, crop: bytes | None, style: str = "storybook") -> str:
-    def placeholder():
-        return cached_image(["placeholder-v2", style, prompt], lambda: placeholder_image(prompt, style))
+def _placeholder(prompt: str, style: str) -> str:
+    return cached_image(["placeholder-v2", style, prompt], lambda: placeholder_image(prompt, style))
+
+
+def generate_image(prompt: str, crop: bytes | None, style: str = "storybook"):
+    """(file name, final). final=False means Gemini was busy and this is a stand-in sketch: show it,
+    but don't save it on the stop, so the real picture is tried again next time."""
     if PICTURES == "placeholder":
-        return placeholder()
+        return _placeholder(prompt, style), True
     if PICTURES == "doodle":
-        # Doodles cost one cheap text call. If Gemini is busy or out of quota, use the sketch card.
-        try:
-            return _generate_doodle(prompt, style)
-        except Exception as err:
-            log.info("Doodle failed, using a sketch: %s", err)
-            return placeholder()
-    return _generate_real_image(prompt, crop, style)
+        [name] = generate_doodles([prompt], style)
+        return (name, True) if name else (_placeholder(prompt, style), False)
+    return _generate_real_image(prompt, crop, style), True
 
 
 def _generate_real_image(prompt, crop, style):
@@ -379,8 +450,8 @@ def _generate_real_image(prompt, crop, style):
         text = (f"This photo shows a spot in my room. Redraw it as {look}, with this scene happening right\n"
                 f"there and the room still recognizable. Vivid and funny, no text. Scene: {prompt}"
                 if crop else f"{look}, vivid and funny, no text. Scene: {prompt}")
-        res = _with_retry(lambda: _client.models.generate_content(
-            model=models["image"], contents=[_image_part(crop), text] if crop else text))
+        res = _with_retry(lambda model: _client.models.generate_content(
+            model=model, contents=[_image_part(crop), text] if crop else text), models["image"])
         parts = res.candidates[0].content.parts if res.candidates else []
         image = next((p.inline_data for p in parts if p.inline_data), None)
         if not image:
@@ -390,24 +461,46 @@ def _generate_real_image(prompt, crop, style):
     return cached_image(key, produce)
 
 
-def _generate_doodle(prompt, style):
-    def produce():
-        res = _with_retry(lambda: _client.models.generate_content(
-            model=models["text"],
-            contents=f"""Draw this scene as a playful cartoon doodle in SVG.
-Scene: {prompt}
+DOODLE_BATCH = 4  # doodles per Gemini call
 
-Rules: one <svg> element with xmlns="http://www.w3.org/2000/svg" and viewBox="0 0 768 468".
+
+def _doodle_key(prompt, style):
+    return ["doodle-v1", models["text"], style, prompt]
+
+
+def generate_doodles(prompts: list[str], style: str) -> list[str | None]:
+    """Little SVG drawings of these scenes: cached ones from disk, the rest drawn DOODLE_BATCH per
+    Gemini call (one request instead of one per picture). None where a drawing failed."""
+    names = [lookup_image(_doodle_key(p, style)) for p in prompts]
+    missing = [i for i, name in enumerate(names) if not name]
+    for start in range(0, len(missing), DOODLE_BATCH):
+        batch = missing[start:start + DOODLE_BATCH]
+        try:
+            drawings = _draw_doodles([prompts[i] for i in batch], style)
+        except Exception as err:
+            log.info("Doodles failed, showing sketches for now: %s", err)
+            continue
+        for j, i in enumerate(batch):
+            svg = clean_svg(drawings.get(j + 1, ""))
+            if svg:
+                names[i] = store_image(_doodle_key(prompts[i], style), svg.encode(), "svg")
+    return names
+
+
+def _draw_doodles(prompts, style) -> dict:
+    scenes = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(prompts))
+    result = _generate_json(
+        f"""Draw each of these scenes as a playful cartoon doodle in SVG.
+{scenes}
+
+Rules for every drawing: one <svg> element with xmlns="http://www.w3.org/2000/svg" and viewBox="0 0 768 468".
 A simple background (floor + wall or sky), then 2-4 big, recognizable characters or objects doing the action.
 Thick dark outlines (#3B2A1E, stroke-width 5), {DOODLE_LOOK.get(style, DOODLE_LOOK['storybook'])}, expressive faces.
-Only basic shapes and paths. No text, no <script>, no <image>, no external links, no animation. Under 8 KB.
-Answer with the SVG only.""",
-        ))
-        svg = clean_svg(res.text or "")
-        if not svg:
-            raise GeminiError("No drawing came back")
-        return svg.encode(), "svg"
-    return cached_image(["doodle-v1", models["text"], style, prompt], produce)
+Only basic shapes and paths. No text, no <script>, no <image>, no external links, no animation. Under 6 KB each.
+Return one drawing per scene, numbered like the scenes.""",
+        _obj(drawings={"type": "array", "items": _obj(scene={"type": "integer"}, svg=STRING)}),
+    )
+    return {d["scene"]: d["svg"] for d in result["drawings"]}
 
 
 def clean_svg(text: str):

@@ -83,10 +83,14 @@ export const api = {
 
   fill: (id, notes, style, flavor) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style, flavor })),
   generateImage: (id, spotId) => request(`${spotUrl(id, spotId)}/image`, { method: 'POST' }),
+  // Pictures for a few stops at once (drawn a few per Gemini call).
+  drawPictures: (id, ids) => request(`${palaceUrl(id)}/pictures`, send('POST', { ids })),
   // Quiz answers are checked in the browser; these just keep score.
   recordResult: (id, spotId, correct) => request(`${spotUrl(id, spotId)}/result`, send('POST', { correct })),
   addReview: (id, score, total) => request(`${palaceUrl(id)}/reviews`, send('POST', { score, total })),
   makeWeirder: (id, spotId) => request(`${spotUrl(id, spotId)}/weirder`, { method: 'POST' }),
+  // End of a quiz: weirder scenes for every missed stop, in one Gemini call.
+  makeWeirderMany: (id, ids) => request(`${palaceUrl(id)}/weirder`, send('POST', { ids })),
 };
 
 export const fileUrl = (palaceId, file) => `/files/${palaceId}/${file}`;

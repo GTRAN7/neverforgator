@@ -118,3 +118,14 @@ def test_delete_palace(client, session_factory):
 def test_describe_is_public(client):
     r = client.post("/api/describe", json={"kind": "term", "text": "allele"})
     assert r.status_code == 200 and r.json()["description"]
+
+
+def test_pictures_and_weirder_in_batches(client):
+    palace = new_palace(client)
+    filled = client.post(f"/api/palaces/{palace['id']}/fill", json={"notes": "Mitochondria make ATP. The nucleus stores DNA."},
+                         headers=as_user("alice")).json()
+    ids = [s["id"] for s in filled["spots"]]
+    drawn = client.post(f"/api/palaces/{palace['id']}/pictures", json={"ids": ids}, headers=as_user("alice")).json()
+    assert len(drawn) == 2 and all(s["image"] for s in drawn)
+    rewritten = client.post(f"/api/palaces/{palace['id']}/weirder", json={"ids": ids}, headers=as_user("alice")).json()
+    assert all(s["weirdness"] == 1 and s["image"] is None for s in rewritten)

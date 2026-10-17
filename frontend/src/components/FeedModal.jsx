@@ -32,7 +32,7 @@ const CONFETTI_COLORS = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
 // past a friend, so you only pay for the ones you actually study.
 // onDone: go wander. onQuiz: go to the quiz. onReady(palace): the fill finished (the editor tells
 // you even if you closed this window while it was working).
-export default function FeedModal({ palace, setPalace, onClose, onDone, onQuiz, onReady }) {
+export default function FeedModal({ palace, setPalace, images, onClose, onDone, onQuiz, onReady }) {
   const [notes, setNotes] = useState(palace.notes ?? '');
   const [style, setStyle] = useState(() => palace.style ?? readPrefs().style);
   const [writing, setWriting] = useState(false); // waiting for Gemini to write the scenes
@@ -71,6 +71,8 @@ export default function FeedModal({ palace, setPalace, onClose, onDone, onQuiz, 
       setPalace(updated);
       setFed(true);
       onReady?.(updated);
+      // Start drawing the first friends' pictures now, so they're ready when you start walking.
+      images?.enqueue(updated.spots.filter((s) => s.imagePrompt && !s.image).slice(0, 4).map((s) => s.id));
     } catch (e) {
       setError(e.message);
     } finally {

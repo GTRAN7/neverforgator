@@ -95,14 +95,17 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     ask(0, list);
   }
 
-  async function reimagine(spot) {
-    setRewriting((r) => ({ ...r, [spot.id]: true }));
+  // End of the quiz: every friend that fell asleep gets a weirder scene, all in one Gemini call.
+  // Its new picture is drawn when you wander past.
+  async function reimagineAll(spots) {
+    if (!spots.length) return;
+    setRewriting(Object.fromEntries(spots.map((s) => [s.id, true])));
     try {
-      updateSpot(await api.makeWeirder(palace.id, spot.id)); // its new picture is drawn when you wander past
+      (await api.makeWeirderMany(palace.id, spots.map((s) => s.id))).forEach(updateSpot);
     } catch (err) {
       console.error('Re-imagining failed:', err);
     } finally {
-      setRewriting((r) => ({ ...r, [spot.id]: false }));
+      setRewriting({});
     }
   }
 
@@ -137,8 +140,6 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     // A shared example can be quizzed, but not changed: no scores, no rewritten scenes.
     if (!palace.readOnly) {
       api.recordResult(palace.id, spot.id, correct).catch((e) => console.error('Saving result failed:', e));
-      const missedBefore = Object.entries(answers).some(([i, ok]) => Number(i) < q && !ok && path[questions[i].at].spot.id === spot.id);
-      if (!correct && !missedBefore) reimagine(spot); // no await: it runs while you keep going
     }
     if (q < questions.length - 1) {
       ask(q + 1);
@@ -149,6 +150,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     const happy = path.filter(({ spot: s }) => results?.[s.id] !== false).length;
     if (!palace.readOnly) {
       api.addReview(palace.id, happy, path.length).then((r) => setNextReviewAt(r.nextReviewAt)).catch(() => {});
+      reimagineAll(path.map(({ spot: s }) => s).filter((s) => results?.[s.id] === false)); // no await: shows on the results screen
     }
   }
 
