@@ -59,3 +59,18 @@ CORS_ORIGINS = [
     for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
+
+# ---- NeverForgator studio (Gemini + rooms) ----
+
+# Gemini. Only the backend reads this key; it never reaches the browser.
+# No key = "mock AI" mode: placeholder facts and scenes, so the app still runs offline.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+# Optional: pin models instead of picking the newest "flash" ones.
+GEMINI_TEXT_MODEL = os.getenv("GEMINI_TEXT_MODEL", "").strip()
+GEMINI_IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "").strip()
+# How stops get pictures: doodle (Gemini draws a small SVG, free tier OK), gemini (real
+# images, needs billing) or placeholder (free sketch cards, no API call).
+PICTURES = os.getenv("PICTURES", "doodle").strip() or "doodle"
+
+# Where uploaded rooms, stop crops and generated pictures live (gitignored).
+DATA_DIR = os.path.abspath(os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")))

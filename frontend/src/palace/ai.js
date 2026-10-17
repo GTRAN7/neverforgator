@@ -1,5 +1,6 @@
 // AI helpers. Gemini runs on the backend only (the key never reaches the browser),
-// so this calls the API through Vite's /api proxy (see vite.config.js).
+// so this calls the FastAPI backend through Vite's /api proxy (see vite.config.js and
+// POST /api/describe in backend/app/studio/router.py).
 //
 // Contract for the backend route:
 //   POST /api/describe  { kind: 'subject' | 'term', text, subject?, place? }
@@ -16,12 +17,12 @@ export async function describe({ kind, text, subject = '', place = '' }) {
       body: JSON.stringify({ kind, text, subject, place }),
     })
   } catch {
-    throw new Error("Couldn't reach the AI service. Is the backend running on port 3001?")
+    throw new Error("Couldn't reach the AI service. Is the backend running (npm run dev, port 8000)?")
   }
   const body = await res.json().catch(() => ({}))
-  if (res.status === 404 || (res.status >= 500 && !body.error)) {
-    throw new Error('AI descriptions need the backend: start it on port 3001 with the /api/describe route.')
+  if (res.status === 404 || (res.status >= 500 && !body.error && !body.detail)) {
+    throw new Error('AI descriptions need the backend: start it with npm run dev (FastAPI, port 8000).')
   }
-  if (!res.ok) throw new Error(body.error || `AI request failed (${res.status})`)
+  if (!res.ok) throw new Error(body.error || body.detail || `AI request failed (${res.status})`)
   return body.description
 }

@@ -23,9 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Auth0 credentials
-.env.local
-
+# Auth0 MCP state (.env.local is covered by *.local, the writes log by *.log)
 .auth0-mcp-state.json
-
-.auth0-mcp-writes.log

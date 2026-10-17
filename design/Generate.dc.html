@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mind Palace, fill from notes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@400;600;800&amp;family=Caveat:wght@600&amp;display=swap">
+<style>
+body{margin:0;background:#FBF4E6}
+a{color:#B04A2E}a:hover{color:#7E3320}
+@keyframes wobble{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="height: 900px; position: relative; overflow: hidden; background: #FBF4E6; color: #3B2A1E; font-family: 'Nunito', sans-serif">
+<sc-for list="{{confetti}}" as="k" hint-placeholder-count="14">
+<div style="{{k.style}}"></div>
+</sc-for>
+
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<div role="dialog" aria-label="Fill your palace from notes" style="width: 100%; max-width: 960px; display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<div style="flex: 999 1 440px; min-width: 0; background: #FFFDF7; border: 2px solid #3B2A1E; border-radius: 28px; padding: 30px; display: flex; flex-direction: column; gap: 14px; transform: rotate(-0.6deg); box-shadow: 0 8px 0 #3B2A1E">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+<div style="display: flex; flex-direction: column">
+<h2 style="margin: 0; font-family: 'Fredoka', sans-serif; font-size: 32px; font-weight: 700">Feed your palace</h2>
+<span style="font-family: 'Caveat', cursive; font-size: 24px; color: #7A6450">it turns notes into little friends</span>
+</div>
+<button aria-label="Close" style="width: 44px; height: 44px; flex-shrink: 0; border: 2px solid #3B2A1E; border-radius: 50%; background: #FFFDF7; color: #3B2A1E; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</button>
+</div>
+<label for="notes" style="font: 600 15px 'Fredoka', sans-serif">Paste what you need to remember</label>
+<textarea id="notes" style="height: 290px; resize: none; padding: 16px 18px; border-radius: 18px; border: 2px dashed #D2BE9C; background: #FBF4E6; color: #3B2A1E; font: 400 15px/1.7 'Nunito', sans-serif">Chapter 4: Cell organelles
+The nucleus holds the cell's DNA and controls activity.
+The cell membrane controls what enters and leaves.
+Mitochondria produce ATP, the main energy source.
+Ribosomes build proteins from amino acids.
+The Golgi apparatus packages and ships proteins.
+Vacuoles store water and nutrients.
+The ER is a network that transports materials.
+Lysosomes break down waste with enzymes.</textarea>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<span style="font: 600 14px 'Fredoka', sans-serif; padding: 8px 14px; border-radius: 999px; background: #FDE9A9">8 empty spots waiting</span>
+<label style="display: flex; align-items: center; gap: 8px; font: 600 14px 'Fredoka', sans-serif; padding: 6px 14px; border-radius: 999px; background: #E3EEDF">
+<input type="checkbox" checked="checked" style="width: 20px; height: 20px; accent-color: #4E7A5C">
+Draw pictures (made once, saved)
+</label>
+</div>
+<label for="artstyle" style="font: 600 15px 'Fredoka', sans-serif">Picture style</label>
+<div id="artstyle" style="display: flex; flex-wrap: wrap; gap: 8px">
+<button style="height: 44px; padding: 0 16px; border: 2px solid #3B2A1E; border-radius: 999px; background: #3B2A1E; color: #FFFDF7; font: 600 14px 'Fredoka', sans-serif">Storybook</button>
+<button style="height: 44px; padding: 0 16px; border: 2px solid #D2BE9C; border-radius: 999px; background: #FFFDF7; color: #3B2A1E; font: 600 14px 'Fredoka', sans-serif">Claymation</button>
+<button style="height: 44px; padding: 0 16px; border: 2px solid #D2BE9C; border-radius: 999px; background: #FFFDF7; color: #3B2A1E; font: 600 14px 'Fredoka', sans-serif">Sticker</button>
+<button style="height: 44px; padding: 0 16px; border: 2px solid #D2BE9C; border-radius: 999px; background: #FFFDF7; color: #3B2A1E; font: 600 14px 'Fredoka', sans-serif">Pixel art</button>
+</div>
+<button style="margin-top: 6px; height: 56px; border: 2px solid #3B2A1E; border-radius: 999px; background: {{accent}}; color: #3B2A1E; font: 700 18px 'Fredoka', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 5px 0 #3B2A1E">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"></path></svg>
+Hatch 8 memories
+</button>
+</div>
+
+<div style="flex: 1 1 300px; background: #E3EEDF; border: 2px solid #3B2A1E; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 6px; transform: rotate(0.8deg); box-shadow: 0 8px 0 #3B2A1E">
+<span style="font-family: 'Fredoka', sans-serif; font-size: 22px; font-weight: 700">Hatching...</span>
+<span style="font-family: 'Caveat', cursive; font-size: 21px; color: #4A5E4F; margin-bottom: 8px">each one pops into your room when ready</span>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 12px; padding: 6px 0">
+<div style="{{r.icon}}">
+<sc-if value="{{r.awake}}" hint-placeholder-val="{{ true }}">
+<span style="width: 4px; height: 6px; border-radius: 50%; background: #3B2A1E"></span>
+<span style="width: 4px; height: 6px; border-radius: 50%; background: #3B2A1E"></span>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; min-width: 0; flex: 1">
+<span style="font: 600 14px 'Fredoka', sans-serif">{{r.n}} · {{r.place}}</span>
+<span style="font-size: 13px; color: #4A5E4F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.detail}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F08A6C","options":["#F08A6C","#7FA98B","#FFD86B"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#F08A6C';
+    var colors = ['#FFB38A', '#8CCBFF', '#FFD86B', '#8FE3C6', '#C7B5FF', '#FF9EC4', '#FFB38A', '#8CCBFF'];
+    var data = [
+      ['Door', 'A giant librarian guarding the door', 'done'],
+      ['Window', 'A bouncer checking IDs at the glass', 'done'],
+      ['Light switch', 'Mitochondria in a hard hat', 'done'],
+      ['Desk', 'Ribosomes 3D-printing noodles', 'hatching'],
+      ['Shelf', 'Golgi gift-wrapping textbooks', 'hatching'],
+      ['Mini fridge', 'Still an egg', 'egg'],
+      ['Bed', 'Still an egg', 'egg'],
+      ['Rug', 'Still an egg', 'egg']
+    ];
+    var rows = data.map(function (d, i) {
+      var s = d[2];
+      var base = 'flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 6px; border: 2px solid #3B2A1E; box-sizing: border-box; ';
+      var icon = s === 'done'
+        ? base + 'width: 34px; height: 32px; border-radius: 50% 50% 46% 46%; background: ' + colors[i] + ';'
+        : s === 'hatching'
+        ? base + 'width: 28px; height: 34px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #FFFDF7; border-style: dashed; animation: wobble 0.9s ease-in-out infinite;'
+        : base + 'width: 26px; height: 32px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #FFFDF7; border-color: #B7C9B5;';
+      return { n: i + 1, place: d[0], detail: s === 'hatching' ? 'Hatching: ' + d[1] : d[1], awake: s === 'done', icon: icon };
+    });
+    var cc = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
+    var pts = [[6, 10], [18, 84], [30, 5], [52, 93], [70, 6], [88, 16], [94, 70], [80, 90], [4, 58], [44, 3], [96, 42], [12, 38], [62, 95], [26, 92]];
+    var confetti = pts.map(function (p, i) {
+      var round = i % 2 === 0;
+      return { style: 'position: absolute; left: ' + p[0] + '%; top: ' + p[1] + '%; width: ' + (round ? 12 : 8) + 'px; height: ' + (round ? 12 : 18) + 'px; border-radius: ' + (round ? '50%' : '3px') + '; background: ' + cc[i % 5] + '; transform: rotate(' + (i * 37) + 'deg);' };
+    });
+    return { accent: accent, rows: rows, confetti: confetti };
+  }
+}
+</script>
+</body>
+</html>

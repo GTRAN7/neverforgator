@@ -11,8 +11,15 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.28.2",
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@sparkjsdev/spark": "^2.3.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

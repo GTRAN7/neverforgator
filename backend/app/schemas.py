@@ -93,9 +93,10 @@ class StopOut(BaseModel):
 
     id: int
     stop_order: int
-    concept: str
-    association: str
-    location: LocationOut
+    # Null for studio palaces (stops in rooms) and for stops that are still empty eggs.
+    concept: str | None
+    association: str | None
+    location: LocationOut | None
     questions: list[QuestionOut]
 
 

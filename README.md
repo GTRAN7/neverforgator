@@ -19,6 +19,18 @@ Kira Luna Nichtawitz (UX Designer), Natasha Antoniuk (Frontend developer), Eric 
 6. **Quiz.** Questions go both ways: "What's at Century Tower?" and "Where did you put photosynthesis?"
 7. **Dashboard.** Saved palaces can be reopened, reviewed or quizzed again.
 
+### Two modes (for now)
+
+The app currently has two modes that share the Auth0 login. We'll merge them into one later.
+
+- **3D studio** (default, `frontend/src/`, `backend/app/studio/`): palaces inside real places. The
+  built-in Reitz Union panoramas, or your own room / 3D scan.
+  Gemini cuts your notes into ideas, finds a stop for each in the photos, and writes a vivid scene per
+  stop. Also: walk-through, two-way quiz, spaced review, note import from photos, PDFs and voice, and a
+  1-minute onboarding tour. Details: [docs/how-it-works.md](docs/how-it-works.md).
+- **Campus mode** (`frontend/src/palace/`, the "Campus mode" button): the UF campus walk with photo
+  signs, pins, dashboard, night mode and accessibility settings. Palaces are saved in the browser for now.
+
 ### MVP vs. stretch goals
 
 | MVP (hackathon demo) | Stretch goals |
@@ -173,7 +185,7 @@ Someone else's palace always returns **404**, so the API never confirms it exist
 - [x] Frontend bridge: save palaces to the account, open them from the dashboard, quiz scores saved (see "Frontend ↔ backend" below)
 - [ ] Shared Neon database
 - [ ] Wireframes
-- [ ] Gemini integration
+- [x] Gemini integration (`backend/app/studio/`: notes -> ideas -> stops -> scenes, imports, pictures, limits)
 - [ ] Map, walkthrough, quiz, dashboard
 - [ ] Hosting decision, deployment + domain
 
@@ -202,7 +214,8 @@ swamphacks/
         ├── auth.py             # Checks Auth0 tokens, finds or creates the user
         ├── routers/            # The endpoints: users.py, locations.py, palaces.py
         ├── data/locations.json # The campus route
-        └── seed.py             # Loads locations.json into the database
+        ├── seed.py             # Loads locations.json into the database
+        └── studio/             # 3D studio API (/api/...): Gemini, fill, rooms, limits, shared palaces
 ```
 
 ## Setting up on a new device
@@ -236,6 +249,9 @@ cd swamphacks
    VITE_API_URL=http://localhost:8000
    ```
 
+   The 3D studio calls the backend through Vite's proxy (`/api`, `/files` and `/cache` go to port 8000),
+   so it doesn't need `VITE_API_URL`. From the repo root, `npm run setup` then `npm run dev` starts both.
+
    None of these are secrets. A browser app has to ship them to every visitor anyway. You can also find the Auth0 values in the Auth0 dashboard under **Applications → SwampHacks Project → Settings**.
 
 3. Start the dev server:
@@ -260,6 +276,10 @@ alembic upgrade head            # builds the tables
 python -m app.seed              # loads the campus locations
 fastapi dev main.py             # starts the server with auto-reload
 ```
+
+For the 3D studio, also put `GEMINI_API_KEY` in `backend/.env` (without it the studio runs in "mock AI"
+mode). The built-in Reitz route and the mitosis example are created automatically on startup, from
+`backend/app/data/reitz/` (see [docs/how-it-works.md](docs/how-it-works.md)).
 
 On Windows (PowerShell):
 
