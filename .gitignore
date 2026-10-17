@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+# raw panoramas and 3D scans: too big for GitHub (scans are 80-95 MB), share them separately
+maps/
+
+# Python bytecode
+__pycache__/
+*.py[cod]

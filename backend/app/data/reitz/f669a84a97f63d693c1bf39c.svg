@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 468">
+  <!-- Background -->
+  <rect width="768" height="350" fill="#87CEEB"/>
+  <rect y="350" width="768" height="118" fill="#7CFC00"/>
+
+  <!-- Sticker Style Layer: White outlines -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 400 l50 -150"/> <!-- Club -->
+    <circle cx="150" cy="250" r="15"/> <!-- Ball -->
+    <path d="M350 300 q50 -50 100 0 t100 0"/> <!-- Ant -->
+    <circle cx="600" cy="250" r="60"/> <!-- Lens -->
+  </g>
+
+  <!-- Objects -->
+  <!-- Golfer Arm/Club -->
+  <path d="M50 450 l50 -200 l20 -5" stroke="#3B2A1E" stroke-width="5" fill="#FFD700"/>
+  
+  <!-- Gold Ball -->
+  <circle cx="150" cy="250" r="15" fill="#FFD700" stroke="#3B2A1E" stroke-width="5"/>
+
+  <!-- Ant -->
+  <g fill="#A52A2A" stroke="#3B2A1E" stroke-width="5">
+    <ellipse cx="350" cy="280" rx="20" ry="15"/>
+    <ellipse cx="380" cy="280" rx="20" ry="15"/>
+    <path d="M365 260 l-10 -20 M365 260 l10 -20" fill="none" stroke-width="3"/>
+  </g>
+
+  <!-- Camera Lens -->
+  <circle cx="600" cy="250" r="60" fill="#333" stroke="#3B2A1E" stroke-width="5"/>
+  <circle cx="600" cy="250" r="40" fill="#000" stroke="#3B2A1E" stroke-width="5"/>
+  <circle cx="615" cy="235" r="10" fill="#FFF"/>
+
+  <!-- Blue Splash -->
+  <path d="M540 250 q-20 -50 20 -80 t50 30 t-20 60" fill="#00BFFF" stroke="#3B2A1E" stroke-width="5"/>
+  <circle cx="560" cy="180" r="10" fill="#00BFFF" stroke="#3B2A1E" stroke-width="3"/>
+  <circle cx="590" cy="160" r="8" fill="#00BFFF" stroke="#3B2A1E" stroke-width="3"/>
+
+</svg>

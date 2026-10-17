@@ -1,0 +1,14 @@
+{
+  "name": "swamphacks",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npm --prefix frontend install && npm run setup:backend",
+    "setup:backend": "cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/alembic upgrade head && .venv/bin/python -m app.seed",
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"cd backend && .venv/bin/fastapi dev main.py --port 8000\" \"npm --prefix frontend run dev\"",
+    "test": "cd backend && .venv/bin/pytest -q",
+    "build": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

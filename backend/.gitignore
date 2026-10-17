@@ -4,3 +4,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+
+# Uploaded rooms, generated pictures, AI cache, usage counts
+/data/
+node_modules/
+.env.*
+!.env.example
+test_data/
