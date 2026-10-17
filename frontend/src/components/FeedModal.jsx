@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import NotesImport from './NotesImport.jsx';
+import { readPrefs } from '../lib/prefs.js';
 import { placeName } from '../lib/path.js';
 
 const NOTES_CAP = 20_000; // characters, ≈ 5,000 tokens (the server enforces the same cap)
@@ -31,7 +32,7 @@ const CONFETTI_COLORS = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
 // past a friend, so you only pay for the ones you actually study.
 export default function FeedModal({ palace, setPalace, onClose, onDone }) {
   const [notes, setNotes] = useState(palace.notes ?? '');
-  const [style, setStyle] = useState(palace.style ?? 'storybook');
+  const [style, setStyle] = useState(() => palace.style ?? readPrefs().style);
   const [writing, setWriting] = useState(false); // waiting for Gemini to write the scenes
   const [fed, setFed] = useState(false); // scenes written during this visit
   const [error, setError] = useState('');
@@ -64,7 +65,7 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
     setError('');
     setWriting(true);
     try {
-      setPalace(await api.fill(palace.id, notes, style));
+      setPalace(await api.fill(palace.id, notes, style, readPrefs().flavor));
       setFed(true);
     } catch (e) {
       setError(e.message);
@@ -92,10 +93,10 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
         <div className="feed-card">
           <div className="feed-head">
             <div>
-              <h2 className="card-title huge">Feed your palace</h2>
+              <h2 className="card-title big">Feed your palace</h2>
               <span className="scrawl subtitle">it turns notes into little friends</span>
             </div>
-            <button className="round-btn" aria-label="Close" onClick={onClose}>
+            <button className="round-btn small" aria-label="Close" onClick={onClose}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           </div>
@@ -106,22 +107,18 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
           </div>
           <textarea id="notes" className="notes" value={notes} maxLength={NOTES_CAP} onChange={(e) => setNotes(e.target.value)}
             placeholder="Paste your study notes here, or use one of the buttons below to snap or talk them in…" />
-          <span className={`char-count ${notes.length > NOTES_CAP * 0.9 ? 'near' : ''}`}>
-            {notes.length.toLocaleString()} / {NOTES_CAP.toLocaleString()} characters
-          </span>
-          <NotesImport onText={addText} scansLeft={left('import')} onUsed={refreshUsage} />
+          <NotesImport onText={addText} scansLeft={left('import')} onUsed={refreshUsage}
+            counter={
+              <span className={`char-count ${notes.length > NOTES_CAP * 0.9 ? 'near' : ''}`}>
+                {notes.length.toLocaleString()} / {NOTES_CAP.toLocaleString()}
+              </span>
+            } />
 
-          <span className="hint-text">
-            Gemini cuts your notes into ideas, one per stop (each about one picture’s worth), and finds
-            as many stops as it needs in your panoramas. {spots.some((s) => !s.auto) && 'Eggs you planted go first. '}
-            Pictures are drawn when you first visit each friend.
-          </span>
-
-          <span className="field-label">Picture style</span>
-          <div className="style-row" role="radiogroup" aria-label="Picture style">
+          <div className="style-line" role="radiogroup" aria-label="Picture style">
+            <span className="field-label">Pictures</span>
             {STYLES.map((s) => (
               <button key={s.id} role="radio" aria-checked={style === s.id}
-                className={`style-btn ${style === s.id ? 'on' : ''}`} onClick={() => setStyle(s.id)}>
+                className={`style-btn small ${style === s.id ? 'on' : ''}`} onClick={() => setStyle(s.id)}>
                 {s.label}
               </button>
             ))}
@@ -137,7 +134,7 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
             </button>
           )}
           {left('fill') !== null && !finished && (
-            <span className="hint-text center-text">{left('fill')} of {usage.fill.limit} palace fills left today</span>
+            <span className="hint-text center-text">{left('fill')} of {usage.fill.limit} fills left today · takes about half a minute</span>
           )}
         </div>
 
@@ -146,6 +143,13 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
             {writing ? 'Hatching...' : finished ? 'All hatched!' : 'Your eggs'}
           </span>
           <span className="scrawl subtitle">each one pops into your room when ready</span>
+          {!fed && !writing && (
+            <div className="how-fill">
+              <p>Your notes get cut into small ideas, <strong>one per stop</strong>. New stops are found in your
+                panoramas as needed{spots.some((s) => !s.auto) ? '; eggs you planted go first' : ''}.</p>
+              <p>Each stop gets a weird little scene and a picture, drawn when you first visit it.</p>
+            </div>
+          )}
           <ol className="hatch-list">
             {spots.map((spot, i) => {
               const row = rowFor(spot);
@@ -161,10 +165,7 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
             })}
           </ol>
           {writing && (
-            <p className="scrawl">reading your notes, finding stops in your rooms, writing a scene for each… a whole chapter can take half a minute</p>
-          )}
-          {!fed && !writing && (
-            <p className="scrawl">{spots.length ? '+ new eggs appear for the rest of your notes' : 'your eggs appear here once Gemini picks the facts'}</p>
+            <p className="scrawl">reading your notes, finding stops in your rooms, writing a scene for each…</p>
           )}
           {finished && report && <FillReport report={report} hasScans={hasScans} />}
         </div>

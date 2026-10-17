@@ -1,4 +1,4 @@
-// The Neverforgator mascot: a round little gator (it never forgets where it put things).
+// The NeverForgator mascot: a round little gator (it never forgets where it put things).
 export function Gator({ size = 40 }) {
   return (
     <svg className="gator" width={size} height={size * 0.75} viewBox="0 0 64 48" aria-hidden="true">
@@ -23,7 +23,7 @@ export default function Logo({ href, big = false }) {
   const content = (
     <>
       <Gator size={big ? 72 : 40} />
-      <span className={`wordmark ${big ? 'huge' : ''}`}>Neverforgator</span>
+      <span className={`wordmark ${big ? 'huge' : ''}`}>NeverForgator</span>
     </>
   );
   return href

@@ -10,7 +10,8 @@ import { resizeForUpload } from '../lib/resizeImage.js';
 // Every file import counts toward the daily scan limit; live talking doesn't.
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export default function NotesImport({ onText, scansLeft, onUsed }) {
+// counter: the notes' character count, shown at the end of the button row.
+export default function NotesImport({ onText, scansLeft, onUsed, counter }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [listening, setListening] = useState(false);
@@ -123,13 +124,15 @@ export default function NotesImport({ onText, scansLeft, onUsed }) {
           <span aria-hidden="true">{listening ? '■' : '🎙'}</span> {listening ? 'Stop talking' : 'Talk it in'}
         </button>
         <button type="button" className="import-btn" disabled={Boolean(busy) || listening || outOfScans}
-          onClick={() => photoInput.current.click()} title="A photo of notes, slides or a textbook page, or a PDF">
+          onClick={() => photoInput.current.click()}
+          title={`A photo of notes, slides or a textbook page, or a PDF${scansLeft !== null ? ` (${scansLeft} scans left today)` : ''}`}>
           <span aria-hidden="true">📷</span> Photo or PDF
         </button>
         <button type="button" className="import-btn" disabled={Boolean(busy) || listening || outOfScans}
           onClick={() => audioInput.current.click()} title="A voice memo or lecture clip">
           <span aria-hidden="true">🎧</span> Audio file
         </button>
+        {counter}
         <input ref={photoInput} type="file" hidden accept="image/*,application/pdf" onChange={onPhoto} />
         <input ref={audioInput} type="file" hidden accept="audio/*,.m4a,.mp3,.wav" onChange={onAudio} />
       </div>
@@ -141,9 +144,7 @@ export default function NotesImport({ onText, scansLeft, onUsed }) {
       )}
       {busy && <p className="live-note pulse">{busy}</p>}
       {error && <p className="error-text">{error}</p>}
-      {scansLeft !== null && (
-        <span className="hint-text">{outOfScans ? 'No photo/audio scans left today (talking still works).' : `${scansLeft} photo/audio scans left today`}</span>
-      )}
+      {outOfScans && <span className="hint-text">No photo/audio scans left today. Talking still works.</span>}
     </div>
   );
 }

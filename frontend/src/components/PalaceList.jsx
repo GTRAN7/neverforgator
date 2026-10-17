@@ -4,6 +4,7 @@ import { useAccount } from '../lib/account.js';
 import { openPalace, startInBuiltIn, openSample } from '../lib/start.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
+import AccountMenu from './AccountMenu.jsx';
 import { TOUR_DONE_KEY } from './Guide.jsx';
 
 // Home: the built-in Reitz route (start memorizing right away), other campus routes,
@@ -70,15 +71,9 @@ export default function PalaceList() {
     <div className="home">
       <header className="home-nav">
         <Logo />
-        <div className="account">
-          <a className="link" href="#/guide">Take the tour</a>
-          {account && (
-            <>
-              {account.user.picture && <img src={account.user.picture} alt="" />}
-              <span>{account.user.name}</span>
-              <button className="link" onClick={account.logout}>Log out</button>
-            </>
-          )}
+        <div className="nav-actions">
+          <a className="nav-pill" href="#/guide"><span aria-hidden="true">?</span> How it works</a>
+          <AccountMenu account={account} />
         </div>
       </header>
 

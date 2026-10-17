@@ -31,6 +31,28 @@ function spotView(spot) {
 }
 
 // ---- Panorama room ----
+
+// Phone panoramas rarely line up where the two ends meet, so turning around showed a hard jump.
+// This blends both ends into their blurred average over the last few percent of the photo
+// (textureLod reads a small mipmap = a blurred copy). A panorama that doesn't cover the whole
+// sphere also fades its top and bottom edges into the room color instead of cutting off.
+const ROOM_COLOR = new THREE.Color('#F3E3C8');
+function softenEdges(shader, partial) {
+  shader.uniforms.edgeColor = { value: ROOM_COLOR };
+  shader.fragmentShader = shader.fragmentShader
+    .replace('void main() {', 'uniform vec3 edgeColor;\nvoid main() {')
+    .replace('#include <map_fragment>', `
+      #ifdef USE_MAP
+        vec4 texel = texture2D( map, vMapUv );
+        float seamDistance = min( vMapUv.x, 1.0 - vMapUv.x );
+        if ( seamDistance < 0.025 ) {
+          vec4 seam = 0.5 * ( textureLod( map, vec2( 0.003, vMapUv.y ), 5.0 ) + textureLod( map, vec2( 0.997, vMapUv.y ), 5.0 ) );
+          texel = mix( seam, texel, smoothstep( 0.0, 0.025, seamDistance ) );
+        }
+        ${partial ? 'texel.rgb = mix( edgeColor, texel.rgb, smoothstep( 0.0, 0.06, min( vMapUv.y, 1.0 - vMapUv.y ) ) );' : ''}
+        diffuseColor *= texel;
+      #endif`);
+}
 // Wraps the photo around the camera on the inside of a sphere.
 // A 360° photo sphere is 2:1 and covers the whole sphere. A wider phone
 // panorama (e.g. 6:1) still goes all the way around but only covers a band
@@ -45,12 +67,14 @@ function PanoramaRoom({ url, onPlace }) {
   const { width, height } = texture.image;
   const verticalAngle = Math.min(Math.PI, (2 * Math.PI * height) / width);
   const topAngle = (Math.PI - verticalAngle) / 2; // center the band on the horizon
+  const partial = verticalAngle < Math.PI - 0.01;
 
   return (
     // scale x = -1 mirrors the sphere so the photo isn't backwards when seen from inside.
     <mesh scale={[-1, 1, 1]} onClick={handleClick}>
       <sphereGeometry args={[PANO_RADIUS, 64, 32, 0, Math.PI * 2, topAngle, verticalAngle]} />
-      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} customProgramCacheKey={() => `pano-${partial}`}
+        onBeforeCompile={(shader) => softenEdges(shader, partial)} />
     </mesh>
   );
 }

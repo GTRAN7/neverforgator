@@ -11,6 +11,8 @@ import FeedModal from './FeedModal.jsx';
 import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
+import AccountMenu from './AccountMenu.jsx';
+import { useAccount } from '../lib/account.js';
 
 const MODES = [
   { id: 'build', label: 'Build' },
@@ -35,6 +37,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [mock, setMock] = useState(false);
+  const account = useAccount();
   const [roomBanner, setRoomBanner] = useState(null); // "walking into Room 2" for a moment after changing rooms
   const lastRoom = useRef(null);
 
@@ -237,6 +240,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
               <Sparkle /> Fill from notes
             </button>
           )}
+          <AccountMenu account={account} />
         </div>
       </header>
 

@@ -14,7 +14,7 @@ const STOPS = [
     term: 'Prophase',
     fact: 'Chromosomes condense into X shapes and the nuclear envelope breaks down.',
     hook: 'PRO-phase → PRO wrestlers',
-    scene: 'Two PRO wrestlers kick the front doors off their hinges, flexing arms crossed into giant X’s. Glass envelopes shatter everywhere.',
+    scene: 'PRO wrestlers kick the doors in, arms crossed into giant X’s. Glass envelopes shatter.',
   },
   {
     place: 'giant chess board',
@@ -22,7 +22,7 @@ const STOPS = [
     term: 'Metaphase',
     fact: 'Chromosomes line up across the middle of the cell.',
     hook: 'META → MIDDLE',
-    scene: 'Every chess piece shuffles into one perfect line straight down the MIDDLE of the board, nervously holding hands.',
+    scene: 'Every chess piece shuffles into one line straight down the MIDDLE of the board.',
   },
   {
     place: 'foosball table',
@@ -30,7 +30,7 @@ const STOPS = [
     term: 'Anaphase',
     fact: 'Sister chromatids are pulled apart to opposite ends.',
     hook: 'ANA → AWAY',
-    scene: 'You spin the foosball rods and the twin players are ripped AWAY from each other, screaming, toward opposite goals.',
+    scene: 'You spin the rods and the twin players rip AWAY from each other, to opposite goals.',
   },
   {
     place: 'TV screen',
@@ -38,7 +38,7 @@ const STOPS = [
     term: 'Telophase',
     fact: 'Two new nuclei form, one at each end.',
     hook: 'TELO → TELE-vision → TWO screens',
-    scene: 'The TV cracks down the middle into TWO screens, and a brand-new news anchor pops up in each one.',
+    scene: 'The TV cracks into TWO screens, with a brand-new news anchor in each.',
   },
   {
     place: 'vending machine',
@@ -46,7 +46,7 @@ const STOPS = [
     term: 'Cytokinesis',
     fact: 'The cytoplasm pinches in two, leaving two daughter cells.',
     hook: 'CYTO-KINESIS → psycho-kinesis',
-    scene: 'A psychic glares at the vending machine until it pinches in half like a balloon and drops TWO identical sodas.',
+    scene: 'A psychic glares until the machine pinches in half and drops TWO identical sodas.',
   },
 ];
 
@@ -189,7 +189,7 @@ const STEPS = [
     title: 'Step 1 · Pick a route you know',
     body: (
       <>
-        <p>We’ll use the <strong>Reitz Union</strong>. It’s built into Neverforgator, with stops already placed, so you
+        <p>We’ll use the <strong>Reitz Union</strong>. It’s built into NeverForgator, with stops already placed, so you
           can start without taking a single photo. Later you can add your dorm, your apartment or your walk to class.</p>
         <p>A good route has distinct stops, in a fixed order, that you can picture instantly.</p>
       </>
@@ -200,7 +200,7 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the <strong>phases of mitosis</strong>, a classic exam question. Neverforgator cuts your notes into
+        <p>Let’s learn the <strong>phases of mitosis</strong>, a classic exam question. NeverForgator cuts your notes into
           small ideas, each the size of one picture, and gives every idea its own stop.</p>
         <p>Too many ideas for your route? It tells you to add a room instead of cramming. Crammed stops blur together.</p>
       </>
@@ -242,7 +242,7 @@ const STEPS = [
     title: 'Step 5 · Walk it again, a little later',
     body: (
       <>
-        <p>Memories fade on a curve; each review flattens it. Neverforgator schedules your next walk:
+        <p>Memories fade on a curve; each review flattens it. NeverForgator schedules your next walk:
           <strong> tomorrow, then 3, 7 and 21 days</strong>, a bit longer each time you ace the quiz.
           Friends you forget dream up an even weirder scene.</p>
       </>
@@ -298,7 +298,7 @@ export default function Guide({ onStart, onSample, onSignup, onClose }) {
     <div className="guide">
       <header className="guide-nav">
         <Logo />
-        <button className="link" onClick={onClose}>{last ? 'Close' : 'Skip the tour'}</button>
+        <button className="nav-pill" onClick={onClose}>{last ? 'Close' : 'Skip the tour'} <span aria-hidden="true">→</span></button>
       </header>
 
       <div className="guide-dots" role="tablist" aria-label="Tour steps">
@@ -314,7 +314,7 @@ export default function Guide({ onStart, onSample, onSignup, onClose }) {
             {[1, 2, 3, 4, 5].map((n) => <Creature key={n} number={n} state="happy" size="md" />)}
           </div>
           <h1 className="landing-title">That’s it. Now do it with your notes.</h1>
-          <p className="landing-lead">Paste a chapter, snap a photo of your notes or just talk. Neverforgator builds the
+          <p className="landing-lead">Paste a chapter, snap a photo of your notes or just talk. NeverForgator builds the
             palace in the Reitz in about half a minute.</p>
           <div className="hero-actions">
             {onStart ? (

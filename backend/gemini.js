@@ -117,13 +117,20 @@ Show those images in order in the scene (e.g. 23 → a SHOE kicking a TREE).`,
   comparison: 'Two characters show the contrast side by side, exaggerating the difference.',
 };
 
-const SCENE_RULES = `A great memory scene:
+// How far scenes may go (the user's "How weird?" preference).
+export const FLAVORS = {
+  wild: 'bizarre, exaggerated, funny or even gross',
+  silly: 'silly, cartoonish and playful, never gross or scary',
+  clean: 'vivid and funny but classroom-safe: no violence, gore, gross-out jokes or innuendo',
+};
+
+const sceneRules = (flavor = 'wild') => `A great memory scene:
 - happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
-- is bizarre, exaggerated, funny or gross, with motion, sound and smell, and YOU are in it,
+- is ${FLAVORS[flavor] ?? FLAVORS.wild}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
-- is 2-3 short sentences, present tense, second person ("you see...").
+- is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
 imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image.`;
 
@@ -181,18 +188,18 @@ For each idea also give:
 // of the path and filling again only writes the new ones.
 const SCENE_BATCH = 5;
 
-export async function writeScenes(ideas, locations) {
+export async function writeScenes(ideas, locations, flavor = 'wild') {
   const batches = [];
   for (let start = 0; start < ideas.length; start += SCENE_BATCH) {
     const end = start + SCENE_BATCH;
-    batches.push(writeSceneBatch(ideas.slice(start, end), locations.slice(start, end))
+    batches.push(writeSceneBatch(ideas.slice(start, end), locations.slice(start, end), flavor)
       .then((items) => items.map((item) => ({ ...item, location: item.location + start }))));
   }
   return (await Promise.all(batches)).flat();
 }
 
-function writeSceneBatch(ideas, locations) {
-  return cachedJson(['scenes-v5', models.text, ideas, locations], async () => {
+function writeSceneBatch(ideas, locations, flavor) {
+  return cachedJson(['scenes-v6', models.text, ideas, locations, flavor], async () => {
     if (MOCK) return mockScenes(ideas, locations);
     const list = ideas.map((idea, i) => {
       const pegs = numberPegs(idea.text);
@@ -210,7 +217,7 @@ ${techniques}
 
 For each stop write a scene, a hook and an imagePrompt.
 
-${SCENE_RULES}`,
+${sceneRules(flavor)}`,
       {
         type: 'object',
         properties: {
@@ -290,8 +297,8 @@ center, as x (left to right) and y (top to bottom), each from 0 to 1000.`,
 
 // ---- 3. A missed spot gets a weirder scene ----
 
-export function weirderScene({ fact, kind = 'fact', label, scene, level }) {
-  return cachedJson(['weirder-v4', models.text, fact, kind, label, scene, level], async () => {
+export function weirderScene({ fact, kind = 'fact', label, scene, level, flavor = 'wild' }) {
+  return cachedJson(['weirder-v5', models.text, fact, kind, label, scene, level, flavor], async () => {
     if (MOCK) return mockWeirder(fact, label, level);
     return generateJson(
       `A student forgot this fact during a memory-palace quiz:
@@ -303,7 +310,7 @@ Write a NEW scene at the same location that is far weirder and more vivid (weird
 more absurd, bigger, louder, more emotional, more personal. Use a DIFFERENT hook than before and make the
 key words impossible to miss. Technique for this kind of idea (${kind}): ${TECHNIQUES[kind] ?? TECHNIQUES.fact}
 
-${SCENE_RULES}`,
+${sceneRules(flavor)}`,
       {
         type: 'object',
         properties: { scene: { type: 'string' }, hook: { type: 'string' }, imagePrompt: { type: 'string' } },

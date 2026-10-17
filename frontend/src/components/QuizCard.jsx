@@ -4,6 +4,7 @@ import Creature from './Creature.jsx';
 import SpotImage from './SpotImage.jsx';
 import { hatchedPath, placeName } from '../lib/path.js';
 import { checkAnswer } from '../lib/grade.js';
+import { readPrefs } from '../lib/prefs.js';
 
 // Quiz: visit each friend in path order with its fact hidden, asking both ways (alternating):
 //   "What lives at your desk?"        → type it; checked instantly in the browser
@@ -22,7 +23,13 @@ function whenText(iso) {
   return days <= 1 ? 'tomorrow' : `in ${days} days`;
 }
 
-const questionKind = (index) => (index % 2 === 1 ? 'where' : 'what');
+// The "Quiz me by…" preference: both ways (alternating), or just one.
+function questionKind(index) {
+  const { quiz } = readPrefs();
+  if (quiz === 'type') return 'what';
+  if (quiz === 'tap') return 'where';
+  return index % 2 === 1 ? 'where' : 'what';
+}
 
 // The right place plus up to 3 others, mixed in a fixed order (same every time for a question).
 function placeChoices(path, index) {

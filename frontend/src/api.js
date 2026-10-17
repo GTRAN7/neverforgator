@@ -57,7 +57,7 @@ export const api = {
   deleteSpot: (id, spotId) => request(spotUrl(id, spotId), { method: 'DELETE' }),
   reorderSpots: (id, ids) => request(`${palaceUrl(id)}/spots/order`, send('PUT', { ids })),
 
-  fill: (id, notes, style) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style })),
+  fill: (id, notes, style, flavor) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style, flavor })),
   generateImage: (id, spotId) => request(`${spotUrl(id, spotId)}/image`, { method: 'POST' }),
   // Quiz answers are checked in the browser; these just keep score.
   recordResult: (id, spotId, correct) => request(`${spotUrl(id, spotId)}/result`, send('POST', { correct })),

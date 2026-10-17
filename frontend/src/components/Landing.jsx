@@ -44,15 +44,15 @@ function HeroScene() {
   );
 }
 
-// The front door: what Neverforgator is, why it works, and log in / sign up.
+// The front door: what NeverForgator is, why it works, and log in / sign up.
 export default function Landing({ error, onLogin, onSignup, onTour }) {
   return (
     <div className="landing">
       <header className="landing-nav">
         <Logo />
         <div className="nav-actions">
-          {onTour && <button className="link" onClick={onTour}>Take the 1-minute tour</button>}
-          <button className="btn ghost small" onClick={onLogin}>Log in</button>
+          {onTour && <button className="nav-pill" onClick={onTour}><span aria-hidden="true">?</span> 1-minute tour</button>}
+          <button className="nav-pill solid" onClick={onLogin}>Log in</button>
         </div>
       </header>
 
@@ -61,7 +61,7 @@ export default function Landing({ error, onLogin, onSignup, onTour }) {
           <span className="chip yellow">built for UF students · SwampHacks</span>
           <h1 className="landing-title">Remember anything by taking a walk.</h1>
           <p className="landing-lead">
-            Neverforgator turns your notes into little friends that live along a real place you know:
+            NeverForgator turns your notes into little friends that live along a real place you know:
             the Reitz, your dorm, your route to class. Walk it again in your head and the facts come right back.
           </p>
           {error && <p className="error-text">Couldn’t sign in: {error.message}</p>}
@@ -100,7 +100,7 @@ export default function Landing({ error, onLogin, onSignup, onTour }) {
           </p>
           <p>
             It’s been used since ancient Greece, and it’s still the go-to technique of competitive memory athletes.
-            The hard part has always been building the palace. Neverforgator does that part for you.
+            The hard part has always been building the palace. NeverForgator does that part for you.
           </p>
         </div>
       </section>

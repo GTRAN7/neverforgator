@@ -1,6 +1,6 @@
-# Neverforgator: how the app works
+# NeverForgator: how the app works
 
-The method of loci works, but building a palace in your head is hard. Neverforgator builds it in real places
+The method of loci works, but building a palace in your head is hard. NeverForgator builds it in real places
 you know: the built-in Reitz Union route, other campus routes, or your own room. Each stop holds one idea as
 a little **friend**, and Gemini turns your notes into bizarre scenes that happen at those exact stops.
 
@@ -39,6 +39,7 @@ and falls asleep when you don't.
 | Fill from notes | Builds the whole palace. Gemini cuts the notes into ideas (one picture each, as many as the notes need), gives each its own stop (your eggs first, then objects it finds in your panoramas, room by room), and writes a scene + sound-alike "hook" per stop, using the classic technique for each kind of idea (number pegs for numbers and dates, sound-alikes for names and vocabulary, a chain reaction for processes...). If the rooms run out of stops it says how many more you need instead of cramming | `FeedModal.jsx`, `POST /fill`, `panorama.js`, `gemini.js` |
 | Wander | The camera walks to each friend, across rooms ("walking into Room 2"); its picture appears right at its stop, and a polaroid shows picture, scene, hook and fact. Pictures are drawn here, a few stops ahead, so you only pay for the ones you visit | `WanderCard.jsx`, `CameraRig` in `Viewer.jsx` |
 | Quiz | Alternates **"What lives at your desk?"** (typed) and **"Where did you put X?"** (tap the friend in 3D or pick a place). Checked instantly in the browser; unclear answers show the fact and you say if you had it. Misses get a weirder scene | `QuizCard.jsx`, `lib/grade.js`, `/result`, `/weirder` |
+| Preferences | The avatar menu: default picture style, how weird scenes get (wild / silly / classroom-safe, sent to the prompt), quiz style (both ways / typing / finding). Kept in the browser | `AccountMenu.jsx`, `lib/prefs.js` |
 | Review | Each quiz schedules the next walk: 1, 3, 7, 21, 60 days while you score 80%+, otherwise again in 10 minutes. "review due" shows on the home screen | `POST /reviews`, `PalaceList.jsx` |
 
 ## Fair-use limits (`backend/limits.js`)

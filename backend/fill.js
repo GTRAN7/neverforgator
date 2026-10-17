@@ -43,7 +43,7 @@ async function findExtraStops(palace, keptSpots, needed) {
   return found;
 }
 
-export async function fillPalace(palace, notes, style) {
+export async function fillPalace(palace, notes, style, flavor = 'wild') {
   if (!palace.rooms.length) throw badRequest('Add a room first');
   const ideas = await gemini.splitNotes(notes);
   if (!ideas.length) throw badRequest('Couldn’t find anything to remember in those notes');
@@ -59,7 +59,7 @@ export async function fillPalace(palace, notes, style) {
   if (!stopCount) throw badRequest('No stops yet. Plant a few eggs by clicking your room, or add a panorama.');
 
   const placed = ideas.slice(0, stopCount);
-  const items = await gemini.writeScenes(placed, walk.slice(0, stopCount).map((s, i) => s.label || `spot ${i + 1}`));
+  const items = await gemini.writeScenes(placed, walk.slice(0, stopCount).map((s, i) => s.label || `spot ${i + 1}`), flavor);
   const filled = (i) => {
     const item = i < stopCount ? items.find((it) => it.location === i + 1) : null;
     return {
@@ -79,6 +79,7 @@ export async function fillPalace(palace, notes, style) {
     const current = new Map(p.spots.map((s) => [s.id, s]));
     p.notes = notes;
     p.style = style;
+    p.flavor = flavor;
     p.spots = walk
       .map((stop, i) => ({ ...(current.get(stop.id) ?? stop), ...filled(i) }))
       .filter((spot) => !spot.auto || spot.fact); // drop found stops that ended up without an idea

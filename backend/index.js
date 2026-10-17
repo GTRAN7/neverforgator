@@ -270,7 +270,7 @@ app.put('/api/palaces/:id/spots/:spotId/idea', quota('scene'), async (req, res) 
   const { palace, spot } = await getSpot(req.params.id, req.params.spotId);
   const number = palace.spots.indexOf(spot) + 1;
   const idea = { text: fact, kind: spot.kind ?? 'fact', keyTerms: keyTermsOf(fact) };
-  const [item] = await gemini.writeScenes([idea], [spot.label || `spot ${number}`]);
+  const [item] = await gemini.writeScenes([idea], [spot.label || `spot ${number}`], palace.flavor);
   res.json(await updateSpot(palace.id, spot.id, (s) => {
     Object.assign(s, { fact, keyTerms: idea.keyTerms, scene: item.scene, hook: item.hook, imagePrompt: item.imagePrompt, image: null, weirdness: 0 });
   }));
@@ -311,7 +311,8 @@ app.post('/api/palaces/:id/fill', quota('fill'), async (req, res) => {
   if (notes.length > CAPS.notesChars) {
     return res.status(400).json({ error: `Notes are capped at ${CAPS.notesChars.toLocaleString()} characters. Split them into two palaces.` });
   }
-  res.json(await fillPalace(await getPalace(req.params.id), notes, style));
+  const flavor = Object.hasOwn(gemini.FLAVORS, req.body?.flavor ?? '') ? req.body.flavor : 'wild';
+  res.json(await fillPalace(await getPalace(req.params.id), notes, style, flavor));
 });
 
 // Generate (or fetch from cache) the image for one spot. The client calls this
@@ -372,7 +373,7 @@ app.post('/api/palaces/:id/spots/:spotId/weirder', quota('scene'), async (req, r
   const level = Math.min(5, spot.weirdness + 1);
   const index = palace.spots.indexOf(spot);
   const { scene, hook, imagePrompt } = await gemini.weirderScene({
-    fact: spot.fact, kind: spot.kind ?? 'fact', label: spot.label || `spot ${index + 1}`, scene: spot.scene, level,
+    fact: spot.fact, kind: spot.kind ?? 'fact', flavor: palace.flavor, label: spot.label || `spot ${index + 1}`, scene: spot.scene, level,
   });
   res.json(await updateSpot(palace.id, spot.id, (s) => {
     Object.assign(s, { scene, hook, imagePrompt, image: null, weirdness: level });
@@ -403,7 +404,7 @@ try {
 }
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
-  console.log(`Neverforgator API on http://localhost:${port}`);
+  console.log(`NeverForgator API on http://localhost:${port}`);
   console.log(AUTH_ENABLED ? `Auth0 login required (${process.env.AUTH0_DOMAIN})` : 'Auth0 off: everyone is the local user.');
   console.log(gemini.MOCK
     ? 'No GEMINI_API_KEY: running in MOCK mode (placeholder AI results).'

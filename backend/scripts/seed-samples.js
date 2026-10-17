@@ -47,11 +47,13 @@ await updatePalace(sample.id, (p) => {
   Object.assign(p, { name: 'Sample: the phases of mitosis', template: true, sample: true });
 });
 console.log('Filling the sample with the mitosis notes…');
-const filled = await fillPalace(await readPalace(sample.id), MITOSIS_NOTES, 'sticker');
+const filled = await fillPalace(await readPalace(sample.id), MITOSIS_NOTES, 'sticker', 'silly');
 for (const spot of filled.spots.filter((s) => s.imagePrompt)) {
   const crop = spot.crop ? await fs.readFile(path.join(palaceDir(sample.id), spot.crop)).catch(() => null) : null;
   const image = await gemini.generateImage(spot.imagePrompt, crop, 'sticker');
   await updatePalace(sample.id, (p) => { p.spots.find((s) => s.id === spot.id).image = image; });
   console.log(`  ${spot.label}: ${spot.fact}`);
 }
+// The example only shows what's filled: leftover empty eggs would just be clutter.
+await updatePalace(sample.id, (p) => { p.spots = p.spots.filter((s) => s.fact); });
 console.log(`Sample: ${sample.id}. Done.`);
