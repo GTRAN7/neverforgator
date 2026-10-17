@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import AIButton from './AIButton'
+import Placeholder from './Placeholder'
 
-// "New location" form: name, description, optional subject, and an optional
-// photo picked right away (transparent cutouts stand on the sky like the UF ones).
-export default function AddLocationDialog({ onCreate, onClose }) {
+// "New location": pick one of the UF campus places not on your route yet, or
+// make your own (name, description, optional subject and photo; transparent
+// cutouts stand on the sky like the UF ones).
+export default function AddLocationDialog({ campus = [], imageFor, onPickCampus, onCreate, onClose }) {
   const [form, setForm] = useState({ name: '', description: '', subject: '' })
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -27,8 +29,26 @@ export default function AddLocationDialog({ onCreate, onClose }) {
         <button type="button" className="icon-btn plaque-close" onClick={onClose} aria-label="Close">×</button>
         <p className="eyebrow">New location</p>
         <h2 className="plaque-q">Add a stop to your route</h2>
+        {campus.length > 0 && (
+          <>
+            <p className="field-label">Pick a UF place</p>
+            <ul className="campus-picks">
+              {campus.map(c => (
+                <li key={c.name}>
+                  <button type="button" className="campus-pick" onClick={() => onPickCampus(c)}>
+                    <span className="campus-thumb">
+                      {imageFor(c) ? <img src={imageFor(c)} alt="" /> : <Placeholder variant={c.variant} palette={c.palette} />}
+                    </span>
+                    <span>{c.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="field-label">Or make your own</p>
+          </>
+        )}
         <div className="plaque-form">
-          <label>Name<input autoFocus required value={form.name} onChange={set('name')} placeholder="e.g. My dorm room" /></label>
+          <label>Name<input autoFocus={!campus.length} required value={form.name} onChange={set('name')} placeholder="e.g. My dorm room" /></label>
           <label>Subject <span className="optional">(optional)</span><input value={form.subject} onChange={set('subject')} placeholder="e.g. Chemistry" /></label>
           <div className="field-ai">
             <label>Description<textarea rows={3} value={form.description} onChange={set('description')} placeholder="What's here, or how to picture it" /></label>

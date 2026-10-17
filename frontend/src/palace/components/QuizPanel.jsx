@@ -10,7 +10,7 @@ export function QuizStart({ here, counts, onStart, onClose }) {
       <p className="eyebrow">Quiz</p>
       <h2 className="plaque-q">Walk the route and recall what lives at each stop.</h2>
       <div className="checks">
-        <label className="check"><input type="checkbox" checked={opts.concepts} onChange={toggle('concepts')} /> Concepts, both ways: <i>“What's at this stop?”</i> and <i>“Where did you put it?”</i></label>
+        <label className="check"><input type="checkbox" checked={opts.concepts} onChange={toggle('concepts')} /> <span>Concepts, both ways: <i>“What's at this stop?”</i> and <i>“Where did you put it?”</i></span></label>
         <label className="check"><input type="checkbox" checked={opts.cards} onChange={toggle('cards')} /> Your pinned cards</label>
         <label className="check"><input type="checkbox" checked={opts.shuffle} onChange={toggle('shuffle')} /> Shuffle cards within each stop</label>
       </div>
@@ -101,6 +101,22 @@ export function WalkPanel({ loc, stop, total, onPrev, onNext, onQuiz, onStop }) 
         {last
           ? <button className="btn" onClick={onQuiz}>Quiz me</button>
           : <button className="btn" autoFocus onClick={onNext}>Next stop</button>}
+      </div>
+    </section>
+  )
+}
+
+// Shown when you press → on the last stop.
+export function EndOfRoute({ stops, onAddStop, onQuiz, onContinue, onClose }) {
+  return (
+    <section className="plaque" aria-label="End of the route">
+      <button className="icon-btn plaque-close" onClick={onClose} aria-label="Close">×</button>
+      <p className="eyebrow">End of the route</p>
+      <h2 className="plaque-q">You've walked past all {stops} stops. Ready to test yourself?</h2>
+      <div className="row">
+        <button className="btn btn-ghost" onClick={onAddStop}>+ Add the next stop</button>
+        <button className="btn btn-ghost" onClick={onContinue}>Continue from the start</button>
+        <button className="btn" autoFocus onClick={onQuiz}>Quiz me!</button>
       </div>
     </section>
   )

@@ -1,8 +1,12 @@
 // Full-screen route map, like Blueprint's hamburger menu.
-export default function MenuOverlay({ locations, index, account, onGo, onMove, onAdd, onExport, onImport, onReset, onClose }) {
+export default function MenuOverlay({ locations, index, account, title, onRename, onExit, onGo, onMove, onAdd, onAddPhotos, onAppearance, onExport, onImport, onReset, onClose }) {
   return (
     <div className="menu" role="dialog" aria-label="Palace map">
       <button className="icon-btn menu-close" onClick={onClose} aria-label="Close menu">×</button>
+      <div className="menu-title">
+        <button className="btn btn-small btn-ghost" onClick={onExit}>← All palaces</button>
+        <input aria-label="Palace name" value={title ?? ''} onChange={e => onRename(e.target.value)} placeholder="Name this palace" />
+      </div>
       <div className="account">
         {account.user ? (
           <>
@@ -24,8 +28,8 @@ export default function MenuOverlay({ locations, index, account, onGo, onMove, o
           <li key={l.id} className={i === index ? 'is-current' : ''}>
             <button className="menu-go" onClick={() => onGo(i)}>
               <span className="menu-num">{String(i + 1).padStart(2, '0')}</span>
-              <span className="menu-name">{l.name}</span>
-              <span className="menu-sub">{l.concept || l.description || l.subject || 'No concept yet'} · {l.pins.length} cards</span>
+              <span className={`menu-name${l.subject ? '' : ' is-empty'}`}>{l.subject || 'No topic yet'}</span>
+              <span className="menu-sub">{l.name}</span>
             </button>
             <span className="menu-order">
               <button className="icon-btn" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="Move earlier">↑</button>
@@ -36,9 +40,11 @@ export default function MenuOverlay({ locations, index, account, onGo, onMove, o
       </ol>
       <div className="row menu-actions">
         <button className="btn" onClick={onAdd}>+ Add location</button>
+        <label className="btn btn-ghost">+ Add photos as stops<input type="file" accept="image/*" multiple hidden onChange={e => { onAddPhotos([...e.target.files]); e.target.value = '' }} /></label>
+        <button className="btn btn-ghost" onClick={onAppearance}>Advanced: appearance</button>
         <button className="btn btn-ghost" onClick={onExport}>Export</button>
         <label className="btn btn-ghost">Import<input type="file" accept="application/json" hidden onChange={e => e.target.files[0] && onImport(e.target.files[0])} /></label>
-        <button className="btn btn-ghost" onClick={onReset}>Reset sample</button>
+        <button className="btn btn-ghost" onClick={onReset}>Reset palace</button>
       </div>
     </div>
   )

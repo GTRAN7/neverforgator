@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { uid } from '../seed'
 import CardPhoto from './CardPhoto'
 import AIButton from './AIButton'
@@ -11,10 +11,18 @@ const draftOf = loc => ({
 
 // Side panel for the current stop. Edits are kept as a draft and only applied
 // (and shown on the stop's sign) when you press Save.
-export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, onSave, onDirty, onSelectPin, onUpload, onRemovePhoto, onDeleteLocation, onClose }) {
+export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, focusName, onSave, onDirty, onSelectPin, onUpload, onRemovePhoto, onDeleteLocation, onClose }) {
   const [draft, setDraft] = useState(() => draftOf(loc))
   const [openCard, setOpenCard] = useState(null)
   const [saved, setSaved] = useState(false)
+  // Clicking the stop's sign jumps straight to editing its name.
+  const nameInput = useRef(null)
+  useEffect(() => {
+    if (focusName) {
+      nameInput.current?.focus()
+      nameInput.current?.select()
+    }
+  }, [focusName])
   // Photos picked in this draft aren't in the app's URL map yet; preview them locally.
   const [previews, setPreviews] = useState({})
   const photoUrl = pin => (pin.imageId ? previews[pin.imageId] ?? imageUrls[pin.imageId] : null)
@@ -37,9 +45,18 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, o
   }
   const set = field => e => edit({ [field]: e.target.value })
   const setPin = (id, patch) => edit({ pins: draft.pins.map(p => (p.id === id ? { ...p, ...patch } : p)) })
+  // Closing a new card you never filled in removes it again.
+  const closeCard = () => {
+    const open = draft.pins.find(p => p.id === openCard)
+    if (open && !open.topic.trim() && !open.question.trim() && !open.answer.trim() && !open.imageId) {
+      edit({ pins: draft.pins.filter(p => p.id !== open.id) })
+    }
+    setOpenCard(null)
+  }
   const addCard = () => {
     const pin = { id: uid(), x: 40 + Math.random() * 20, y: 40 + Math.random() * 20, topic: '', question: '', answer: '', stats: { right: 0, wrong: 0 } }
-    edit({ pins: [...draft.pins, pin] })
+    const kept = draft.pins.filter(p => p.id !== openCard || p.topic.trim() || p.question.trim() || p.answer.trim() || p.imageId)
+    edit({ pins: [...kept, pin] })
     setOpenCard(pin.id)
   }
   const save = () => {
@@ -56,7 +73,7 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, o
       </header>
 
       <label className="field">Place
-        <input value={draft.name} onChange={set('name')} />
+        <input ref={nameInput} value={draft.name} onChange={set('name')} />
       </label>
       <label className="field">Subject / theme
         <input value={draft.subject} onChange={set('subject')} placeholder="e.g. Organic Chemistry" />
@@ -104,17 +121,18 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, o
             <span className="card-num">{i + 1}</span>
             {openCard === pin.id ? (
               <div className="card-edit">
+                <button type="button" className="icon-btn card-close" onClick={closeCard} aria-label="Close card">×</button>
                 <input value={pin.topic} placeholder="Topic" onChange={e => setPin(pin.id, { topic: e.target.value })} />
                 <textarea autoFocus={!pin.question} rows={2} value={pin.question} placeholder="Question" onChange={e => setPin(pin.id, { question: e.target.value })} />
                 <textarea rows={2} value={pin.answer} placeholder="Answer" onChange={e => setPin(pin.id, { answer: e.target.value })} />
                 <CardPhoto url={photoUrl(pin)} onPick={file => pickPhoto(pin.id, file)} onRemove={() => setPin(pin.id, { imageId: null })} />
                 <div className="row">
                   <button className="btn btn-small btn-danger" onClick={() => edit({ pins: draft.pins.filter(p => p.id !== pin.id) })}>Delete card</button>
-                  <button className="btn btn-small btn-ghost" onClick={() => setOpenCard(null)}>Done</button>
+                  <button className="btn btn-small btn-ghost" onClick={closeCard}>Done</button>
                 </div>
               </div>
             ) : (
-              <button className="card-view" onClick={() => { setOpenCard(pin.id); onSelectPin(pin.id) }}>
+              <button className="card-view" onClick={() => { closeCard(); setOpenCard(pin.id); onSelectPin(pin.id) }}>
                 {pin.topic && <span className="eyebrow">{pin.topic}</span>}
                 <span className="card-q">{pin.question || 'Untitled card'}</span>
                 {photoUrl(pin) && <img className="card-thumb" src={photoUrl(pin)} alt="" />}

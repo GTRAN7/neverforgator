@@ -64,7 +64,7 @@ function Pin({ pin, n, canvasRef, editing, active, highlight, onSelect, onMove }
 
 export default function Scene({
   loc, url, interactive, editing, quizzing, hideHint,
-  activePinId, highlightPinId, onAddPin, onSelectPin, onMovePin, onUpload,
+  activePinId, highlightPinId, onAddPin, onSelectPin, onMovePin, onUpload, onEditStop,
 }) {
   const canvasRef = useRef(null)
 
@@ -95,7 +95,7 @@ export default function Scene({
         ))}
       </div>
 
-      <Sign loc={loc} />
+      <Sign loc={loc} onEdit={interactive && !quizzing ? onEditStop : undefined} />
 
       {!url && interactive && !quizzing && !hideHint && (
         <button className="upload-hint" onClick={onUpload}>

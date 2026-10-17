@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { deleteImage, exportPalace, imageIdsOf, importPalace, loadPalace, prepareImage, putImage, savePalace, storageKey, useImageUrls } from './storage'
-import { newLocation, seedPalace, uid, upgradePalace } from './seed'
+import { deleteImage, exportPalace, imageIdsOf, importPalace, loadPalace, prepareImage, putImage, savePalace, useImageUrls } from './storage'
+import { campusCatalog, newLocation, resetPalace, seedPalace, uid, upgradePalace } from './seed'
 import Scene from './components/Scene'
 import Sky from './components/Sky'
 import stadiumUrl from './assets/stadium.webp'
@@ -11,7 +11,11 @@ import PinPlaque from './components/PinPlaque'
 import NotesDrawer from './components/NotesDrawer'
 import MenuOverlay from './components/MenuOverlay'
 import AddLocationDialog from './components/AddLocationDialog'
-import { QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
+import ConfirmDialog from './components/ConfirmDialog'
+import AppearancePanel from './components/AppearancePanel'
+import NightToggle from './components/NightToggle'
+import { lookOf, lookStyle } from './appearance'
+import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const stripOffset = ({ offset, ...k }) => (offset == null ? k : { ...k, offset: 1 - offset })
@@ -38,14 +42,14 @@ const isTyping = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA
 
 // `account` comes from the Auth0 gate in src/App.jsx: { user, logout } when
 // signed in, or { guest, login, exit } for the sample palace.
-export default function PalaceApp({ account }) {
-  const key = storageKey(account.user?.sub)
-  const [palace, setPalace] = useState(() => upgradePalace(loadPalace(key) ?? seedPalace()))
-  useEffect(() => savePalace(palace, key), [palace, key])
+export default function PalaceApp({ account, palaceId, onExit, night, onToggleNight }) {
+  const sub = account.user?.sub
+  const [palace, setPalace] = useState(() => upgradePalace(loadPalace(sub, palaceId) ?? seedPalace()))
+  useEffect(() => savePalace(sub, palaceId, palace), [palace, sub, palaceId])
   const locs = palace.locations
   const n = locs.length
 
-  const [index, setIndex] = useState(() => Math.max(0, locs.findIndex(l => slug(l.name) === location.hash.slice(1))))
+  const [index, setIndex] = useState(() => Math.max(0, locs.findIndex(l => slug(l.name) === location.hash.split('/')[1])))
   const [trans, setTrans] = useState(null) // { from, to, dir }
   const [editing, setEditing] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
@@ -54,14 +58,20 @@ export default function PalaceApp({ account }) {
   const [quiz, setQuiz] = useState(null) // { stage: 'start' | 'run' | 'done', queue, i, results, revealed }
   const [walking, setWalking] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [endCard, setEndCard] = useState(false)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [editFocus, setEditFocus] = useState(0) // bumped when the sign is clicked: focus the name field
   const imageUrls = useImageUrls(imageIdsOf(palace))
 
   const cur = locs[Math.min(index, n - 1)]
+  const look = lookOf(palace)
+  const setLook = patch => setPalace(p => ({ ...p, appearance: { ...lookOf(p), ...patch } }))
+  const lookCss = lookStyle(look)
   const urlFor = l => (l?.imageId ? imageUrls[l.imageId] : BUILTIN_IMAGES[l?.builtin] ?? null)
 
   useEffect(() => {
-    history.replaceState(null, '', `#${slug(cur.name)}`)
-  }, [cur.name])
+    history.replaceState(null, '', `#${palaceId}/${slug(cur.name)}`)
+  }, [palaceId, cur.name])
 
   // ---- palace mutations -------------------------------------------------
   const updateLoc = useCallback((id, patch) => setPalace(p => ({
@@ -74,6 +84,13 @@ export default function PalaceApp({ account }) {
     const pin = { id: uid(), x, y, topic: '', question: '', answer: '', stats: { right: 0, wrong: 0 } }
     updateLoc(cur.id, l => ({ pins: [...l.pins, pin] }))
     setActivePinId(pin.id)
+  }
+  // A card with nothing written and no photo is dropped when you close it.
+  const isBlankPin = p => !p.topic?.trim() && !p.question?.trim() && !p.answer?.trim() && !p.imageId
+  const deselectPin = () => {
+    const open = activePinId && cur.pins.find(p => p.id === activePinId)
+    if (open && isBlankPin(open)) updateLoc(cur.id, l => ({ pins: l.pins.filter(p => p.id !== open.id) }))
+    setActivePinId(null)
   }
   const deletePin = pinId => {
     updateLoc(cur.id, l => ({ pins: l.pins.filter(p => p.id !== pinId) }))
@@ -120,15 +137,29 @@ export default function PalaceApp({ account }) {
 
   // ---- navigation: fly forward into the distance ----------------------
   const notesDirty = useRef(false)
-  const goTo = useCallback((to, dir) => {
-    if (trans || to === index || to < 0 || to >= n) return
-    if (notesDirty.current && !confirm('Discard your unsaved stop notes?')) return
-    notesDirty.current = false
-    setActivePinId(null)
+  // In-app confirmations (browser confirm() popups can be blocked in embedded views).
+  const [dialog, setDialog] = useState(null)
+  const ask = (opts, run) => setDialog({ ...opts, run })
+  const discardNotes = then => ask(
+    { title: 'Unsaved notes', message: 'Discard your unsaved stop notes?', confirmLabel: 'Discard' },
+    () => { notesDirty.current = false; then() },
+  )
+  const flyTo = (to, dir) => {
+    deselectPin()
+    setEndCard(false)
     if (reducedMotion()) return setIndex(to)
     setTrans({ from: index, to, dir: dir ?? (to > index ? 'next' : 'prev') })
-  }, [trans, index, n])
-  const next = () => goTo((index + 1) % n, 'next')
+  }
+  const goTo = useCallback((to, dir) => {
+    if (trans || to === index || to < 0 || to >= n) return
+    if (notesDirty.current) return discardNotes(() => flyTo(to, dir))
+    flyTo(to, dir)
+  }, [trans, index, n]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Past the last stop, offer a quiz or another lap instead of silently wrapping.
+  const next = () => {
+    if (!walking && !quiz && n > 1 && index === n - 1) return setEndCard(true)
+    goTo((index + 1) % n, 'next')
+  }
   const prev = () => goTo((index - 1 + n) % n, 'prev')
 
   const inRef = useRef(null)
@@ -165,11 +196,17 @@ export default function PalaceApp({ account }) {
   // ---- walkthrough ------------------------------------------------------
   // Notes, Edit, Walk and Quiz are modes: only one can be on at a time.
   const mode = quiz ? 'quiz' : walking ? 'walk' : editing ? 'edit' : notesOpen ? 'notes' : null
-  const switchMode = m => {
-    if (quiz?.stage === 'run' && quiz.i > 0 && m !== 'quiz' && !confirm('End the quiz? Your progress will be lost.')) return
-    if (notesDirty.current && m !== 'notes' && !confirm('Discard your unsaved stop notes?')) return
-    notesDirty.current = false
-    setActivePinId(null)
+  const switchMode = (m, quizEnded = false) => {
+    if (!quizEnded && quiz?.stage === 'run' && quiz.i > 0 && m !== 'quiz') {
+      return ask(
+        { title: 'End quiz', message: 'End the quiz? Your progress will be lost.', confirmLabel: 'End quiz' },
+        () => switchMode(m, true),
+      )
+    }
+    if (notesDirty.current && m !== 'notes') return discardNotes(() => switchMode(m, quizEnded))
+    deselectPin()
+    setEndCard(false)
+    if (m) setAppearanceOpen(false)
     setNotesOpen(m === 'notes')
     setEditing(m === 'edit')
     setWalking(m === 'walk')
@@ -195,7 +232,7 @@ export default function PalaceApp({ account }) {
     if (!queue.length) return
     setEditing(false)
     setNotesOpen(false)
-    setActivePinId(null)
+    deselectPin()
     setWalking(false)
     setQuiz({ stage: 'run', queue, i: 0, results: [], revealed: false })
   }
@@ -261,7 +298,7 @@ export default function PalaceApp({ account }) {
       if (isTyping(document.activeElement)) return
       if (e.key === 'ArrowRight' && !quiz && !(walking && index === n - 1)) next()
       if (e.key === 'ArrowLeft' && !quiz && !(walking && index === 0)) prev()
-      if (e.key === 'Escape') { setActivePinId(null); setMenuOpen(false); setAdding(false) }
+      if (e.key === 'Escape') { deselectPin(); setMenuOpen(false); setAdding(false); setEndCard(false) }
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
@@ -284,12 +321,13 @@ export default function PalaceApp({ account }) {
 
   return (
     <main
-      className={`app${dragOver ? ' is-dragover' : ''}${hidingPlace ? ' is-hiding-place' : ''}`}
+      className={`app${dragOver ? ' is-dragover' : ''}${hidingPlace ? ' is-hiding-place' : ''}${lookCss.className}`}
+      style={lookCss.style}
       onDragOver={e => { e.preventDefault(); setDragOver(true) }}
       onDragLeave={e => { if (e.target === e.currentTarget) setDragOver(false) }}
       onDrop={e => { e.preventDefault(); setDragOver(false); setPhoto(cur.id, e.dataTransfer.files[0]) }}
     >
-      <Sky />
+      <Sky look={look} imageUrl={look.skyImageId ? imageUrls[look.skyImageId] : null} night={night} />
       <div className="stage">
         {layers.map(({ i, ref }) => {
           const l = locs[i]
@@ -305,9 +343,16 @@ export default function PalaceApp({ account }) {
                 activePinId={activePinId}
                 highlightPinId={step?.kind === 'card' ? step.pinId : null}
                 onAddPin={addPin}
-                onSelectPin={id => setActivePinId(a => (a === id ? null : id))}
+                onSelectPin={id => {
+                  deselectPin()
+                  if (id !== activePinId) setActivePinId(id)
+                }}
                 onMovePin={(id, x, y) => updatePin(l.id, id, { x, y })}
                 onUpload={() => askUpload(l.id)}
+                onEditStop={() => {
+                  if (mode !== 'notes') switchMode('notes')
+                  setEditFocus(f => f + 1)
+                }}
               />
             </div>
           )
@@ -316,7 +361,10 @@ export default function PalaceApp({ account }) {
 
       <header className="hud-top">
         <div className="brand">UF<span>·</span>MP</div>
-        <button className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Open map"><span /><span /><span /></button>
+        <div className="hud-actions">
+          <NightToggle night={night} onToggle={onToggleNight} />
+          <button className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Open map"><span /><span /><span /></button>
+        </div>
       </header>
 
       {editing && !quiz && (
@@ -353,7 +401,7 @@ export default function PalaceApp({ account }) {
           }}
           onChange={patch => updatePin(cur.id, activePin.id, patch)}
           onDelete={() => deletePin(activePin.id)}
-          onClose={() => setActivePinId(null)}
+          onClose={deselectPin}
         />
       )}
 
@@ -373,6 +421,15 @@ export default function PalaceApp({ account }) {
           {...stepContent()}
           onGrade={grade}
           onStop={() => setQuiz({ ...quiz, stage: 'done' })}
+        />
+      )}
+      {endCard && !busy && !trans && (
+        <EndOfRoute
+          stops={n}
+          onAddStop={() => { setEndCard(false); setAdding(true) }}
+          onQuiz={() => switchMode('quiz')}
+          onContinue={() => goTo(0, 'next')}
+          onClose={() => setEndCard(false)}
         />
       )}
       {walking && !trans && (
@@ -402,16 +459,21 @@ export default function PalaceApp({ account }) {
           activePinId={activePinId}
           imageUrls={imageUrls}
           storePhoto={storePhoto}
+          focusName={editFocus}
           onSave={patch => updateLoc(cur.id, patch)}
           onDirty={d => { notesDirty.current = d }}
           onSelectPin={id => setActivePinId(id)}
           onUpload={() => askUpload(cur.id)}
           onRemovePhoto={removePhoto}
           onDeleteLocation={() => {
-            if (n < 2 || !confirm(`Delete ${cur.name} and its ${cur.pins.length} cards?`)) return
-            if (cur.imageId) deleteImage(cur.imageId)
-            setPalace(p => ({ ...p, locations: p.locations.filter(l => l.id !== cur.id) }))
-            setIndex(i => Math.max(0, Math.min(i, n - 2)))
+            if (n < 2) return alert('A palace needs at least one stop.')
+            const doomed = cur
+            ask({ title: 'Delete location', message: `Delete ${doomed.name} and its ${doomed.pins.length} cards?`, confirmLabel: 'Delete' }, () => {
+              notesDirty.current = false
+              ;[doomed.imageId, ...doomed.pins.map(p => p.imageId)].filter(Boolean).forEach(id => deleteImage(id))
+              setPalace(p => ({ ...p, locations: p.locations.filter(l => l.id !== doomed.id) }))
+              setIndex(i => Math.max(0, Math.min(i, n - 2)))
+            })
           }}
           onClose={() => switchMode(null)}
         />
@@ -422,6 +484,9 @@ export default function PalaceApp({ account }) {
           locations={locs}
           index={index}
           account={account}
+          title={palace.title}
+          onRename={title => setPalace(p => ({ ...p, title }))}
+          onExit={onExit}
           onGo={i => { setMenuOpen(false); goTo(i) }}
           onMove={(i, d) => {
             setPalace(p => {
@@ -436,6 +501,31 @@ export default function PalaceApp({ account }) {
             setMenuOpen(false)
             setAdding(true)
           }}
+          onAddPhotos={async files => {
+            const images = files.filter(f => f.type.startsWith('image/'))
+            if (!images.length) return
+            setMenuOpen(false)
+            const added = []
+            for (const file of images) {
+              try {
+                const { blob, ar, cutout } = await prepareImage(file)
+                const imageId = uid()
+                await putImage(imageId, blob)
+                const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'New stop'
+                added.push({ ...newLocation({ name }, n + added.length), imageId, ar, cutout })
+              } catch {
+                alert(`${file.name} could not be read. Try JPG or PNG.`)
+              }
+            }
+            if (!added.length) return
+            setPalace(p => ({ ...p, locations: [...p.locations, ...added] }))
+            setIndex(n)
+          }}
+          onAppearance={() => {
+            setMenuOpen(false)
+            switchMode(null)
+            setAppearanceOpen(true)
+          }}
           onExport={() => exportPalace(palace)}
           onImport={async file => {
             try {
@@ -446,20 +536,68 @@ export default function PalaceApp({ account }) {
               alert(`Import failed: ${err.message}`)
             }
           }}
-          onReset={() => {
-            if (!confirm('Replace your palace with the sample UF route? Export first if you want a backup.')) return
+          onReset={() => ask({
+            title: 'Reset palace',
+            message: 'Resetting will reset ALL of the information inside of this wonderful palace. Are you sure you want to continue?',
+            confirmLabel: 'Reset',
+            countdown: 5,
+          }, () => {
+            const fresh = resetPalace(palace)
+            // Drop photos only the old notes used (card photos, removed stops).
+            const keep = new Set(imageIdsOf(fresh))
+            imageIdsOf(palace).filter(id => !keep.has(id)).forEach(id => deleteImage(id))
+            notesDirty.current = false
             setQuiz(null)
             setWalking(false)
-            setPalace(seedPalace())
+            setEditing(false)
+            setNotesOpen(false)
+            setActivePinId(null)
+            setEndCard(false)
+            setPalace(fresh)
             setIndex(0)
             setMenuOpen(false)
-          }}
+          })}
           onClose={() => setMenuOpen(false)}
+        />
+      )}
+
+      {appearanceOpen && (
+        <AppearancePanel
+          look={look}
+          onChange={setLook}
+          onPickSkyPhoto={async file => {
+            try {
+              const { blob } = await prepareImage(file)
+              const id = uid()
+              await putImage(id, blob)
+              if (look.skyImageId) deleteImage(look.skyImageId)
+              setLook({ sky: 'image', skyImageId: id })
+            } catch {
+              alert('That image could not be read. Try a JPG or PNG.')
+            }
+          }}
+          onClose={() => setAppearanceOpen(false)}
+        />
+      )}
+
+      {dialog && (
+        <ConfirmDialog
+          {...dialog}
+          onConfirm={() => { const run = dialog.run; setDialog(null); run() }}
+          onCancel={() => setDialog(null)}
         />
       )}
 
       {adding && (
         <AddLocationDialog
+          campus={campusCatalog().filter(c => !locs.some(l => l.name === c.name || (c.builtin && l.builtin === c.builtin)))}
+          imageFor={urlFor}
+          onPickCampus={c => {
+            setPalace(p => ({ ...p, locations: [...p.locations, c] }))
+            setAdding(false)
+            switchMode(null)
+            setIndex(n)
+          }}
           onClose={() => setAdding(false)}
           onCreate={(fields, file) => {
             const l = newLocation(fields, n)

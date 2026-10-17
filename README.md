@@ -92,7 +92,8 @@ React app ──(Auth0 access token)──▶ Express API ──▶ PostgreSQL
 - [ ] Backend + database
 - [ ] Gemini integration
 - [x] Palace view: illustrated campus stops, guided walkthrough, two-way quiz (frontend only, saved in the browser)
-- [ ] Map, dashboard
+- [x] Dashboard (create / reopen / delete palaces, saved in the browser for now)
+- [ ] Map
 - [ ] Deployment + domain
 
 ## Project structure
@@ -121,13 +122,19 @@ Each stop on the route is a full-screen scene: a campus photo (cutouts with a tr
 - **Walk** runs the guided walkthrough. It visits the stops in order and shows each concept and its memory image.
 - **Quiz** asks questions both ways. On the walk it asks "What did you put at Century Tower?", and at the end it asks "Where did you put photosynthesis?" with the scene hidden until you reveal the answer. Pinned cards can be included too.
 - **Edit** lets you click a scene to pin extra question cards to spots in the photo. **Notes** edits the stop's subject, concept, memory image and photo.
-- **Log in / Sign up** use Auth0. **Try the sample palace** opens the demo route without an account.
+- **Log in / Sign up** use Auth0. **Try it without an account** uses a guest library saved in this browser.
+- **Dashboard** (first page after signing in): create a palace from the UF campus route (stops only) or the filled-in sample, or reopen / delete one of **your palaces**. First-time users only see the create card. "← All palaces" in the menu goes back.
+- Pressing **→** on the last stop shows an end card with **Quiz me!** or **Continue** from the start.
+- **Create** offers four starting points: the **UF campus route** (starts with the stadium and Smathers; pick each next UF place from **+ Add location** or the end-of-route card), the filled-in **Sample palace**, a **Custom route** (upload several photos; each becomes a stop, and you can rename and reorder them), or a **Blank palace** (one empty stop). Inside a palace, the menu's **+ Add photos as stops** adds a batch of photos at once.
+- **Reset palace** (menu) puts the palace back the way it started; deleting a palace from the dashboard asks the same way. Both show a warning, and the red button only works after a countdown (5 seconds for reset, 3 for delete).
+- **Night mode:** the moon/sun button (top right on every page) switches to a moonlit sky with stars and dark panels. It follows the computer's dark-mode setting until you click it.
+- **Advanced: appearance** (menu) changes the sky (day, sunset, night, overcast or your own photo), hides clouds, birds, sun, hills or the castle, and changes the signs' color, side and size. Settings are saved with each palace.
 
 - **+ Add location** (menu) asks for a name, description, optional subject and an optional photo. Without a photo the stop is plain hills; transparent PNGs stand on the sky like the campus cutouts.
 - **Cards** can have a photo, shown with the question and in the quiz.
 - **✨ Describe the subject / ✨ Define the term** fill the stop's Description and Definition with Gemini. They call `POST /api/describe` on the backend (port 3001, through the Vite `/api` proxy), which isn't built yet. Expected contract: request `{ kind: 'subject' | 'term', text, subject?, place? }`, response `{ description }` (2–3 plain sentences). Without the backend the buttons show a "backend not running" message.
 
-The sample route lives in `src/palace/seed.js`. Its fields follow the draft data model: each location holds `concept` and `association` (`palace_stops`), and `pins` are extra `quiz_questions`. Until the backend is ready, palaces are saved in the browser: `localStorage`, one per Auth0 user, and uploaded photos in IndexedDB. Export / Import in the menu moves a palace between browsers.
+The sample route lives in `src/palace/seed.js`. Its fields follow the draft data model: each location holds `concept` and `association` (`palace_stops`), and `pins` are extra `quiz_questions`. Until the backend is ready, palaces are saved in the browser: a library per Auth0 user (or the guest) in `localStorage`, and uploaded photos in IndexedDB. `src/palace/storage.js` is the only place that reads or writes them, so it can be swapped for API calls. Export / Import in the menu moves a palace between browsers.
 
 ## Setting up on a new device
 

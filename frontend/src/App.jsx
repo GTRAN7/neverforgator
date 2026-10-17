@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import PalaceApp from './palace/PalaceApp.jsx'
+import Dashboard from './palace/components/Dashboard.jsx'
+import { loadPalace } from './palace/storage'
+import { useNightMode } from './palace/night'
+import NightToggle from './palace/components/NightToggle.jsx'
 import Sky from './palace/components/Sky.jsx'
 import signUrl from './palace/assets/sign.webp'
 
@@ -14,6 +18,9 @@ function App() {
     user,
   } = useAuth0()
   const [guest, setGuest] = useState(false)
+  const [night, toggleNight] = useNightMode()
+  // The open palace lives in the URL (#<palaceId>/<stop>) so a refresh stays put.
+  const [openId, setOpenId] = useState(() => location.hash.slice(1).split('/')[0] || null)
 
   const signup = () =>
     login({ authorizationParams: { screen_hint: 'signup' } })
@@ -24,18 +31,31 @@ function App() {
   if (isLoading) {
     return (
       <main className="landing">
-        <Sky />
+        <Sky night={night} />
         <p className="landing-loading">Loading…</p>
       </main>
     )
   }
 
-  if (isAuthenticated) return <PalaceApp account={{ user, logout }} />
-  if (guest) return <PalaceApp account={{ guest: true, login, exit: () => setGuest(false) }} />
+  if (isAuthenticated || guest) {
+    const account = isAuthenticated
+      ? { user, logout }
+      : { guest: true, login, exit: () => { setGuest(false); setOpenId(null) } }
+    const sub = account.user?.sub
+    if (openId && loadPalace(sub, openId)) {
+      const exit = () => {
+        history.replaceState(null, '', location.pathname)
+        setOpenId(null)
+      }
+      return <PalaceApp key={openId} account={account} palaceId={openId} onExit={exit} night={night} onToggleNight={toggleNight} />
+    }
+    return <Dashboard account={account} onOpen={setOpenId} night={night} onToggleNight={toggleNight} />
+  }
 
   return (
     <main className="landing">
-      <Sky />
+      <Sky night={night} />
+      <NightToggle night={night} onToggle={toggleNight} className="landing-corner" />
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />
@@ -59,7 +79,7 @@ function App() {
             <button className="btn btn-ghost" onClick={signup}>Sign up</button>
           </div>
           <button className="link" onClick={() => setGuest(true)}>
-            or try the sample palace without an account
+            or try it without an account
           </button>
         </section>
       </div>

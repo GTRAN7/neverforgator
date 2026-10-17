@@ -24,6 +24,7 @@ export function seedPalace() {
   return {
     version: 2,
     title: 'Sample UF route',
+    template: 'sample',
     builtinsAdded: ['stadium', 'smathers', 'heavener'],
     locations: [
       loc('Ben Hill Griffin Stadium', 'Statistics', 'stadium', 0, {
@@ -68,6 +69,57 @@ export function seedPalace() {
         card(30, 62, 'Micro', 'What is opportunity cost?', 'The value of the next-best alternative you give up when making a choice.'),
       ]),
     ],
+  }
+}
+
+// Every UF place you can add to a palace, with no notes yet. New campus photos go here.
+export const campusCatalog = () => clearStops(seedPalace().locations)
+
+// A fresh palace on the UF route: starts with the first two campus stops; you
+// choose the next ones from the catalog as you go.
+export function blankRoutePalace(title) {
+  return {
+    ...seedPalace(),
+    title,
+    template: 'route',
+    locations: campusCatalog().slice(0, 2),
+  }
+}
+
+// Clear every note, term and card but keep the stops and their photos.
+const clearStops = locations => locations.map(l => ({
+  ...l, subject: '', concept: '', association: '', definition: '', description: '', pins: [], stats: { right: 0, wrong: 0 },
+}))
+
+// Put a palace back the way it started: the sample, the blank UF route, or a
+// custom route's own photos with nothing written on them.
+export function resetPalace(palace) {
+  const { title } = palace
+  if (palace.template === 'route') return blankRoutePalace(title)
+  if (palace.template === 'blank') return blankPalace(title)
+  if (palace.template === 'custom') return { ...palace, locations: clearStops(palace.locations) }
+  return { ...seedPalace(), title }
+}
+
+// A blank palace: one empty stop to rename and give a photo; add more as you go.
+export function blankPalace(title) {
+  return {
+    version: 2,
+    title,
+    template: 'blank',
+    builtinsAdded: ['stadium', 'smathers', 'heavener'],
+    locations: [newLocation({ name: 'First stop', description: 'Click the sign to rename me, and add a photo' }, 0)],
+  }
+}
+
+// A palace built from your own photos: one stop per photo, in order.
+export function customPalace(title, stops) {
+  return {
+    version: 2,
+    title,
+    template: 'custom',
+    builtinsAdded: ['stadium', 'smathers', 'heavener'],
+    locations: stops.map((stop, i) => ({ ...newLocation({ name: stop.name }, i), ...stop.image })),
   }
 }
 
