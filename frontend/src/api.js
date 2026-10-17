@@ -69,6 +69,7 @@ export const api = {
     files.forEach(({ blob, name }) => form.append('room', blob, name));
     return request(`${palaceUrl(id)}/rooms`, { method: 'POST', body: form });
   },
+  reorderRooms: (id, ids) => request(`${palaceUrl(id)}/rooms/order`, send('PUT', { ids })),
   updateRoom: (id, roomId, changes) => request(`${palaceUrl(id)}/rooms/${roomId}`, send('PATCH', changes)),
   deleteRoom: (id, roomId) => request(`${palaceUrl(id)}/rooms/${roomId}`, { method: 'DELETE' }),
 

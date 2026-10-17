@@ -1,4 +1,5 @@
 import { useFileDrop } from '../useFileDrop'
+import { Avatar } from './AccountMenu'
 
 // Full-screen route map, like Blueprint's hamburger menu.
 
@@ -17,7 +18,7 @@ export default function MenuOverlay({ locations, index, account, title, onRename
       <div className="account">
         {account.user ? (
           <>
-            {account.user.picture && <img className="avatar" src={account.user.picture} alt="" />}
+            <Avatar user={account.user} large />
             <span><b>{account.user.name}</b><br /><span className="muted">{account.user.email}</span></span>
             {onSaveAccount && (
               <button className="btn btn-small" disabled={savingAccount} onClick={onSaveAccount}

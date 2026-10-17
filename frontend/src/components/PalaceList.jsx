@@ -6,7 +6,7 @@ import { switchMode } from '../lib/mode.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import SkyPage from './SkyPage.jsx';
-import NightToggle from './NightToggle.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import AccountMenu from './AccountMenu.jsx';
 import { TOUR_DONE_KEY } from './Guide.jsx';
 
@@ -18,6 +18,10 @@ function PalaceListContent() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(null); // what's being set up
+  // Renaming and deleting happen in the palace's row, not in window.prompt/confirm pop-ups:
+  // browsers can silently block those (they answer "no" without showing anything).
+  const [renaming, setRenaming] = useState(null); // { id, name } while a name is being edited
+  const [deletingId, setDeletingId] = useState(null); // this palace's row asks "Delete?"
 
   useEffect(() => {
     // First visit ever: take the tour first.
@@ -52,8 +56,9 @@ function PalaceListContent() {
     run('create', async () => openPalace((await api.createPalace(name)).id));
   }
 
-  function rename(palace) {
-    const next = window.prompt('Rename this palace', palace.name)?.trim();
+  function rename(palace, name) {
+    setRenaming(null);
+    const next = name.trim();
     if (!next || next === palace.name) return;
     run(null, async () => {
       await api.renamePalace(palace.id, next);
@@ -63,7 +68,7 @@ function PalaceListContent() {
   }
 
   function remove(palace) {
-    if (!window.confirm(`Delete “${palace.name}”? Its rooms, stops and scenes are gone for good.`)) return;
+    setDeletingId(null);
     run(null, async () => {
       await api.deletePalace(palace.id);
       setPalaces((list) => list.filter((p) => p.id !== palace.id));
@@ -77,10 +82,10 @@ function PalaceListContent() {
         <Logo />
         <div className="nav-actions">
           <button className="nav-pill" onClick={() => switchMode('campus')} title="Natasha's campus walk, a second mode for now">
-            <span aria-hidden="true">🏛</span> Campus mode
+            <span aria-hidden="true">🏛</span> 2D Mode
           </button>
-          <a className="nav-pill" href="#/guide"><span aria-hidden="true">?</span> How it works</a>
-          <NightToggle />
+          <a className="nav-pill" href="#/guide"><span aria-hidden="true">?</span> How It Works</a>
+          <SettingsMenu />
           <AccountMenu account={account} />
         </div>
       </header>
@@ -117,10 +122,10 @@ function PalaceListContent() {
         <section className="home-section">
           <h2 className="section-tag">More routes</h2>
           <ul className="palace-list">
-            {routes.map((t, i) => (
+            {routes.map((t) => (
               <li key={t.id}>
                 <div className="template-card">
-                  <Creature number={i + 2} size="md" />
+                  <Creature number={t.id} size="md" />
                   <div className="template-text">
                     <strong>{t.name}</strong>
                     <span>{t.builtIn && 'built in · '}{t.spotCount} stop{t.spotCount === 1 ? '' : 's'} · {t.roomCount} place{t.roomCount === 1 ? '' : 's'}</span>
@@ -154,21 +159,41 @@ function PalaceListContent() {
         <section className="home-section">
           <h2 className="section-tag">Your palaces</h2>
           <ul className="palace-list">
-            {mine.map((p, i) => (
+            {mine.map((p) => (
               <li key={p.id} className="palace-row">
-                <a href={`#/palace/${p.id}`}>
-                  <Creature number={i + 1} />
-                  <strong>{p.name}</strong>
-                  <span>{p.roomCount} room{p.roomCount === 1 ? '' : 's'} · {p.friendCount} friend{p.friendCount === 1 ? '' : 's'}</span>
-                  {p.friendCount > 0 && p.nextReviewAt && <ReviewChip at={p.nextReviewAt} />}
-                </a>
-                <details className="more-menu">
-                  <summary aria-label={`More for ${p.name}`}>⋯</summary>
-                  <div className="more-items">
-                    <button onClick={() => rename(p)}>Rename</button>
-                    <button className="danger" onClick={() => remove(p)}>Delete</button>
+                {renaming?.id === p.id ? (
+                  <form className="palace-row-edit" onSubmit={(e) => { e.preventDefault(); rename(p, renaming.name); }}>
+                    <Creature number={p.id} />
+                    <input className="pill-input" autoFocus maxLength={80} value={renaming.name} aria-label="Palace name"
+                      onChange={(e) => setRenaming({ id: p.id, name: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === 'Escape') setRenaming(null); }} />
+                    <button className="btn ink small" type="submit">Save</button>
+                    <button className="btn ghost small" type="button" onClick={() => setRenaming(null)}>Cancel</button>
+                  </form>
+                ) : deletingId === p.id ? (
+                  <div className="palace-row-edit" role="alertdialog" aria-label={`Delete ${p.name}?`}>
+                    <Creature number={p.id} state="sleepy" />
+                    <span className="palace-row-ask">Delete <strong>{p.name}</strong>? Its rooms, stops and scenes are gone for good.</span>
+                    <button className="btn small danger" autoFocus onClick={() => remove(p)}>Delete</button>
+                    <button className="btn ghost small" onClick={() => setDeletingId(null)}>Keep</button>
                   </div>
-                </details>
+                ) : (
+                  <>
+                    <a href={`#/palace/${p.id}`}>
+                      <Creature number={p.id} />
+                      <strong>{p.name}</strong>
+                      <span>{p.roomCount} room{p.roomCount === 1 ? '' : 's'} · {p.friendCount} friend{p.friendCount === 1 ? '' : 's'}</span>
+                      {p.friendCount > 0 && p.nextReviewAt && <ReviewChip at={p.nextReviewAt} />}
+                    </a>
+                    <details className="more-menu">
+                      <summary aria-label={`More for ${p.name}`}>⋯</summary>
+                      <div className="more-items">
+                        <button onClick={() => { setDeletingId(null); setRenaming({ id: p.id, name: p.name }); }}>Rename</button>
+                        <button className="danger" onClick={() => { setRenaming(null); setDeletingId(p.id); }}>Delete</button>
+                      </div>
+                    </details>
+                  </>
+                )}
               </li>
             ))}
           </ul>

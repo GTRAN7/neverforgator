@@ -12,7 +12,7 @@ import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import AccountMenu from './AccountMenu.jsx';
-import NightToggle from './NightToggle.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import { useAccount } from '../lib/account.js';
 
 const MODES = [
@@ -31,7 +31,8 @@ export default function PalaceEditor({ palaceId, startAction }) {
   const [focusId, setFocusId] = useState(null); // the spot the camera turns to
   const [selectedId, setSelectedId] = useState(null); // the highlighted spot
   const [inspecting, setInspecting] = useState(false); // Build: the selected spot's card is open
-  const [movingId, setMovingId] = useState(null); // Build: the next click in the room moves this spot
+  const [movingId, setMovingId] = useState(null);
+  const [wanderClosed, setWanderClosed] = useState(false); // Wander: the friend's card was closed // Build: the next click in the room moves this spot
   const [feeding, setFeeding] = useState(false); // "Fill from notes" modal open
   const [quizResults, setQuizResults] = useState(null); // { spotId: true/false } once a quiz starts
   const [friendPicker, setFriendPicker] = useState(null); // set while the quiz asks "where did you put X?"
@@ -93,6 +94,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
 
   // Walk to a spot, switching rooms if it's in another one.
   const goToSpot = useCallback((spot) => {
+    setWanderClosed(false); // going to a friend shows its card again
     setRoomId(spot.roomId);
     setFocusId(spot.id);
     setSelectedId(spot.id);
@@ -282,7 +284,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
               <Sparkle /> Fill from notes
             </button>
           )}
-          <NightToggle />
+          <SettingsMenu />
           <AccountMenu account={account} />
         </div>
       </header>
@@ -304,6 +306,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 focusSpot={focusSpot}
                 visitedUpTo={visitedUpTo}
                 onPlace={mode === 'build' && !palace.readOnly ? handlePlace : undefined}
+                onRoomClick={mode === 'wander' ? () => setWanderClosed(true) : undefined}
                 onFriendClick={handleFriendClick}
                 onMoveFriend={mode === 'build' && !palace.readOnly ? dropSpot : undefined}
               />
@@ -350,8 +353,12 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 )}
               </>
             )}
-            {mode === 'wander' && (
+            {mode === 'wander' && wanderClosed && (
+              <span className="scene-hint">Look around · click a friend to see its card again</span>
+            )}
+            {mode === 'wander' && !wanderClosed && (
               <WanderCard palace={palace} images={images} selectedId={selectedId} goToSpot={goToSpot}
+                onClose={() => setWanderClosed(true)}
                 onQuiz={() => switchMode('quiz')} onFeed={() => setFeeding(true)} />
             )}
             {mode === 'quiz' && (
@@ -385,7 +392,14 @@ export default function PalaceEditor({ palaceId, startAction }) {
           </div>
 
           {mode === 'build' && (
-            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run} />
+            // A shared palace (the built-in route, the sample) can't be changed: just switch rooms there.
+            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run}
+              browse={palace.readOnly} />
+          )}
+          {mode === 'wander' && palace.rooms.length > 1 && (
+            // Look around other rooms; the friend's card closes, since that friend isn't there.
+            <RoomStrip palace={palace} room={room} browse
+              setRoomId={(id) => { if (id !== room?.id) setWanderClosed(true); setRoomId(id); }} />
           )}
         </main>
       </div>

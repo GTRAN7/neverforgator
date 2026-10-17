@@ -24,10 +24,12 @@
   /* Constants: lettering outlines, light text on colored things, dark text on orange. */
   --outline: #3b2a1e;
   --light: #faf3e8;
-  /* UF accent for buttons: orange by day, blue at night (overridden below). */
-  --accent: #e97451;
-  --accent-deep: #c95a3a;
-  --on-accent: #2a1d12;
+  /* Buttons: the 3D studio's coral (index.css --accent), so both modes match. */
+  --accent: #f08a6c;
+  --accent-deep: #c9694d;
+  --on-accent: #3b2a1e;
+  /* Delete buttons: outlined in brick red, like the 3D studio's .btn.danger */
+  --danger-ink: #b04a2e;
   --font: 'Recursive', system-ui, sans-serif;
   --text-scale: 1; /* Settings → Text size */
   color-scheme: light;
@@ -285,20 +287,27 @@ button:disabled { cursor: default; opacity: 0.45; }
   z-index: 10;
 }
 .hud-top > * { pointer-events: auto; }
+/* The 3D studio's logo: gator + "NeverForgator" in Fredoka (components/Logo.jsx), on a pill over the sky */
 .brand {
   grid-area: brand;
   justify-self: start;
-  font-weight: 900;
-  font-size: calc(26px * var(--text-scale));
-  color: var(--orange);
-  paint-order: stroke fill;
-  -webkit-text-stroke: 5px var(--outline);
-  font-variation-settings: 'CASL' 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 16px 4px 10px;
+  border-radius: 999px;
+  background: #FFFDF7;
+  border: 2px solid #3B2A1E;
+  box-shadow: 0 3px 0 #3B2A1E;
 }
-.brand span { color: var(--light); }
-/* "Never·Forgator" is long: shrink it on phones so the header stays on one line. */
+.brand .gator { flex: none; display: block; }
+.brand-word { font: 700 calc(24px * var(--text-scale)) 'Fredoka', system-ui, sans-serif; color: #3B2A1E; white-space: nowrap; }
+.brand-tag { font-size: 0.62em; color: #7A6450; vertical-align: 0.15em; }
+/* "NeverForgator" is long: shrink it on phones so the header stays on one line. */
 @media (max-width: 520px) {
-  .brand { font-size: calc(16px * var(--text-scale)); -webkit-text-stroke-width: 4px; }
+  .brand { gap: 6px; padding: 3px 12px 3px 6px; }
+  .brand .gator { width: 28px; height: 21px; }
+  .brand-word { font-size: calc(17px * var(--text-scale)); }
 }
 .title-wrap { grid-area: title; pointer-events: none; animation: titleIn 0.8s 0.7s both cubic-bezier(.2,.8,.2,1); }
 @keyframes titleIn { from { opacity: 0; transform: translateY(-14px); } }
@@ -458,7 +467,7 @@ input, textarea {
 .btn-ghost { background: var(--paper); color: var(--ink); }
 .btn-small { padding: 6px 14px; font-size: calc(13px * var(--text-scale)); }
 .btn-hit { background: var(--good); color: var(--on-good); }
-.btn-danger { background: var(--red); color: var(--light); }
+.btn-danger { background: var(--paper); color: var(--danger-ink); border-color: var(--danger-ink); }
 .btn-miss { background: var(--shaky); color: var(--on-shaky); }
 .icon-btn {
   width: 34px;
@@ -687,6 +696,37 @@ input, textarea {
 }
 .account > span { flex: 1; min-width: 180px; font-size: calc(14px * var(--text-scale)); }
 .avatar { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid var(--ink); }
+.account > .acct-avatar { flex: none; min-width: 0; }
+
+/* Profile: the same avatar pill and drop-down as the 3D studio's header (index.css .account-btn) */
+.acct-menu { position: relative; }
+.acct-btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 4px; cursor: pointer;
+  border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); color: var(--ink);
+  font: 600 calc(14px * var(--text-scale)) 'Fredoka', system-ui, sans-serif; box-shadow: 0 3px 0 var(--shadow);
+}
+.acct-btn:hover { background: #FDE9A9; color: #3B2A1E; }
+.acct-avatar {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+  border: 1.5px solid var(--outline); background: #7FC28E; color: #3B2A1E; font: 600 calc(14px * var(--text-scale)) 'Fredoka', system-ui, sans-serif;
+}
+.acct-avatar.is-large { width: 44px; height: 44px; border-width: 2.5px; font-size: calc(20px * var(--text-scale)); }
+.acct-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-chev { font-size: calc(11px * var(--text-scale)); color: var(--muted); }
+.acct-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; min-width: 230px; display: grid; padding: 6px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 16px; box-shadow: 0 6px 0 var(--shadow);
+  animation: rise-pop 0.2s cubic-bezier(.2,.8,.2,1);
+}
+.acct-who { display: grid; gap: 2px; padding: 8px 12px 10px; margin-bottom: 4px; border-bottom: 1.5px dashed var(--cream); }
+.acct-who strong { font: 600 calc(15px * var(--text-scale)) 'Fredoka', system-ui, sans-serif; }
+.acct-who span { font-size: calc(12px * var(--text-scale)); color: var(--muted); overflow-wrap: anywhere; }
+.acct-dropdown button {
+  padding: 9px 12px; border: 0; border-radius: 10px; background: none; color: var(--ink); text-align: left; cursor: pointer;
+  font: 600 calc(14px * var(--text-scale)) 'Fredoka', system-ui, sans-serif;
+}
+.acct-dropdown button:hover { background: var(--cream); }
+.acct-dropdown .is-danger { color: var(--danger-ink); }
 
 /* ---------- quiz + walkthrough ---------- */
 .checks { display: grid; gap: 8px; }
@@ -805,6 +845,8 @@ input, textarea {
 .palace-card { width: auto; padding: 18px; }
 .palace-card h3 { margin: 0 0 4px; font-size: calc(20px * var(--text-scale)); font-variation-settings: 'CASL' 0.9; }
 .palace-card .muted { margin: 0; font-size: calc(13.5px * var(--text-scale)); }
+.palace-rename { margin: 0 0 6px; flex-wrap: nowrap; }
+.palace-rename input { flex: 1; min-width: 0; }
 .menu-title { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; max-width: 640px; }
 .menu-nav { flex-basis: 100%; display: flex; justify-content: space-between; gap: 12px; }
 .menu-title input { flex: 1; min-width: 200px; font-size: calc(20px * var(--text-scale)); font-weight: 800; }
@@ -906,7 +948,7 @@ input, textarea {
 .arrow { border-color: var(--light); }
 .chip-primary.is-on { color: var(--paper); }
 .btn-ghost, .pin.is-active .pin-num, .pin.is-highlight .pin-num { color: var(--ink); }
-.btn-danger { color: var(--light); }
+.btn-danger { color: var(--danger-ink); }
 .btn-miss, .pin-shaky .pin-num { color: var(--on-shaky); }
 
 :root[data-theme='night'] {
@@ -919,11 +961,12 @@ input, textarea {
   --menu-bg: rgb(22 30 52 / 0.97);
   --highlight: #33416a;
   --shadow: #0b1020;
-  --accent: #3399ff;
-  --accent-deep: #1f7ad9;
+  --accent: #f2956f;
+  --accent-deep: #d27453;
+  --danger-ink: #ffb08f;
   --label: #a9d4ff; /* section labels: a light, cool blue instead of dark orange */
-  /* Dark text reads better than white on this lighter blue. */
-  --on-accent: #0b1630;
+  /* Dark text on the coral buttons, as in the 3D studio. */
+  --on-accent: #3b2a1e;
   color-scheme: dark;
 }
 :root[data-theme='night'] body { background: linear-gradient(#1d2b53 0 50%, #4d6b35 50% 100%); }
@@ -1333,7 +1376,7 @@ input, textarea {
 }
 
 /* ---------- logo button + About dialog ---------- */
-button.brand { padding: 0; border: 0; background: none; cursor: pointer; transition: transform 0.15s; }
+button.brand { cursor: pointer; transition: transform 0.15s; }
 button.brand:hover { transform: rotate(-4deg) scale(1.06); }
 .plaque.about { width: min(560px, calc(100vw - 32px)); }
 .about p { margin: 0 0 10px; line-height: 1.5; font-size: calc(15px * var(--text-scale)); }

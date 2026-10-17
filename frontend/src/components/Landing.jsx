@@ -1,7 +1,7 @@
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import SkyPage from './SkyPage.jsx';
-import NightToggle from './NightToggle.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 
 const STEPS = [
   {
@@ -53,7 +53,7 @@ function LandingContent({ error, onLogin, onSignup, onTour }) {
       <header className="landing-nav">
         <Logo />
         <div className="nav-actions">
-          <NightToggle />
+          <SettingsMenu />
           {onTour && <button className="nav-pill" onClick={onTour}><span aria-hidden="true">?</span> 1-minute tour</button>}
           <button className="nav-pill solid" onClick={onLogin}>Log in</button>
         </div>

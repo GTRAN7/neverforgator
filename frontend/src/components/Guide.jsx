@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Logo from './Logo.jsx';
 import SkyPage from './SkyPage.jsx';
-import NightToggle from './NightToggle.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
@@ -301,7 +301,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
       <header className="guide-nav">
         <Logo />
         <div className="nav-actions">
-        <NightToggle />
+        <SettingsMenu />
         <button className="nav-pill" onClick={onClose}>{last ? 'Close' : 'Skip the tour'} <span aria-hidden="true">→</span></button>
         </div>
       </header>

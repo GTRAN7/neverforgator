@@ -347,7 +347,8 @@ function LoadingOverlay({ message }) {
 // friends: [{ spot, number, state, tag, active }] for this room (see PalaceEditor).
 // onPlace: set only while placing spots. visitedUpTo: trail is "walked" up to this friend number.
 // onMoveFriend(spot, placement): set when friends can be dragged to a new spot (Build).
-export default function Viewer({ palaceId, room, friends: placed, focusSpot, visitedUpTo = 0, onPlace, onFriendClick, onMoveFriend }) {
+// onRoomClick: a click on the room itself when not placing (Wander closes the friend's card).
+export default function Viewer({ palaceId, room, friends: placed, focusSpot, visitedUpTo = 0, onPlace, onRoomClick, onFriendClick, onMoveFriend }) {
   // The space around a room (and the fade at photo edges) follows night mode.
   const [{ night }] = useDisplay();
   const roomColor = night ? ROOM_NIGHT : ROOM_DAY;
@@ -358,6 +359,8 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
   const stateRef = useRef(null); // R3F's get(), for dragging from outside the canvas
   const url = fileUrl(palaceId, room.file);
   const panorama = room.type !== 'splat';
+  // A click on the room places a spot (Build) or, if not placing, is just a click (onRoomClick).
+  const roomClick = onPlace ?? (onRoomClick && (() => onRoomClick()));
   const friends = dragSpot
     ? placed.map((f) => (f.spot.id === dragSpot.id ? { ...f, spot: dragSpot } : f))
     : placed;
@@ -371,8 +374,8 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
         <color attach="background" args={[roomColor]} />
         <Suspense fallback={null}>
           {panorama
-            ? <PanoramaRoom url={url} photo={room.type === 'photo'} onPlace={onPlace} />
-            : <SplatRoom url={url} flipped={room.flipped} onPlace={onPlace} onStatus={setSplatMessage} />}
+            ? <PanoramaRoom url={url} photo={room.type === 'photo'} onPlace={roomClick} />
+            : <SplatRoom url={url} flipped={room.flipped} onPlace={roomClick} onStatus={setSplatMessage} />}
         </Suspense>
         <TrailDots friends={friends} panorama={panorama} visitedUpTo={visitedUpTo} />
         <SpriteProjector friends={friends} pins={pins} stateRef={stateRef} />
