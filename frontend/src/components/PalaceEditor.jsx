@@ -109,6 +109,21 @@ export default function PalaceEditor({ palaceId, startAction }) {
 
   const closeFeed = useCallback(() => setFeeding(false), []);
 
+  // A fill finished. If its window was closed meanwhile, say so in the room; if the tab is in the
+  // background, say so in the tab title until you come back.
+  const [readyBanner, setReadyBanner] = useState(false);
+  const feedingNow = useRef(feeding);
+  feedingNow.current = feeding;
+  const palaceReady = useCallback(() => {
+    if (!feedingNow.current) setReadyBanner(true);
+    if (document.hidden) {
+      const title = document.title;
+      document.title = '✓ Your palace is ready · NeverForgator';
+      const restore = () => { document.title = title; document.removeEventListener('visibilitychange', restore); };
+      document.addEventListener('visibilitychange', restore);
+    }
+  }, []);
+
   if (!palace) return <div className="center">{error || 'Loading…'}</div>;
 
   const room = palace.rooms.find((r) => r.id === roomId) ?? palace.rooms[0];
@@ -364,6 +379,13 @@ export default function PalaceEditor({ palaceId, startAction }) {
             {roomBanner && room?.id === roomBanner && (
               <div key={`banner-${roomBanner}`} className="room-banner">walking into <strong>{room.name}</strong></div>
             )}
+            {readyBanner && (
+              <div className="ready-banner" role="status">
+                <span>🎉 Your palace is ready!</span>
+                <button className="btn accent small" onClick={() => { setReadyBanner(false); switchMode('wander'); }}>Go wander →</button>
+                <button className="round-btn small" aria-label="Dismiss" onClick={() => setReadyBanner(false)}>×</button>
+              </div>
+            )}
             {(busy || error) && (
               <div className={`toast ${error ? 'error' : ''}`} onClick={() => setError('')}>{error || busy}</div>
             )}
@@ -381,8 +403,9 @@ export default function PalaceEditor({ palaceId, startAction }) {
       </div>
 
       {feeding && (
-        <FeedModal palace={palace} setPalace={setPalace} onClose={closeFeed}
-          onDone={() => { setFeeding(false); switchMode('wander'); }} />
+        <FeedModal palace={palace} setPalace={setPalace} onClose={closeFeed} onReady={palaceReady}
+          onDone={() => { setFeeding(false); switchMode('wander'); }}
+          onQuiz={() => { setFeeding(false); switchMode('quiz'); }} />
       )}
     </div>
   );
