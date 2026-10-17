@@ -521,7 +521,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       </div>
 
       <header className="hud-top">
-        <Brand />
+        <Brand onHome={onExit} />
         <div className="hud-actions">
           <Settings
             prefs={prefs}

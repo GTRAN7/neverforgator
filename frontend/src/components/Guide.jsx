@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import Logo from './Logo.jsx';
 import SkyPage from './SkyPage.jsx';
 import SettingsMenu from './SettingsMenu.jsx';
+import AccountMenu from './AccountMenu.jsx';
+import { useAccount } from '../lib/account.js';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
@@ -265,6 +267,7 @@ const STEPS = [
 // onStart: start memorizing (copy the built-in Reitz). onSample: open the finished example in 3D.
 // Both are missing when logged out; then onSignup is shown instead.
 function GuideContent({ onStart, onSample, onSignup, onClose }) {
+  const account = useAccount(); // signed in: show your profile, like the other pages
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -302,6 +305,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
         <Logo />
         <div className="nav-actions">
         <SettingsMenu />
+        {account?.user && <AccountMenu account={account} />}
         <button className="nav-pill" onClick={onClose}>{last ? 'Close' : 'Skip the tour'} <span aria-hidden="true">→</span></button>
         </div>
       </header>
