@@ -1,5 +1,7 @@
 # SwampHacks Project
+Make memorization easier with a AI assisted memory palace creation tool centered around UF campus.
 
+### Project description
 A memory palace maker built on the UF campus. Upload notes, a list or a topic, and AI pulls out the key concepts. Each concept is placed at a real campus location on an interactive map. A guided walkthrough helps you memorize the route, and a quiz helps the material stick. You can save your palaces and come back to them from a dashboard.
 
 ### Team:
@@ -17,7 +19,7 @@ Kira Luna Nichtawitz (UX Designer), Natasha Antoniuk (Frontend developer), Eric 
 
 ### MVP vs. stretch goals
 
-| MVP (hackathon demo) | Stretch |
+| MVP (hackathon demo) | Stretch goals |
 | --- | --- |
 | Text / topic input | File uploads (PDF, images) |
 | Concept extraction + placement on a fixed route | Choosing or customizing the route |
