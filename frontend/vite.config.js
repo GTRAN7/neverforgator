@@ -5,11 +5,11 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Forward API calls and stored images to the backend (backend/, port 3001).
+    // Forward API calls and stored images to the FastAPI backend (backend/, port 8000); Gemini runs there.
     proxy: {
-      '/api': 'http://localhost:3001',
-      '/files': 'http://localhost:3001',
-      '/cache': 'http://localhost:3001',
+      '/api': 'http://localhost:8000',
+      '/files': 'http://localhost:8000',
+      '/cache': 'http://localhost:8000',
     },
   },
 })

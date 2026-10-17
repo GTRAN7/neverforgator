@@ -1,4 +1,13 @@
 import { useEffect, useState } from 'react'
+// Fonts are bundled locally so the demo never depends on Google Fonts loading.
+import '@fontsource/fredoka/500.css'
+import '@fontsource/fredoka/600.css'
+import '@fontsource/fredoka/700.css'
+import '@fontsource/nunito/400.css'
+import '@fontsource/nunito/600.css'
+import '@fontsource/nunito/800.css'
+import '@fontsource/caveat/600.css'
+import './index.css'
 import { useAuth0 } from '@auth0/auth0-react'
 import { setTokenGetter } from './api.js'
 import PalaceList from './components/PalaceList.jsx'

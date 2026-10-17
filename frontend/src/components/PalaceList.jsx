@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, fileUrl } from '../api.js';
 import { useAccount } from '../lib/account.js';
 import { openPalace, startInBuiltIn, openSample } from '../lib/start.js';
+import { switchMode } from '../lib/mode.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import AccountMenu from './AccountMenu.jsx';
@@ -72,6 +73,9 @@ export default function PalaceList() {
       <header className="home-nav">
         <Logo />
         <div className="nav-actions">
+          <button className="nav-pill" onClick={() => switchMode('campus')} title="Natasha's campus walk, a second mode for now">
+            <span aria-hidden="true">🏛</span> Campus mode
+          </button>
           <a className="nav-pill" href="#/guide"><span aria-hidden="true">?</span> How it works</a>
           <AccountMenu account={account} />
         </div>
