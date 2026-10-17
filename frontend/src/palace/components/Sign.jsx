@@ -28,6 +28,8 @@ export default function Sign({ loc, onEdit, art }) {
       }}
     >
       <img src={art?.url || signUrl} alt="" draggable={false} />
+      {/* Color-wheel tint: recolors only the sign's own pixels (masked by its shape). */}
+      <span className="sign-tint" style={{ WebkitMaskImage: `url(${art?.url || signUrl})`, maskImage: `url(${art?.url || signUrl})` }} />
       {art?.layout.name.show !== false && (
         <h1 className={`sign-name${long ? ' is-long' : ''}`} style={art && box(art.layout.name)}>{loc.name}</h1>
       )}

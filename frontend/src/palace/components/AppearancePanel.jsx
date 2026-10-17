@@ -68,6 +68,10 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
             <span className="sr-only">{c.label}</span>
           </button>
         ))}
+        <label className={`swatch wheel${look.signColor === 'custom' ? ' is-on' : ''}`} title="Pick any color">
+          <span className="sr-only">Pick any sign color</span>
+          <input type="color" value={look.signTint} onChange={e => onChange({ signColor: 'custom', signTint: e.target.value })} />
+        </label>
       </div>
       <p className="field-label">Side</p>
       {choice('signSide', [['left', 'Left'], ['right', 'Right']])}
@@ -94,31 +98,48 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signAr
       />
       <label className="check"><input type="checkbox" checked={layout.name.show} onChange={e => setBox('name', { show: e.target.checked })} /> Show the place name</label>
       <label className="check"><input type="checkbox" checked={layout.topic.show} onChange={e => setBox('topic', { show: e.target.checked })} /> Show the subject</label>
-      {choice('signText', [['light', 'Light letters'], ['dark', 'Dark letters']])}
+      <p className="field-label">Letters</p>
+      <div className="seg">
+        {choice('signText', [['light', 'Light'], ['dark', 'Dark']])}
+        <label className={`swatch wheel${look.signText === 'custom' ? ' is-on' : ''}`} title="Pick any letter color">
+          <span className="sr-only">Pick any letter color</span>
+          <input type="color" value={look.signTextColor} onChange={e => onChange({ signText: 'custom', signTextColor: e.target.value })} />
+        </label>
+      </div>
+      <label className="slider">
+        <span>Place name size <b>{Math.round(look.signNameScale * 100)}%</b></span>
+        <input type="range" min="0.6" max="1.6" step="0.05" value={look.signNameScale} onChange={e => onChange({ signNameScale: +e.target.value })} />
+      </label>
+      <label className="slider">
+        <span>Subject size <b>{Math.round(look.signTopicScale * 100)}%</b></span>
+        <input type="range" min="0.6" max="1.6" step="0.05" value={look.signTopicScale} onChange={e => onChange({ signTopicScale: +e.target.value })} />
+      </label>
       <button type="button" className="link" onClick={() => onChange({ signLayout: null })}>Put the text back where it was</button>
 
-      <h3>Cursor</h3>
-      <div className="seg" role="radiogroup" aria-label="Cursor">
-        {CURSORS.map(c => (
-          <button key={c.id} type="button" role="radio" aria-checked={look.cursor === c.id} title={c.label}
-            className={`chip cursor-chip${look.cursor === c.id ? ' is-on' : ''}`}
-            style={c.css ? { cursor: c.css } : undefined}
-            onClick={() => onChange({ cursor: c.id })}>
-            {c.label}
-          </button>
-        ))}
-        {look.cursorUrl && (
-          <button type="button" role="radio" aria-checked={look.cursor === 'custom'}
-            className={`chip cursor-chip${look.cursor === 'custom' ? ' is-on' : ''}`} onClick={() => onChange({ cursor: 'custom' })}>
-            <img src={look.cursorUrl} alt="" width="16" height="16" /> Mine
-          </button>
-        )}
-      </div>
-      <label className={`btn btn-small btn-ghost photo-btn${cursorDrop.over ? ' is-over' : ''}`} {...cursorDrop.props}>
-        Upload or drop a cursor image
-        <input type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickCursor(e.target.files[0]); e.target.value = '' }} />
-      </label>
-      <p className="hint">Hover the options to try them. Small PNGs with a transparent background work best.</p>
+      <details className="adv-section">
+        <summary>Cursor</summary>
+        <div className="seg" role="radiogroup" aria-label="Cursor">
+          {CURSORS.map(c => (
+            <button key={c.id} type="button" role="radio" aria-checked={look.cursor === c.id} title={c.label}
+              className={`chip cursor-chip${look.cursor === c.id ? ' is-on' : ''}`}
+              style={c.css ? { cursor: c.css } : undefined}
+              onClick={() => onChange({ cursor: c.id })}>
+              {c.label}
+            </button>
+          ))}
+          {look.cursorUrl && (
+            <button type="button" role="radio" aria-checked={look.cursor === 'custom'}
+              className={`chip cursor-chip${look.cursor === 'custom' ? ' is-on' : ''}`} onClick={() => onChange({ cursor: 'custom' })}>
+              <img src={look.cursorUrl} alt="" width="16" height="16" /> Mine
+            </button>
+          )}
+        </div>
+        <label className={`btn btn-small btn-ghost photo-btn${cursorDrop.over ? ' is-over' : ''}`} {...cursorDrop.props}>
+          Upload or drop a cursor image
+          <input type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickCursor(e.target.files[0]); e.target.value = '' }} />
+        </label>
+        <p className="hint">Hover the options to try them. Small PNGs with a transparent background work best.</p>
+      </details>
 
       <footer className="drawer-save">
         <span className="muted">Changes save automatically</span>

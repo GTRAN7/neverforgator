@@ -155,14 +155,14 @@ button:disabled { cursor: default; opacity: 0.45; }
   top: 7%;
   height: 37%;
   transform: rotate(2.2deg);
-  font-size: 11.5cqw;
+  font-size: calc(11.5cqw * var(--sign-name-scale, 1));
   font-weight: 900;
   line-height: 0.98;
   text-transform: uppercase;
   letter-spacing: 0.01em;
   text-shadow: 0 0.6cqw 0 rgb(0 0 0 / 0.25);
 }
-.sign-name.is-long { font-size: 9.5cqw; }
+.sign-name.is-long { font-size: calc(9.5cqw * var(--sign-name-scale, 1)); }
 /* Bottom panel: what you're learning here. */
 .sign-topic {
   left: 13%;
@@ -172,16 +172,18 @@ button:disabled { cursor: default; opacity: 0.45; }
   gap: 1.5cqw;
   transform: rotate(-0.6deg);
 }
-.sign-subject { margin: 0; font-size: 9cqw; font-weight: 800; line-height: 1.05; color: var(--sign-accent, var(--orange)); }
-.sign-subject.is-long { font-size: 7cqw; line-height: 1.12; }
+.sign-subject { margin: 0; font-size: calc(9cqw * var(--sign-topic-scale, 1)); font-weight: 800; line-height: 1.05; color: var(--sign-accent, var(--orange)); }
+.sign-subject.is-long { font-size: calc(7cqw * var(--sign-topic-scale, 1)); line-height: 1.12; }
 .sign-subject { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .sign-count {
   justify-self: center;
   margin: 0;
   padding: 0.6cqw 3cqw;
   border-radius: 99px;
-  border: 0.5cqw solid rgb(250 243 232 / 0.6);
-  font-size: 4.6cqw;
+  /* The circle follows the letter color (light, dark or picked). */
+  border: 0.5cqw solid color-mix(in srgb, currentColor 65%, transparent);
+  color: var(--sign-text, var(--light));
+  font-size: calc(4.6cqw * var(--sign-topic-scale, 1));
   font-weight: 700;
 }
 
@@ -1134,7 +1136,6 @@ input, textarea {
 .sign-name, .sign-topic { color: var(--sign-text, var(--light)); }
 .custom-sign .sign-name, .custom-sign .sign-topic { transform: none; }
 .custom-sign .sign-name { text-shadow: none; }
-.custom-sign .sign-count { border-color: currentColor; opacity: 0.8; }
 .appearance .hint { margin: -4px 0 0; font-size: calc(12px * var(--text-scale)); color: var(--muted); }
 .art-row { justify-content: flex-start; margin: 0; }
 .sign-editor {
@@ -1171,3 +1172,42 @@ input, textarea {
   cursor: nwse-resize;
 }
 .cursor-chip img { vertical-align: middle; }
+
+/* ---------- sign color wheel, letter sizes, cursor dropdown ---------- */
+.sign { isolation: isolate; }
+.sign-tint {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: var(--sign-tint);
+  mix-blend-mode: color;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  pointer-events: none;
+}
+.app.sign-tinted .sign-tint { display: block; }
+.swatch.wheel {
+  position: relative;
+  display: inline-block;
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  cursor: pointer;
+  overflow: hidden;
+}
+.swatch.wheel input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.slider { display: grid; gap: 4px; font-size: calc(13px * var(--text-scale)); font-weight: 700; }
+.slider span { display: flex; justify-content: space-between; }
+.slider input { width: 100%; padding: 0; border: 0; accent-color: var(--accent); background: none; }
+.adv-section { border-top: 2px dashed var(--cream); padding-top: 8px; }
+.adv-section summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: calc(18px * var(--text-scale));
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+.adv-section summary::-webkit-details-marker { display: none; }
+.adv-section summary::after { content: '▾'; transition: transform 0.3s; }
+.adv-section[open] summary::after { transform: rotate(180deg); }
+.adv-section[open] { display: grid; gap: 10px; }

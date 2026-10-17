@@ -16,7 +16,11 @@ export const DEFAULT_LOOK = {
   cursorUrl: null, // small PNG data URL made from an uploaded image
   signImageId: null, // IndexedDB id of custom sign artwork (null = the campus sign)
   signAr: 1486 / 1791, // width / height of the sign artwork
-  signText: 'light', // 'light' | 'dark' lettering
+  signText: 'light', // 'light' | 'dark' | 'custom' lettering
+  signTextColor: '#ffe08a', // used when signText is 'custom'
+  signTint: '#d94f8c', // sign color when signColor is 'custom' (picked on the wheel)
+  signNameScale: 1, // place-name text size on the sign
+  signTopicScale: 1, // subject text size on the sign
   signLayout: null, // where the name / subject sit on the sign (null = DEFAULT_SIGN_LAYOUT)
 }
 
@@ -41,6 +45,16 @@ export const CURSORS = [
     id: 'star',
     label: 'Star',
     css: svgCursor("<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 2 L20 11.5 L30 12.3 L22.4 18.8 L24.8 28.6 L16 23.3 L7.2 28.6 L9.6 18.8 L2 12.3 L12 11.5 Z' fill='#ffd76a' stroke='#3b2a1e' stroke-width='2' stroke-linejoin='round'/></svg>", 16, 16),
+  },
+  {
+    id: 'flower',
+    label: 'Flower',
+    css: svgCursor("<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16.0' cy='9.0' r='5.6' fill='#ff8fc0' stroke='#3b2a1e' stroke-width='1.6'/><circle cx='22.7' cy='13.8' r='5.6' fill='#ff8fc0' stroke='#3b2a1e' stroke-width='1.6'/><circle cx='20.1' cy='21.7' r='5.6' fill='#ff8fc0' stroke='#3b2a1e' stroke-width='1.6'/><circle cx='11.9' cy='21.7' r='5.6' fill='#ff8fc0' stroke='#3b2a1e' stroke-width='1.6'/><circle cx='9.3' cy='13.8' r='5.6' fill='#ff8fc0' stroke='#3b2a1e' stroke-width='1.6'/><circle cx='16' cy='16' r='4.2' fill='#ffd76a' stroke='#3b2a1e' stroke-width='1.6'/></svg>", 16, 16),
+  },
+  {
+    id: 'hand',
+    label: 'Hand',
+    css: svgCursor("<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M10.5 14 V5 a2.75 2.75 0 0 1 5.5 0 V12.5 a2.6 2.6 0 0 1 5 0.6 a2.6 2.6 0 0 1 5 1 V22 q0 8 -8 8 H15 q-5 0 -7.5 -5 L4.4 19.4 a2.4 2.4 0 0 1 3.9 -2.7 L10.5 19 Z' fill='#fff3e0' stroke='#3b2a1e' stroke-width='2' stroke-linejoin='round'/><path d='M16 12.5 V18 M21 13.1 V18.5' stroke='#3b2a1e' stroke-width='1.5' stroke-linecap='round'/></svg>", 13, 2),
   },
   {
     id: 'pencil',
@@ -80,18 +94,23 @@ export function lookStyle(look) {
   const color = SIGN_COLORS.find(c => c.id === look.signColor) ?? SIGN_COLORS[0]
   const cursor = cursorCss(look)
   const customSign = !!look.signImageId
-  const lettering = look.signText === 'dark' ? '#1d140c' : 'var(--light)'
+  const lettering = look.signText === 'dark' ? '#1d140c' : look.signText === 'custom' ? look.signTextColor : 'var(--light)'
+  const tinted = !customSign && look.signColor === 'custom'
   return {
-    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}`,
+    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}${tinted ? ' sign-tinted' : ''}`,
     style: {
       ...(cursor && { '--cursor': cursor }),
       '--sign-ar': look.signAr ?? DEFAULT_LOOK.signAr,
       '--sign-text': lettering,
+      '--sign-tint': look.signTint,
+      '--sign-name-scale': look.signNameScale ?? 1,
+      '--sign-topic-scale': look.signTopicScale ?? 1,
       // Sign colors only recolor the built-in campus sign.
-      '--sign-filter': customSign ? 'none' : color.filter,
+      '--sign-filter': customSign ? 'none' : tinted ? 'grayscale(1) brightness(2.3)' : color.filter,
       '--sign-scale': SIGN_SIZES[look.signSize] ?? 1,
       // Orange topic text only reads well on the blue sign.
-      '--sign-accent': customSign ? lettering : color.id === 'blue' ? 'var(--orange)' : 'var(--light)',
+      // Orange subject text only on the blue sign with default letters; otherwise it matches the letters.
+      '--sign-accent': !customSign && !tinted && color.id === 'blue' && look.signText === 'light' ? 'var(--orange)' : lettering,
     },
   }
 }
