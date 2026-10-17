@@ -16,6 +16,7 @@ from app.routers import locations, palaces, users
 from app.studio import gemini
 from app.studio import router as studio
 from app.studio.files import CACHE_DIR, PALACES_DIR
+from app.studio.seed_samples import seed_if_missing
 
 logging.basicConfig(level=logging.INFO)
 
@@ -79,6 +80,7 @@ def gemini_failed(request: Request, err: gemini.GeminiError):
 
 
 gemini.choose_models()
+seed_if_missing()  # the built-in Reitz route and the mitosis example (app/studio/seed_samples.py)
 logging.getLogger("loci").info(
     "Gemini: %s", "MOCK mode (no GEMINI_API_KEY)" if gemini.MOCK
     else f"text={gemini.models['text']}, pictures={gemini.PICTURES}")

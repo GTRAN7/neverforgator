@@ -277,8 +277,8 @@ fastapi dev main.py             # starts the server with auto-reload
 ```
 
 For the 3D studio, also put `GEMINI_API_KEY` in `backend/.env` (without it the studio runs in "mock AI"
-mode) and build the shared palaces once: `python -m app.studio.seed_samples --reitz <folder>` (see
-[docs/how-it-works.md](docs/how-it-works.md)).
+mode). The built-in Reitz route and the mitosis example are created automatically on startup, from
+`backend/app/data/reitz/` (see [docs/how-it-works.md](docs/how-it-works.md)).
 
 On Windows (PowerShell):
 

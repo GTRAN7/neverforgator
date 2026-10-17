@@ -1,13 +1,33 @@
 // Every call to the backend goes through here.
 
-// Set by App once the user is logged in: returns an Auth0 access token for the backend.
+// Set by App once the user is logged in: (options) => an Auth0 access token for the backend.
 let getToken = null;
 export const setTokenGetter = (fn) => { getToken = fn; };
 
+// The login stopped working (token rejected, or Auth0 can't give us one): App shows a
+// "log in again" card. `detail` is the reason, for the card's fine print.
+const loginFailed = (detail) => window.dispatchEvent(new CustomEvent('login-failed', { detail }));
+
+async function authHeader(fresh) {
+  if (!getToken) return {};
+  try {
+    return { Authorization: `Bearer ${await getToken(fresh ? { cacheMode: 'off' } : undefined)}` };
+  } catch (e) {
+    loginFailed(e.message);
+    throw new Error('Your login expired. Log in again.');
+  }
+}
+
 async function request(url, options = {}) {
-  const headers = { ...options.headers };
-  if (getToken) headers.Authorization = `Bearer ${await getToken()}`;
-  const res = await fetch(url, { ...options, headers });
+  const call = async (fresh) => fetch(url, { ...options, headers: { ...options.headers, ...(await authHeader(fresh)) } });
+  let res = await call(false);
+  // A rejected token is often just a stale one: get a fresh token and try once more.
+  if (res.status === 401 && getToken) res = await call(true);
+  if (res.status === 401 && getToken) {
+    const body = await res.json().catch(() => ({}));
+    loginFailed(body.detail);
+    throw new Error('Your login expired. Log in again.');
+  }
   if (res.status === 204) return null;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {

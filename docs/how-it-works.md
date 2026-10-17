@@ -15,8 +15,10 @@ cp backend/.env.example backend/.env   # add GEMINI_API_KEY (never commit .env)
 # frontend/.env.local: the VITE_AUTH0_* lines from the root README (with VITE_AUTH0_AUDIENCE)
 npm run dev                            # FastAPI on :8000, app on http://localhost:5173
 npm test                               # backend tests (mock AI, throwaway database)
-cd backend && .venv/bin/python -m app.studio.seed_samples --reitz <folder>   # once: shared palaces
 ```
+
+The built-in Reitz route and the mitosis example are created on startup from `backend/app/data/reitz/`
+(three panoramas, the stops, and the finished example with its doodles), so nobody needs Gemini for them.
 
 - No `GEMINI_API_KEY`: **Mock AI** mode (placeholder facts and scenes), shown as a "mock AI" chip.
 - `DEV_AUTH=true` in `backend/.env` skips Auth0 (local testing only); run the frontend without
@@ -82,12 +84,12 @@ isn't duplicated per user.
 
 ```bash
 cd backend
-.venv/bin/python -m app.studio.seed_samples --reitz <folder>   # Reitz Union + the mitosis example
+.venv/bin/python -m app.studio.seed_samples                  # rebuild Reitz Union + the mitosis example
 .venv/bin/python -m app.studio.make_template <palaceId> [off]  # share (or unshare) any palace
 ```
 
-`--reitz` is a Reitz palace folder exported by the old Node server (`palace.json` + room files; ours is in
-`backend/data/legacy-node/b7c9970f`). The built-ins belong to the `system` user; run it again to rebuild them.
+The built-ins come from `backend/app/data/reitz/` and belong to the `system` user. The 3D scans of the
+Reitz aren't in git (180 MB); add them to your own copy with "+ Add a room".
 
 ## How it fits together
 
@@ -114,7 +116,7 @@ frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI
 
 ## Demo checklist
 
-1. Seed the shared palaces and fill your demo palace **before** demo day so every Gemini result is cached.
+1. Fill your demo palace **before** demo day so every Gemini result is cached.
    `backend/data/`, `backend/loci.db` and `maps/` are gitignored: copy them to the demo laptop yourself.
 2. Panoramas: Chrome can't read HEIC, so convert first:
    `sips -s format jpeg --resampleWidth 8192 IMG_1234.HEIC --out IMG_1234.jpg`.

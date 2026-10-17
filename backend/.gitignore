@@ -6,7 +6,7 @@ __pycache__/
 venv/
 
 # Uploaded rooms, generated pictures, AI cache, usage counts
-data/
+/data/
 node_modules/
 .env.*
 !.env.example

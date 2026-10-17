@@ -42,6 +42,38 @@ function Pages() {
   return <PalaceList />
 }
 
+// When the backend rejects the login (see api.js), say so clearly instead of failing silently.
+// The usual cause on a new machine: frontend/.env.local is missing VITE_AUTH0_AUDIENCE, so Auth0
+// hands out tokens that aren't meant for our API.
+function LoginExpired({ onLogin }) {
+  const [reason, setReason] = useState(null)
+  useEffect(() => {
+    const show = (e) => setReason(e.detail || 'Your login was rejected')
+    window.addEventListener('login-failed', show)
+    return () => window.removeEventListener('login-failed', show)
+  }, [])
+  if (!reason) return null
+  const noAudience = !import.meta.env.VITE_AUTH0_AUDIENCE
+  return (
+    <div className="modal-backdrop">
+      <div className="prefs-card login-expired" role="alertdialog" aria-label="Log in again">
+        <h2 className="card-title big">Your login needs a refresh</h2>
+        {noAudience ? (
+          <p>This copy of the app isn’t set up for the backend yet. Add this line to <code>frontend/.env.local</code>,
+            restart <code>npm run dev</code>, then log in again:<br /><code>VITE_AUTH0_AUDIENCE=https://loci-api</code></p>
+        ) : (
+          <p>The server didn’t accept your login (it may have expired). Log in again and you’ll be right back.</p>
+        )}
+        <small className="hint-text">Server said: {reason}</small>
+        <div className="btn-row">
+          <button className="btn ghost" onClick={() => setReason(null)}>Not now</button>
+          <button className="btn accent" onClick={onLogin}>Log in again</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Shows the landing page (log in / sign up) until Auth0 says we're signed in, then the app.
 function AuthGate() {
   const { isLoading, isAuthenticated, error, user, loginWithRedirect, logout, getAccessTokenSilently } = useAuth0()
@@ -65,7 +97,7 @@ function AuthGate() {
 
   // Every API call sends the user's access token; the backend checks it.
   // (Set during render so it's ready before the pages' first requests.)
-  setTokenGetter(() => getAccessTokenSilently())
+  setTokenGetter((options) => getAccessTokenSilently(options))
   const account = {
     user,
     logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
@@ -73,6 +105,7 @@ function AuthGate() {
   return (
     <AccountContext.Provider value={account}>
       <Pages />
+      <LoginExpired onLogin={() => loginWithRedirect()} />
     </AccountContext.Provider>
   )
 }

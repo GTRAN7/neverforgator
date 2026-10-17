@@ -77,7 +77,8 @@ def verify_token(token: str) -> dict:
             algorithms=["RS256"],            # only accept Auth0's signing algorithm
             audience=config.AUTH0_AUDIENCE,  # token must be meant for THIS API
             issuer=config.AUTH0_ISSUER,      # token must come from OUR Auth0 tenant
-            options={"require_exp": True, "require_sub": True},
+            # leeway: a laptop clock a little off shouldn't make a fresh token look expired.
+            options={"require_exp": True, "require_sub": True, "leeway": 30},
         )
     except ExpiredSignatureError:
         raise _unauthorized("Token expired")
