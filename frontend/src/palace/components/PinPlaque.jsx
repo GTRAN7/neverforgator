@@ -24,6 +24,7 @@ export default function PinPlaque({ pin, n, photoUrl, answerPhotoUrl, editing, o
             <CardPhoto label="Answer photo" url={answerPhotoUrl} onPick={file => onPhoto(file, 'answerImageId')} onRemove={() => onChange({ answerImageId: null })} />
           </div>
           <div className="row">
+            <button className="btn btn-ghost" onClick={() => onChange({ hidden: !pin.hidden })}>{pin.hidden ? 'Show pin' : 'Hide pin'}</button>
             <button className="btn btn-danger" onClick={onDelete}>Delete card</button>
             <button className="btn" onClick={onClose}>Done</button>
           </div>

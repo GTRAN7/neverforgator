@@ -52,31 +52,6 @@ export function seedPalace() {
         card(40, 60, 'Algorithms', 'What is the time complexity of binary search?', 'O(log n): each step halves the remaining range.'),
         card(75, 82, 'Data structures', 'What does a hash table give you on average for lookups?', 'O(1) average-time lookup by key.'),
       ], { builtin: 'malachowsky', cutout: true, ar: 2000 / 1390 }),
-      loc('Marston Science Library', 'Cell Biology', 'library', 1, {
-        concept: 'Mitochondria',
-        association: 'Marston never sleeps: its glowing windows are the powerhouse of campus, burning energy all night.',
-      }, [
-        card(22, 62, 'Organelles', 'Which organelle produces most of the cell\'s ATP?', 'The mitochondrion, via oxidative phosphorylation.'),
-        card(40, 74, 'Membranes', 'What does the fluid mosaic model describe?', 'The plasma membrane as a fluid phospholipid bilayer with embedded, mobile proteins.'),
-      ]),
-      loc('Lake Alice', 'Ecology', 'lake', 2, {
-        concept: 'Keystone species',
-        association: 'Lift the alligator out of Lake Alice and the whole food web collapses, like an arch missing its keystone.',
-      }, [
-        card(38, 72, 'Food webs', 'What is a keystone species?', 'A species whose impact on its ecosystem is disproportionately large relative to its abundance.'),
-      ]),
-      loc('Plaza of the Americas', 'Spanish Vocab', 'plaza', 3, {
-        concept: 'recordar (to remember)',
-        association: 'Everyone lying on the Plaza lawn is recording a voice memo so they remember the sunny afternoon.',
-      }, [
-        card(30, 60, 'Verbs', 'Translate: "to remember"', 'recordar'),
-      ]),
-      loc('Turlington Hall', 'Economics', 'hall', 1, {
-        concept: 'Opportunity cost',
-        association: 'You can paint the Turlington rock or sit on it, not both. The one you give up is the cost.',
-      }, [
-        card(30, 62, 'Micro', 'What is opportunity cost?', 'The value of the next-best alternative you give up when making a choice.'),
-      ]),
     ],
   }
 }

@@ -50,7 +50,7 @@ function Pin({ pin, n, canvasRef, editing, active, highlight, onSelect, onMove }
   })
   return (
     <button
-      className={`pin pin-${mastery(pin.stats)}${pin.starred ? ' is-starred' : ''}${active ? ' is-active' : ''}${highlight ? ' is-highlight' : ''}`}
+      className={`pin pin-${mastery(pin.stats)}${pin.starred ? ' is-starred' : ''}${pin.hidden ? ' is-hidden-pin' : ''}${active ? ' is-active' : ''}${highlight ? ' is-highlight' : ''}`}
       style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
       onPointerDown={onPointerDown}
       onClick={stop}
@@ -80,7 +80,7 @@ export default function Scene({
         <SceneImage loc={loc} url={url} />
 
 
-        {loc.pins.map((pin, i) => (
+        {loc.pins.map((pin, i) => (pin.hidden && !editing && pin.id !== activePinId && pin.id !== highlightPinId) ? null : (
           <Pin
             key={pin.id}
             pin={pin}

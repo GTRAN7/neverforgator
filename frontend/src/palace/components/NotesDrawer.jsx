@@ -12,10 +12,28 @@ const draftOf = loc => ({
 
 // Side panel for the current stop. Edits are kept as a draft and only applied
 // (and shown on the stop's sign) when you press Save.
-export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, focusName, onSave, onDirty, onSelectPin, onUpload, onRemovePhoto, onDeleteLocation, onClose, side = 'right', onFlipSide }) {
+export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, focusName, onSave, onDirty, onSelectPin, onUpload, onRemovePhoto, onDeleteLocation, onClose, side = 'right', onFlipSide, onDraftPins, newPinSpot, onPlacePin }) {
   const [draft, setDraft] = useState(() => draftOf(loc))
+  // Show this draft's pins in the scene (even before Save), and let the scene move them.
+  useEffect(() => {
+    onDraftPins?.(draft.pins)
+  }, [draft.pins, onDraftPins])
+  useEffect(() => () => {
+    onDraftPins?.(null)
+    onPlacePin?.(null)
+  }, [onDraftPins, onPlacePin])
   const [openCard, setOpenCard] = useState(null)
   const [saved, setSaved] = useState(false)
+  // The scene moves a draft pin (placing a new card) through this app event.
+  useEffect(() => {
+    const move = e => {
+      const { id, x, y } = e.detail
+      setDraft(d => ({ ...d, pins: d.pins.map(p => (p.id === id ? { ...p, x, y } : p)) }))
+      setSaved(false)
+    }
+    addEventListener('uf-mp:move-draft-pin', move)
+    return () => removeEventListener('uf-mp:move-draft-pin', move)
+  }, [])
   // Clicking the stop's sign jumps straight to editing its name.
   const nameInput = useRef(null)
   useEffect(() => {
@@ -55,10 +73,13 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
     setOpenCard(null)
   }
   const addCard = () => {
-    const pin = { id: uid(), x: 40 + Math.random() * 20, y: 40 + Math.random() * 20, topic: '', question: '', answer: '', stats: { right: 0, wrong: 0 } }
+    // Starts in view (not under this panel), then follows the cursor until you click the photo.
+    const spot = newPinSpot?.(draft.pins.length) ?? { x: 40 + Math.random() * 20, y: 40 + Math.random() * 20 }
+    const pin = { id: uid(), ...spot, topic: '', question: '', answer: '', stats: { right: 0, wrong: 0 } }
     const kept = draft.pins.filter(p => p.id !== openCard || p.topic.trim() || p.question.trim() || p.answer.trim() || p.imageId || p.answerImageId)
     edit({ pins: [...kept, pin] })
     setOpenCard(pin.id)
+    onPlacePin?.(pin.id)
   }
   const save = () => {
     onSave(draft)
@@ -135,6 +156,8 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
                   <CardPhoto label="Answer photo" url={photoUrl(pin, 'answerImageId')} onPick={file => pickPhoto(pin.id, file, 'answerImageId')} onRemove={() => setPin(pin.id, { answerImageId: null })} />
                 </div>
                 <div className="row">
+                  <button className="btn btn-small btn-ghost" onClick={() => setPin(pin.id, { hidden: !pin.hidden })}
+                    title={pin.hidden ? 'Show this pin in the scene again' : 'Keep the card but hide its pin in the scene'}>{pin.hidden ? 'Show pin' : 'Hide pin'}</button>
                   <button className="btn btn-small btn-danger" onClick={() => edit({ pins: draft.pins.filter(p => p.id !== pin.id) })}>Delete card</button>
                   <button className="btn btn-small btn-ghost" onClick={closeCard}>Done</button>
                 </div>
@@ -149,7 +172,7 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
                     {photoUrl(pin, 'answerImageId') && <img className="card-thumb" src={photoUrl(pin, 'answerImageId')} alt="Answer photo" title="Answer photo" />}
                   </span>
                 )}
-                <span className="card-stats">✓ {pin.stats.right} · ✗ {pin.stats.wrong} · tap to edit</span>
+                <span className="card-stats">✓ {pin.stats.right} · ✗ {pin.stats.wrong}{pin.hidden && ' · pin hidden'} · tap to edit</span>
               </button>
             )}
           </li>

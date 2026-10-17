@@ -10,12 +10,12 @@ export default function AboutDialog({ onClose }) {
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <section className="plaque dialog about" role="dialog" aria-label="About UF Memory Palace" onClick={e => e.stopPropagation()}>
+      <section className="plaque dialog about" role="dialog" aria-label="About Never Forgator" onClick={e => e.stopPropagation()}>
         <button className="icon-btn plaque-close" onClick={onClose} aria-label="Close">×</button>
         <p className="eyebrow">About</p>
         <h2 className="plaque-q">Welcome, ruler! 📏</h2>
         <p>
-          Welcome to Memory Palace, built by students at the University of Florida. We built this to teach
+          Welcome to Never Forgator, built by students at the University of Florida. We built this to teach
           students to use the <b>method of loci</b> (aka, your mind palace). It's a useful trick for memorization
           or learning new concepts. As an effect, you can also just use this as a way to memorize terms that
           relate to specific locations (e.g. learning parts of the body or architecture in a city)!

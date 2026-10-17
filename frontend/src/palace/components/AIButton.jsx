@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { describe } from '../ai'
 
-// "✨ Generate" button: asks the backend for a description and hands it to onResult.
+// "Generate" button: asks the backend for a description and hands it to onResult.
 export default function AIButton({ request, onResult, label = 'Generate' }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -21,7 +21,7 @@ export default function AIButton({ request, onResult, label = 'Generate' }) {
   return (
     <span className="ai">
       <button type="button" className="btn btn-small btn-ai" onClick={run} disabled={busy}>
-        {busy ? 'Writing…' : `✨ ${label}`}
+        {busy ? 'Writing…' : `${label}`}
       </button>
       {error && <span className="ai-error" role="alert">{error}</span>}
     </span>

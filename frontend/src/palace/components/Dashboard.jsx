@@ -108,7 +108,7 @@ export default function Dashboard({ account, onOpen, prefs }) {
       <Sky night={prefs.night} />
       <div className="dashboard-content">
         <header className="dashboard-head">
-          <button className="brand" onClick={openAbout} title="About UF Memory Palace">UF<span>·</span>MP</button>
+          <button className="brand" onClick={openAbout} title="About Never Forgator">Never<span>·</span>Forgator</button>
           <div className="row">
             <Settings prefs={prefs} />
             {account.user ? (

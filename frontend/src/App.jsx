@@ -73,7 +73,7 @@ function App() {
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />
-          <h1 className="sign-name is-long">UF Memory Palace</h1>
+          <h1 className="sign-name is-long">Never Forgator</h1>
           <div className="sign-topic">
             <p className="sign-subject is-long">Walk through campus and learn the method of loci</p>
           </div>

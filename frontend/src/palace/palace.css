@@ -215,6 +215,11 @@ button:disabled { cursor: default; opacity: 0.45; }
   font-size: calc(17px * var(--text-scale));
   transition: transform 0.15s ease;
 }
+/* A hidden pin only shows (faded) while editing or when its card is open. */
+.pin.is-hidden-pin { opacity: 0.45; }
+/* The "place the new pin" hint stays visible above the Notes panel. */
+.edit-banner.is-placing { z-index: 16; }
+.pin.is-hidden-pin .pin-num { border-style: dashed; }
 .pin:hover .pin-num, .pin.is-active .pin-num { transform: translateY(-3px) scale(1.08); }
 .pin-good .pin-num { background: var(--good); }
 .pin-shaky .pin-num { background: var(--shaky); color: var(--on-shaky); }
@@ -291,6 +296,10 @@ button:disabled { cursor: default; opacity: 0.45; }
   font-variation-settings: 'CASL' 1;
 }
 .brand span { color: var(--light); }
+/* "Never·Forgator" is long: shrink it on phones so the header stays on one line. */
+@media (max-width: 520px) {
+  .brand { font-size: calc(16px * var(--text-scale)); -webkit-text-stroke-width: 4px; }
+}
 .title-wrap { grid-area: title; pointer-events: none; animation: titleIn 0.8s 0.7s both cubic-bezier(.2,.8,.2,1); }
 @keyframes titleIn { from { opacity: 0; transform: translateY(-14px); } }
 .title {
@@ -618,6 +627,7 @@ input, textarea {
   .drawer-left { border-right: 0; animation-name: slideIn; }
   .drawer-flip { display: none; }
   .edit-banner { top: auto; bottom: 96px; white-space: normal; width: calc(100vw - 32px); text-align: center; }
+  .edit-banner.is-placing { top: 72px; bottom: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -26,6 +26,9 @@ const stripOffset = ({ offset, ...k }) => (offset == null ? k : { ...k, offset: 
 const shuffled = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1])
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 // Images that ship with the app, referenced by name from seed data.
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
+// Moves a pin in the Notes draft (see NotesDrawer).
+const moveDraftPin = (id, x, y) => dispatchEvent(new CustomEvent('uf-mp:move-draft-pin', { detail: { id, x, y } }))
 const BUILTIN_IMAGES = { stadium: stadiumUrl, smathers: smathersUrl, heavener: heavenerUrl, century: centuryTowerUrl, malachowsky: malachowskyUrl }
 
 // Camera keyframes for the "fly forward into the distance" transition.
@@ -163,6 +166,61 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
 
   // ---- navigation: fly forward into the distance ----------------------
   const notesDirty = useRef(false)
+  // Cards added in Notes stay a draft until Save; their pins still show in the scene meanwhile.
+  const [draftPins, setDraftPins] = useState(null)
+  // A just-added card's pin follows the cursor over the photo until you click to drop it.
+  const [placingPinId, setPlacingPinId] = useState(null)
+  const stageRef = useRef(null)
+  const sceneCanvas = () => stageRef.current?.querySelector('.scene-canvas')
+  // A spot in the part of the photo you can see (not under the side panel), in % of the photo.
+  const visibleSpot = nth => {
+    const canvas = sceneCanvas()?.getBoundingClientRect()
+    if (!canvas) return { x: 50, y: 50 }
+    const free = { left: 0, right: innerWidth, top: 0, bottom: innerHeight }
+    const panel = document.querySelector('aside.drawer')?.getBoundingClientRect()
+    if (panel) {
+      if (panel.left <= 0 && panel.right < innerWidth) free.left = panel.right
+      else if (panel.right >= innerWidth && panel.left > 0) free.right = panel.left
+      if (panel.top > 0) free.bottom = panel.top
+    }
+    const nudge = (nth % 4) * 4 // so several new pins don't stack exactly
+    const px = (free.left + free.right) / 2 + nudge
+    const py = free.top + (free.bottom - free.top) * 0.45 + nudge
+    return {
+      x: clamp(((px - canvas.left) / canvas.width) * 100, 4, 96),
+      y: clamp(((py - canvas.top) / canvas.height) * 100, 4, 96),
+    }
+  }
+  useEffect(() => {
+    if (!placingPinId) return
+    const at = e => {
+      if (e.target.closest?.('.drawer, .hud-top, .hud-bottom, .dialog-backdrop')) return null
+      const r = stageRef.current?.querySelector('.scene-canvas')?.getBoundingClientRect()
+      if (!r || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return null
+      return { x: clamp(((e.clientX - r.left) / r.width) * 100, 2, 98), y: clamp(((e.clientY - r.top) / r.height) * 100, 2, 98) }
+    }
+    const move = e => {
+      const p = at(e)
+      if (p) moveDraftPin(placingPinId, p.x, p.y)
+    }
+    const drop = e => {
+      const p = at(e)
+      if (!p) return
+      e.preventDefault()
+      e.stopPropagation()
+      moveDraftPin(placingPinId, p.x, p.y)
+      setPlacingPinId(null)
+    }
+    const key = e => { if (e.key === 'Escape') setPlacingPinId(null) }
+    addEventListener('pointermove', move)
+    addEventListener('click', drop, true)
+    addEventListener('keydown', key)
+    return () => {
+      removeEventListener('pointermove', move)
+      removeEventListener('click', drop, true)
+      removeEventListener('keydown', key)
+    }
+  }, [placingPinId])
   // In-app confirmations (browser confirm() popups can be blocked in embedded views).
   const [dialog, setDialog] = useState(null)
   const ask = (opts, run) => setDialog({ ...opts, run })
@@ -399,19 +457,19 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       }}
     >
       <Sky look={look} imageUrl={look.skyImageId ? imageUrls[look.skyImageId] : null} night={prefs.night} />
-      <div className="stage">
+      <div className="stage" ref={stageRef}>
         {layers.map(({ i, ref }) => {
           const l = locs[i]
           return (
             <div className="layer" key={l.id} ref={ref}>
               <Scene
-                loc={l}
+                loc={notesOpen && draftPins && l.id === cur.id ? { ...l, pins: draftPins } : l}
                 url={urlFor(l)}
                 interactive={!trans}
                 editing={editing && !trans}
                 quizzing={!!quiz}
                 hideHint={!!activePinId || notesOpen || walking}
-                activePinId={activePinId}
+                activePinId={placingPinId ?? activePinId}
                 highlightPinId={step?.kind === 'card' ? step.pinId : null}
                 onAddPin={addPin}
                 onSelectPin={id => {
@@ -432,7 +490,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       </div>
 
       <header className="hud-top">
-        <button className="brand" onClick={openAbout} title="About UF Memory Palace">UF<span>·</span>MP</button>
+        <button className="brand" onClick={openAbout} title="About Never Forgator">Never<span>·</span>Forgator</button>
         <div className="hud-actions">
           <Settings
             prefs={prefs}
@@ -449,6 +507,9 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
 
       {editing && !quiz && (
         <div className="edit-banner">Editing · click the scene to pin a card · drag pins to move them</div>
+      )}
+      {placingPinId && notesOpen && (
+        <div className="edit-banner is-placing">Click the photo to place the new card's pin · Esc keeps it where it is</div>
       )}
 
       <nav className="hud-bottom">
@@ -545,6 +606,9 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
           focusName={editFocus}
           onSave={patch => updateLoc(cur.id, patch)}
           onDirty={d => { notesDirty.current = d }}
+          onDraftPins={setDraftPins}
+          newPinSpot={visibleSpot}
+          onPlacePin={setPlacingPinId}
           onSelectPin={id => setActivePinId(id)}
           onUpload={() => askUpload(cur.id)}
           onRemovePhoto={removePhoto}
