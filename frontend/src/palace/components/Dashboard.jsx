@@ -4,6 +4,7 @@ import { createPalace, deletePalace, listPalaces, prepareImage, putImage } from 
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import Settings from './Settings'
+import { useFileDrop } from '../useFileDrop'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
@@ -42,6 +43,7 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
       .map(file => ({ id: uid(), file, url: URL.createObjectURL(file), name: nameFromFile(file) }))
     setPhotos(ps => [...ps, ...added])
   }
+  const drop = useFileDrop(addPhotos, { multiple: true })
   const removePhoto = id => setPhotos(ps => {
     const gone = ps.find(p => p.id === id)
     if (gone) URL.revokeObjectURL(gone.url)
@@ -130,8 +132,8 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
             </div>
             {template === 'custom' && (
               <div className="custom-route">
-                <label className="photo-drop">
-                  <span>Choose photos for your stops<br /><small>Pick several at once. You can rename and reorder them below.</small></span>
+                <label className={`photo-drop${drop.over ? ' is-over' : ''}`} {...drop.props}>
+                  <span>Choose or drop photos for your stops<br /><small>Pick several at once. You can rename and reorder them below.</small></span>
                   <input type="file" accept="image/*" multiple hidden onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
                 </label>
                 {photos.length > 0 && (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { uid } from '../seed'
 import CardPhoto from './CardPhoto'
+import StarButton from './StarButton'
 import AIButton from './AIButton'
 
 const FIELDS = ['name', 'description', 'subject', 'concept', 'definition', 'association']
@@ -127,6 +128,7 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
                 <textarea rows={2} value={pin.answer} placeholder="Answer" onChange={e => setPin(pin.id, { answer: e.target.value })} />
                 <CardPhoto url={photoUrl(pin)} onPick={file => pickPhoto(pin.id, file)} onRemove={() => setPin(pin.id, { imageId: null })} />
                 <div className="row">
+                  <StarButton starred={pin.starred} onToggle={() => setPin(pin.id, { starred: !pin.starred })} />
                   <button className="btn btn-small btn-danger" onClick={() => edit({ pins: draft.pins.filter(p => p.id !== pin.id) })}>Delete card</button>
                   <button className="btn btn-small btn-ghost" onClick={closeCard}>Done</button>
                 </div>
@@ -134,7 +136,7 @@ export default function NotesDrawer({ loc, activePinId, imageUrls, storePhoto, f
             ) : (
               <button className="card-view" onClick={() => { closeCard(); setOpenCard(pin.id); onSelectPin(pin.id) }}>
                 {pin.topic && <span className="eyebrow">{pin.topic}</span>}
-                <span className="card-q">{pin.question || 'Untitled card'}</span>
+                <span className="card-q">{pin.starred && <span className="card-star" title="Starred">★ </span>}{pin.question || 'Untitled card'}</span>
                 {photoUrl(pin) && <img className="card-thumb" src={photoUrl(pin)} alt="" />}
                 <span className="card-stats">✓ {pin.stats.right} · ✗ {pin.stats.wrong} · tap to edit</span>
               </button>

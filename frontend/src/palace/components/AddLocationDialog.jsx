@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AIButton from './AIButton'
 import Placeholder from './Placeholder'
+import { useFileDrop } from '../useFileDrop'
 
 // "New location": pick one of the UF campus places not on your route yet, or
 // make your own (name, description, optional subject and photo; transparent
@@ -16,6 +17,7 @@ export default function AddLocationDialog({ campus = [], imageFor, onPickCampus,
     setFile(next)
     setPreview(next ? URL.createObjectURL(next) : null)
   }
+  const drop = useFileDrop(files => pick(files[0]))
 
   const pickButton = c => (
     <li key={c.name}>
@@ -66,10 +68,10 @@ export default function AddLocationDialog({ campus = [], imageFor, onPickCampus,
           </div>
           <label className="photo-pick">
             Photo <span className="optional">(optional)</span>
-            <span className="photo-drop">
+            <span className={`photo-drop${drop.over ? ' is-over' : ''}`} {...drop.props}>
               {preview
                 ? <img src={preview} alt="" />
-                : <span>Choose a photo<br /><small>PNGs with a transparent background stand on the sky</small></span>}
+                : <span>Choose or drop a photo<br /><small>PNGs with a transparent background stand on the sky</small></span>}
             </span>
             <input type="file" accept="image/*" hidden onChange={e => pick(e.target.files[0] ?? null)} />
           </label>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { deleteImage, exportPalace, imageIdsOf, importPalace, loadPalace, prepareImage, putImage, savePalace, useImageUrls } from './storage'
+import { cursorFromImage, deleteImage, exportPalace, imageIdsOf, importPalace, loadPalace, prepareImage, putImage, savePalace, useImageUrls } from './storage'
 import { campusCatalog, newLocation, resetPalace, seedPalace, uid, upgradePalace } from './seed'
 import Scene from './components/Scene'
 import Sky from './components/Sky'
@@ -14,7 +14,8 @@ import AddLocationDialog from './components/AddLocationDialog'
 import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import Settings from './components/Settings'
-import { lookOf, lookStyle } from './appearance'
+import { lookOf, lookStyle, signLayoutOf } from './appearance'
+import { imagesFromDrop } from './useFileDrop'
 import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -67,6 +68,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
   const look = lookOf(palace)
   const setLook = patch => setPalace(p => ({ ...p, appearance: { ...lookOf(p), ...patch } }))
   const lookCss = lookStyle(look)
+  const signArt = { url: look.signImageId ? imageUrls[look.signImageId] : null, layout: signLayoutOf(look) }
   const urlFor = l => (l?.imageId ? imageUrls[l.imageId] : BUILTIN_IMAGES[l?.builtin] ?? null)
 
   useEffect(() => {
@@ -135,6 +137,17 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
     updateLoc(cur.id, { imageId: null, builtin: null, cutout: false, ar: 16 / 9 })
   }
 
+  // ---- quiz zoom (Advanced appearance): move the camera onto the card's spot ----
+  // The scene layer is scaled up and shifted so the highlighted pin lands above
+  // the question panel. zoomRef remembers the current transform so the next pin
+  // can be located in unzoomed coordinates.
+  const zoomRef = useRef({ s: 1, tx: 0, ty: 0 })
+  const clearZoom = () => {
+    const layer = document.querySelector('.stage .layer')
+    if (layer) Object.assign(layer.style, { transition: 'none', transform: '', transformOrigin: '' })
+    zoomRef.current = { s: 1, tx: 0, ty: 0 }
+  }
+
   // ---- navigation: fly forward into the distance ----------------------
   const notesDirty = useRef(false)
   // In-app confirmations (browser confirm() popups can be blocked in embedded views).
@@ -145,6 +158,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
     () => { notesDirty.current = false; then() },
   )
   const flyTo = (to, dir) => {
+    clearZoom()
     deselectPin()
     setEndCard(false)
     if (reducedMotion()) return setIndex(to)
@@ -221,10 +235,12 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
   const startQuiz = (scope, opts, preset) => {
     let queue = preset
     if (!queue) {
-      const pool = scope === 'here' ? [cur] : locs
+      const pool = (scope === 'here' ? [cur] : locs).filter(l => !opts.stops || opts.chosen.includes(l.id))
       const walk = pool.flatMap(l => [
         ...(opts.concepts && l.concept ? [{ kind: 'what', locId: l.id }] : []),
-        ...(opts.cards ? (opts.shuffle ? shuffled(l.pins) : l.pins).map(p => ({ kind: 'card', locId: l.id, pinId: p.id })) : []),
+        ...(opts.cards ? (opts.shuffle ? shuffled(l.pins) : l.pins)
+          .filter(p => !opts.starredOnly || p.starred)
+          .map(p => ({ kind: 'card', locId: l.id, pinId: p.id })) : []),
       ])
       const where = opts.concepts ? shuffled(pool.filter(l => l.concept)).map(l => ({ kind: 'where', locId: l.id })) : []
       queue = [...walk, ...where]
@@ -287,9 +303,39 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       question: pin?.question || 'What lives at this spot?',
       image: pin?.imageId ? imageUrls[pin.imageId] : null,
       answer: pin?.answer || <em>No answer saved.</em>,
+      starred: pin?.starred,
+      onStar: pin ? () => updatePin(step.locId, step.pinId, { starred: !pin.starred }) : null,
     }
   }
   const showStep = !!step && (step.kind === 'where' || (stepLocIndex === index && !trans))
+  const zoomPinId = look.quizZoom && step?.kind === 'card' && stepLocIndex === index && !trans ? step.pinId : null
+  useLayoutEffect(() => {
+    const layer = document.querySelector('.stage .layer')
+    if (!layer) return
+    const z = zoomRef.current
+    if (!zoomPinId) {
+      // Quiz moved on or ended: ease back out.
+      if (z.s !== 1) {
+        Object.assign(layer.style, { transition: 'transform 0.7s cubic-bezier(.4,0,.2,1)', transform: '' })
+        zoomRef.current = { s: 1, tx: 0, ty: 0 }
+      }
+      return
+    }
+    const pin = layer.querySelector('.pin.is-highlight .pin-num')
+    if (!pin) return
+    const r = pin.getBoundingClientRect()
+    const px = (r.left + r.width / 2 - z.tx) / z.s
+    const py = (r.top + r.height / 2 - z.ty) / z.s
+    const s = 1.8
+    const tx = innerWidth / 2 - s * px
+    const ty = innerHeight * 0.3 - s * py
+    Object.assign(layer.style, {
+      transformOrigin: '0 0',
+      transition: 'transform 0.9s cubic-bezier(.4,0,.2,1)',
+      transform: `translate(${tx}px, ${ty}px) scale(${s})`,
+    })
+    zoomRef.current = { s, tx, ty }
+  }, [zoomPinId])
   const hidingPlace = step?.kind === 'where' && !quiz.revealed
 
   // ---- keyboard + drag-and-drop ----------------------------------------
@@ -303,7 +349,17 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
   })
+  // Dropping a photo on the scene sets this stop's photo. dragover keeps firing
+  // while a file hovers the scene, so the hint switches itself off shortly after
+  // it stops (left the window, dropped, or moved onto a drop area of its own).
   const [dragOver, setDragOver] = useState(false)
+  const dragTimer = useRef(null)
+  const onSceneDragOver = e => {
+    e.preventDefault()
+    setDragOver(true)
+    clearTimeout(dragTimer.current)
+    dragTimer.current = setTimeout(() => setDragOver(false), 150)
+  }
 
   // ---- render ----------------------------------------------------------
   // Whichever layer moves toward the camera is drawn on top.
@@ -313,19 +369,20 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       ? [{ i: trans.to, ref: inRef }, { i: trans.from, ref: outRef }]
       : [{ i: trans.from, ref: outRef }, { i: trans.to, ref: inRef }]
   const activePin = cur.pins.find(p => p.id === activePinId)
-  const quizCounts = {
-    all: { concepts: locs.filter(l => l.concept).length, cards: locs.reduce((s, l) => s + l.pins.length, 0) },
-    here: { concepts: cur.concept ? 1 : 0, cards: cur.pins.length },
-  }
   const busy = !!quiz || walking
 
   return (
     <main
       className={`app${dragOver ? ' is-dragover' : ''}${hidingPlace ? ' is-hiding-place' : ''}${lookCss.className}`}
       style={lookCss.style}
-      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-      onDragLeave={e => { if (e.target === e.currentTarget) setDragOver(false) }}
-      onDrop={e => { e.preventDefault(); setDragOver(false); setPhoto(cur.id, e.dataTransfer.files[0]) }}
+      onDragOver={onSceneDragOver}
+      onDrop={e => {
+        e.preventDefault()
+        setDragOver(false)
+        if (busy || adding || appearanceOpen || menuOpen) return
+        const stopId = cur.id
+        imagesFromDrop(e.dataTransfer).then(([image]) => image && setPhoto(stopId, image))
+      }}
     >
       <Sky look={look} imageUrl={look.skyImageId ? imageUrls[look.skyImageId] : null} night={night} />
       <div className="stage">
@@ -349,6 +406,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
                 }}
                 onMovePin={(id, x, y) => updatePin(l.id, id, { x, y })}
                 onUpload={() => askUpload(l.id)}
+                signArt={signArt}
                 onEditStop={() => {
                   if (mode !== 'notes') switchMode('notes')
                   setEditFocus(f => f + 1)
@@ -416,7 +474,8 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       {quiz?.stage === 'start' && (
         <QuizStart
           here={cur.name}
-          counts={quizCounts}
+          current={cur}
+          stops={locs}
           onStart={startQuiz}
           onClose={() => setQuiz(null)}
         />
@@ -579,6 +638,29 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
               alert('That image could not be read. Try a JPG or PNG.')
             }
           }}
+          signArt={signArt}
+          onPickSignArt={async file => {
+            try {
+              const { blob, ar } = await prepareImage(file, 1600)
+              const id = uid()
+              await putImage(id, blob)
+              if (look.signImageId) deleteImage(look.signImageId)
+              setLook({ signImageId: id, signAr: ar })
+            } catch {
+              alert('That image could not be read. Try a JPG or PNG.')
+            }
+          }}
+          onResetSignArt={() => {
+            if (look.signImageId) deleteImage(look.signImageId)
+            setLook({ signImageId: null, signAr: 1486 / 1791, signLayout: null, signText: 'light' })
+          }}
+          onPickCursor={async file => {
+            try {
+              setLook({ cursor: 'custom', cursorUrl: await cursorFromImage(file) })
+            } catch {
+              alert('That image could not be read. Try a PNG.')
+            }
+          }}
           onClose={() => setAppearanceOpen(false)}
         />
       )}
@@ -620,7 +702,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
         hidden
         onChange={e => { setPhoto(uploadTarget.current, e.target.files[0]); e.target.value = '' }}
       />
-      {dragOver && <div className="drop-hint">Drop to set the photo for {cur.name}</div>}
+      {dragOver && !busy && !adding && !appearanceOpen && !menuOpen && <div className="drop-hint">Drop to set the photo for {cur.name}</div>}
     </main>
   )
 }

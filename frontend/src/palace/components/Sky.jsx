@@ -67,7 +67,7 @@ function Castle() {
     <svg className="castle" viewBox="0 0 140 120" aria-hidden="true">
       <g {...line}>
         {/* flag */}
-        <path d="M70 6 v22" fill="none" />
+        <path d="M70 6 v36" fill="none" />
         <path d="M70 7 l16 5 l-16 5 z" fill="#fa4616" />
         {/* keep */}
         <path d="M44 52 v-10 h8 v6 h8 v-6 h8 v6 h8 v-6 h8 v6 h8 v-6 h8 v10" fill="#efe3cf" />
@@ -102,8 +102,9 @@ const STARS = [[8, 10], [18, 28], [27, 8], [41, 18], [55, 6], [63, 26], [72, 12]
 // `look` comes from the palace's Advanced appearance settings (see appearance.js);
 // the landing page and dashboard use the defaults.
 // `night` (the app-wide night mode) turns any sky into a moonlit one.
-export default function Sky({ look = {}, imageUrl = null, night = false }) {
-  const { clouds = true, birds = true, sun = true, hills = true, castle = true } = look
+// `castle` is only turned on for the start-up page.
+export default function Sky({ look = {}, imageUrl = null, night = false, castle = false }) {
+  const { clouds = true, birds = true, sun = true, hills = true } = look
   const photo = look.sky === 'image' && imageUrl
   const sky = night && !photo ? 'night' : (look.sky ?? 'day')
   const dark = sky === 'night'

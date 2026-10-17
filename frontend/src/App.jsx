@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import PalaceApp from './palace/PalaceApp.jsx'
 import Dashboard from './palace/components/Dashboard.jsx'
@@ -19,6 +19,18 @@ function App() {
   } = useAuth0()
   const [guest, setGuest] = useState(false)
   const [night, toggleNight] = useNightMode()
+
+  // A file dropped anywhere that isn't a drop area would make the browser
+  // open the image and leave the app; ignore those drops instead.
+  useEffect(() => {
+    const ignore = e => e.preventDefault()
+    addEventListener('dragover', ignore)
+    addEventListener('drop', ignore)
+    return () => {
+      removeEventListener('dragover', ignore)
+      removeEventListener('drop', ignore)
+    }
+  }, [])
   // The open palace lives in the URL (#<palaceId>/<stop>) so a refresh stays put.
   const [openId, setOpenId] = useState(() => location.hash.slice(1).split('/')[0] || null)
 
@@ -54,7 +66,7 @@ function App() {
 
   return (
     <main className="landing">
-      <Sky night={night} />
+      <Sky night={night} castle />
       <Settings night={night} onToggleNight={toggleNight} className="landing-corner" />
       <div className="landing-content">
         <div className="sign landing-sign">

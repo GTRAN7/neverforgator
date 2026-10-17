@@ -135,10 +135,23 @@ function hasTransparency(ctx, w, h) {
 // Every uploaded photo in a palace: background, stop photos and card photos.
 export const imageIdsOf = palace => [
   palace.appearance?.skyImageId,
+  palace.appearance?.signImageId,
   ...palace.locations.flatMap(l => [l.imageId, ...l.pins.map(p => p.imageId)]),
 ].filter(Boolean)
 
 // Object URLs for the given IndexedDB image ids, loaded as they appear.
+// Shrink an image to a small PNG data URL, for use as a mouse cursor.
+export async function cursorFromImage(file, size = 32) {
+  const bmp = await createImageBitmap(file)
+  const scale = Math.min(size / bmp.width, size / bmp.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const w = bmp.width * scale
+  const h = bmp.height * scale
+  canvas.getContext('2d').drawImage(bmp, 0, 0, w, h)
+  return canvas.toDataURL('image/png')
+}
+
 export function useImageUrls(imageIds) {
   const [urls, setUrls] = useState({})
   const ids = imageIds.join(',')

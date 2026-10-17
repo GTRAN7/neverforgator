@@ -1,29 +1,54 @@
 import { useState } from 'react'
+import StarButton from './StarButton'
 
-export function QuizStart({ here, counts, onStart, onClose }) {
-  const [opts, setOpts] = useState({ concepts: true, cards: true, shuffle: false })
+export function QuizStart({ here, current, stops, onStart, onClose }) {
+  const [opts, setOpts] = useState({ concepts: false, cards: true, shuffle: false, stops: false, chosen: [] }) //stops added to choose stops included in card set; modify to true when running; chosen[] added to check marked list when selected from a list of locations of the user :/
   const toggle = k => e => setOpts(o => ({ ...o, [k]: e.target.checked }))
   const count = c => (opts.concepts ? c.concepts * 2 : 0) + (opts.cards ? c.cards : 0)
+  // With "Choose from multiple stops" on, only the ticked stops count toward "Whole route";
+  // with "Only starred cards" on, only ★ cards count.
+  const picked = stops.filter(l => !opts.stops || opts.chosen.includes(l.id))
+  const cardsIn = list => list.reduce((n, l) => n + l.pins.filter(p => !opts.starredOnly || p.starred).length, 0)
+  const routeCounts = { concepts: picked.filter(l => l.concept).length, cards: cardsIn(picked) }
+  const hereCounts = { concepts: current.concept ? 1 : 0, cards: cardsIn([current]) }
+  const starredTotal = stops.reduce((n, l) => n + l.pins.filter(p => p.starred).length, 0)
   return (
     <section className="plaque quiz" aria-label="Start a quiz">
       <button className="icon-btn plaque-close" onClick={onClose} aria-label="Close">×</button>
       <p className="eyebrow">Quiz</p>
       <h2 className="plaque-q">Walk the route and recall what lives at each stop.</h2>
       <div className="checks">
-        <label className="check"><input type="checkbox" checked={opts.concepts} onChange={toggle('concepts')} /> <span>Concepts, both ways: <i>“What's at this stop?”</i> and <i>“Where did you put it?”</i></span></label>
+        {/* <label className="check"><input type="checkbox" checked={opts.concepts} onChange={toggle('concepts')} /> <span>Concepts, both ways: <i>“What's at this stop?”</i> and <i>“Where did you put it?”</i></span></label> */}
         <label className="check"><input type="checkbox" checked={opts.cards} onChange={toggle('cards')} /> Your pinned cards</label>
+        <label className="check"><input type="checkbox" checked={opts.stops} onChange={toggle('stops')}/> Choose from multiple stops</label>
+        {opts.stops && stops.map(l => (
+          <label key={l.id} className="check stop-pick">
+            <input
+              type="checkbox"
+              checked={opts.chosen.includes(l.id)}
+              onChange={() => setOpts(o => ({
+                ...o,
+                chosen: o.chosen.includes(l.id)
+                  ? o.chosen.filter(id => id !== l.id)
+                  : [...o.chosen, l.id],
+              }))}
+            />
+            {l.name}
+          </label>
+        ))}
+        <label className="check"><input type="checkbox" checked={!!opts.starredOnly} onChange={toggle('starredOnly')} disabled={!starredTotal} /> Only starred cards (★ {starredTotal})</label>
         <label className="check"><input type="checkbox" checked={opts.shuffle} onChange={toggle('shuffle')} /> Shuffle cards within each stop</label>
       </div>
       <div className="row">
-        <button className="btn" disabled={!count(counts.all)} onClick={() => onStart('all', opts)}>Whole route · {count(counts.all)}</button>
-        <button className="btn btn-ghost" disabled={!count(counts.here)} onClick={() => onStart('here', opts)}>Just {here} · {count(counts.here)}</button>
+        <button className="btn" disabled={!count(routeCounts)} onClick={() => onStart('all', opts)}>Whole route · {count(routeCounts)}</button>
+        <button className="btn btn-ghost" disabled={!count(hereCounts)} onClick={() => onStart('here', opts)}>Just {here} · {count(hereCounts)}</button>
       </div>
     </section>
   )
 }
 
 // One question. `onReveal` lets the app react (e.g. fly to the answer's location).
-export function QuizStep({ step, total, eyebrow, question, image, answer, onReveal, onGrade, onStop }) {
+export function QuizStep({ step, total, eyebrow, question, image, answer, starred, onStar, onReveal, onGrade, onStop }) {
   const [typed, setTyped] = useState('')
   const [revealed, setRevealed] = useState(false)
   const reveal = () => {
@@ -52,6 +77,7 @@ export function QuizStep({ step, total, eyebrow, question, image, answer, onReve
             <div><p className="eyebrow">Answer</p><div className="plaque-a">{answer}</div></div>
           </div>
           <div className="row">
+            {onStar && <StarButton starred={starred} onToggle={onStar} />}
             <button className="btn btn-miss" onClick={() => onGrade(false)}>✗ Missed it</button>
             <button className="btn btn-hit" autoFocus onClick={() => onGrade(true)}>✓ Got it</button>
           </div>

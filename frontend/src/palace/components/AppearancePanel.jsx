@@ -1,7 +1,14 @@
-import { DEFAULT_LOOK, SIGN_COLORS, SKIES } from '../appearance'
+import { CURSORS, DEFAULT_LOOK, SIGN_COLORS, SKIES, signLayoutOf } from '../appearance'
+import { useFileDrop } from '../useFileDrop'
+import SignLayoutEditor from './SignLayoutEditor'
 
 // Advanced mode: how this palace looks. Changes apply right away and are saved with the palace.
-export default function AppearancePanel({ look, onChange, onPickSkyPhoto, onClose }) {
+export default function AppearancePanel({ look, onChange, onPickSkyPhoto, signArt, onPickSignArt, onResetSignArt, onPickCursor, onClose }) {
+  const drop = useFileDrop(files => onPickSkyPhoto(files[0]))
+  const signDrop = useFileDrop(files => onPickSignArt(files[0]))
+  const cursorDrop = useFileDrop(files => onPickCursor(files[0]))
+  const layout = signLayoutOf(look)
+  const setBox = (key, patch) => onChange({ signLayout: { ...layout, [key]: { ...layout[key], ...patch } } })
   const toggle = key => (
     <label className="check">
       <input type="checkbox" checked={look[key]} onChange={e => onChange({ [key]: e.target.checked })} />
@@ -34,8 +41,8 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, onClos
           </button>
         ))}
       </div>
-      <label className="btn btn-small btn-ghost photo-btn">
-        {look.skyImageId ? 'Change background photo' : 'Upload a background photo'}
+      <label className={`btn btn-small btn-ghost photo-btn${drop.over ? ' is-over' : ''}`} {...drop.props}>
+        {look.skyImageId ? 'Change (or drop) background photo' : 'Upload or drop a background photo'}
         <input id="sky-photo" type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickSkyPhoto(e.target.files[0]); e.target.value = '' }} />
       </label>
       <div className="checks">
@@ -43,8 +50,13 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, onClos
         {toggle('birds')}
         {toggle('sun')}
         {toggle('hills')}
-        {toggle('castle')}
       </div>
+
+      <h3>Quiz</h3>
+      <label className="check">
+        <input type="checkbox" checked={look.quizZoom} onChange={e => onChange({ quizZoom: e.target.checked })} />
+        Zoom in on each card's spot during quizzes
+      </label>
 
       <h3>Signs</h3>
       <label className="check"><input type="checkbox" checked={look.showSigns} onChange={e => onChange({ showSigns: e.target.checked })} /> Show the stop signs</label>
@@ -62,9 +74,55 @@ export default function AppearancePanel({ look, onChange, onPickSkyPhoto, onClos
       <p className="field-label">Size</p>
       {choice('signSize', [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']])}
 
+      <p className="field-label">Sign artwork</p>
+      <div className="row art-row">
+        <label className={`btn btn-small btn-ghost${signDrop.over ? ' is-over' : ''}`} {...signDrop.props}>
+          {look.signImageId ? 'Change (or drop) sign image' : 'Upload or drop your own sign'}
+          <input type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickSignArt(e.target.files[0]); e.target.value = '' }} />
+        </label>
+        {look.signImageId && <button type="button" className="btn btn-small btn-ghost" onClick={onResetSignArt}>Use the campus sign</button>}
+      </div>
+
+      <p className="field-label">Text on the sign</p>
+      <p className="hint">Drag the boxes to where the words should go; drag a corner to resize.</p>
+      <SignLayoutEditor
+        url={signArt?.url}
+        ar={look.signAr}
+        layout={layout}
+        lettering={look.signText === 'dark' ? '#1d140c' : '#faf3e8'}
+        onChange={signLayout => onChange({ signLayout })}
+      />
+      <label className="check"><input type="checkbox" checked={layout.name.show} onChange={e => setBox('name', { show: e.target.checked })} /> Show the place name</label>
+      <label className="check"><input type="checkbox" checked={layout.topic.show} onChange={e => setBox('topic', { show: e.target.checked })} /> Show the subject</label>
+      {choice('signText', [['light', 'Light letters'], ['dark', 'Dark letters']])}
+      <button type="button" className="link" onClick={() => onChange({ signLayout: null })}>Put the text back where it was</button>
+
+      <h3>Cursor</h3>
+      <div className="seg" role="radiogroup" aria-label="Cursor">
+        {CURSORS.map(c => (
+          <button key={c.id} type="button" role="radio" aria-checked={look.cursor === c.id} title={c.label}
+            className={`chip cursor-chip${look.cursor === c.id ? ' is-on' : ''}`}
+            style={c.css ? { cursor: c.css } : undefined}
+            onClick={() => onChange({ cursor: c.id })}>
+            {c.label}
+          </button>
+        ))}
+        {look.cursorUrl && (
+          <button type="button" role="radio" aria-checked={look.cursor === 'custom'}
+            className={`chip cursor-chip${look.cursor === 'custom' ? ' is-on' : ''}`} onClick={() => onChange({ cursor: 'custom' })}>
+            <img src={look.cursorUrl} alt="" width="16" height="16" /> Mine
+          </button>
+        )}
+      </div>
+      <label className={`btn btn-small btn-ghost photo-btn${cursorDrop.over ? ' is-over' : ''}`} {...cursorDrop.props}>
+        Upload or drop a cursor image
+        <input type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickCursor(e.target.files[0]); e.target.value = '' }} />
+      </label>
+      <p className="hint">Hover the options to try them. Small PNGs with a transparent background work best.</p>
+
       <footer className="drawer-save">
         <span className="muted">Changes save automatically</span>
-        <button className="btn btn-small btn-ghost" onClick={() => onChange({ ...DEFAULT_LOOK, skyImageId: look.skyImageId })}>Back to default</button>
+        <button className="btn btn-small btn-ghost" onClick={() => onChange({ ...DEFAULT_LOOK, skyImageId: look.skyImageId, signImageId: look.signImageId, signAr: look.signAr, cursorUrl: look.cursorUrl })}>Back to default</button>
       </footer>
     </aside>
   )

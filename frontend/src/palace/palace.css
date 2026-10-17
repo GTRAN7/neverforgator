@@ -605,6 +605,7 @@ input, textarea {
 .landing-content {
   position: relative;
   min-height: 100%;
+  padding-bottom: 0 !important;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -616,7 +617,10 @@ input, textarea {
   position: relative;
   left: auto;
   bottom: auto;
-  height: clamp(220px, 46dvh, 420px);
+  /* Bigger, and planted: its posts reach down into the grass. */
+  height: clamp(280px, 62dvh, 580px);
+  align-self: flex-end;
+  margin-bottom: -2dvh;
   cursor: default;
 }
 .sign.landing-sign:hover, .sign.landing-sign:focus { transform: none; }
@@ -892,8 +896,8 @@ input, textarea {
 /* ---------- castle, moon, stars ---------- */
 .castle {
   position: absolute;
-  left: 30%;
-  bottom: 16.5%;
+  left: 87%;
+  bottom: 16%; /* base tucked just into the far hill */
   width: clamp(70px, 8vw, 130px);
   filter: drop-shadow(0 4px 0 rgb(59 42 30 / 0.15));
 }
@@ -1053,3 +1057,117 @@ input, textarea {
 :root[data-colorblind='on'] .pin-shaky .pin-num::after { content: '!'; }
 .pin-num { position: relative; }
 .knob-cb { width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(#0072b2 0 50%, #e69f00 50% 100%); }
+
+/* Stops listed under "Choose from multiple stops" in the quiz start card */
+.check.stop-pick { margin-left: 26px; font-size: calc(13.5px * var(--text-scale)); }
+.landing-content > .landing-card { align-self: center; }
+
+/* ---------- starred cards ---------- */
+.star-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 2.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: calc(13px * var(--text-scale));
+}
+.star-btn span { font-size: 1.2em; line-height: 1; }
+.star-btn.is-on { background: #ffd76a; color: var(--outline); }
+.star-btn.is-small { padding: 2px 8px; }
+.plaque-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-right: 34px; }
+.card-star { color: #e0a800; }
+.pin.is-starred .pin-num::before {
+  content: '★';
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 2px solid var(--outline);
+  background: #ffd76a;
+  color: var(--outline);
+  font-size: 11px;
+  line-height: 1;
+}
+.quiz .row .star-btn { margin-right: auto; }
+
+/* ---------- drag and drop ---------- */
+.photo-drop.is-over, .card-photo.is-over, .btn.is-over {
+  outline: 3px dashed var(--accent);
+  outline-offset: 3px;
+  background: var(--highlight);
+}
+.card-photo .row small { align-self: center; font-size: calc(12px * var(--text-scale)); }
+
+/* Short messages (e.g. a website blocked copying its image) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 110px;
+  z-index: 60;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 5px 0 var(--shadow);
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: calc(14px * var(--text-scale));
+  animation: rise-pop 0.25s cubic-bezier(.2,.8,.2,1);
+}
+
+/* ---------- custom cursor + sign artwork ---------- */
+.app.has-cursor, .app.has-cursor * { cursor: var(--cursor) !important; }
+.app .sign { aspect-ratio: var(--sign-ar, 1486 / 1791); }
+.app .sign img { object-fit: fill; }
+.sign-name, .sign-topic { color: var(--sign-text, var(--light)); }
+.custom-sign .sign-name, .custom-sign .sign-topic { transform: none; }
+.custom-sign .sign-name { text-shadow: none; }
+.custom-sign .sign-count { border-color: currentColor; opacity: 0.8; }
+.appearance .hint { margin: -4px 0 0; font-size: calc(12px * var(--text-scale)); color: var(--muted); }
+.art-row { justify-content: flex-start; margin: 0; }
+.sign-editor {
+  position: relative;
+  width: min(220px, 100%);
+  border-radius: 10px;
+  background: repeating-conic-gradient(#e9dcc7 0 25%, #f6eddf 0 50%) 0 0 / 16px 16px;
+  touch-action: none;
+  user-select: none;
+}
+.sign-editor > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.sign-editor-box {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 2px dashed currentColor;
+  border-radius: 6px;
+  background: rgb(250 70 22 / 0.18);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  cursor: move;
+}
+.sign-editor-box.is-topic { background: rgb(51 153 255 / 0.22); }
+.sign-editor-resize {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid var(--outline);
+  background: var(--light);
+  cursor: nwse-resize;
+}
+.cursor-chip img { vertical-align: middle; }

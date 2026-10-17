@@ -50,7 +50,7 @@ function Pin({ pin, n, canvasRef, editing, active, highlight, onSelect, onMove }
   })
   return (
     <button
-      className={`pin pin-${mastery(pin.stats)}${active ? ' is-active' : ''}${highlight ? ' is-highlight' : ''}`}
+      className={`pin pin-${mastery(pin.stats)}${pin.starred ? ' is-starred' : ''}${active ? ' is-active' : ''}${highlight ? ' is-highlight' : ''}`}
       style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
       onPointerDown={onPointerDown}
       onClick={stop}
@@ -64,7 +64,7 @@ function Pin({ pin, n, canvasRef, editing, active, highlight, onSelect, onMove }
 
 export default function Scene({
   loc, url, interactive, editing, quizzing, hideHint,
-  activePinId, highlightPinId, onAddPin, onSelectPin, onMovePin, onUpload, onEditStop,
+  activePinId, highlightPinId, onAddPin, onSelectPin, onMovePin, onUpload, onEditStop, signArt,
 }) {
   const canvasRef = useRef(null)
 
@@ -95,7 +95,7 @@ export default function Scene({
         ))}
       </div>
 
-      <Sign loc={loc} onEdit={interactive && !quizzing ? onEditStop : undefined} />
+      <Sign loc={loc} art={signArt} onEdit={interactive && !quizzing ? onEditStop : undefined} />
 
       {!url && interactive && !quizzing && !hideHint && (
         <button className="upload-hint" onClick={onUpload}>

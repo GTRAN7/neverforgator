@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CardPhoto from './CardPhoto'
+import StarButton from './StarButton'
 
 // The wooden "sign" that appears when you click a pin in the scene.
 export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto, onDelete, onClose }) {
@@ -16,13 +17,17 @@ export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto
           <label>Answer<textarea value={pin.answer} onChange={set('answer')} rows={3} placeholder="The thing to recall" /></label>
           <CardPhoto url={photoUrl} onPick={onPhoto} onRemove={() => onChange({ imageId: null })} />
           <div className="row">
+            <StarButton starred={pin.starred} onToggle={() => onChange({ starred: !pin.starred })} />
             <button className="btn btn-danger" onClick={onDelete}>Delete card</button>
             <button className="btn" onClick={onClose}>Done</button>
           </div>
         </div>
       ) : (
         <>
-          <p className="eyebrow">#{n}{pin.topic && ` · ${pin.topic}`}</p>
+          <div className="plaque-top">
+            <p className="eyebrow">#{n}{pin.topic && ` · ${pin.topic}`}</p>
+            <StarButton starred={pin.starred} onToggle={() => onChange({ starred: !pin.starred })} />
+          </div>
           {photoUrl && <img className="card-img" src={photoUrl} alt="" />}
           <h2 className="plaque-q">{pin.question || <em>No question yet — switch to Edit to write one.</em>}</h2>
           {revealed
