@@ -493,7 +493,26 @@ input, textarea {
   animation: slideIn 0.3s cubic-bezier(.2,.8,.2,1);
 }
 @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } }
-.drawer-head { display: flex; justify-content: space-between; align-items: center; }
+/* Sections keep their full height (and the panel scrolls) instead of squashing into each other. */
+.drawer > * { flex-shrink: 0; }
+.drawer-left {
+  right: auto;
+  left: 0;
+  border-left: 0;
+  border-right: 4px solid var(--ink);
+  box-shadow: 10px 0 30px rgb(0 0 0 / 0.15);
+  animation-name: slideInLeft;
+}
+@keyframes slideInLeft { from { transform: translateX(-40px); opacity: 0; } }
+/* On wide screens, keep the toolbar and arrows beside an open side panel instead of under it. */
+@media (min-width: 1000px) {
+  .app:has(.drawer-left) .hud-bottom { left: min(380px, 100vw); }
+  .app:has(.drawer-right) .hud-bottom { right: min(380px, 100vw); }
+}
+.drawer-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.drawer-head .eyebrow { flex: 1; }
+.knob-sign { width: 14px; height: 10px; border-radius: 3px; background: #0f4764; border: 1.5px solid #faf3e8; }
+.drawer-flip { font-size: calc(16px * var(--text-scale)); }
 .drawer .row { justify-content: flex-start; margin: 0; }
 .drawer-section { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .drawer-section h3 { margin: 0; font-size: calc(20px * var(--text-scale)); }
@@ -596,6 +615,8 @@ input, textarea {
   .dots { display: none; }
   .plaque { bottom: 92px; }
   .drawer { top: auto; height: 72dvh; width: 100vw; border-left: 0; border-top: 4px solid var(--ink); border-radius: 22px 22px 0 0; }
+  .drawer-left { border-right: 0; animation-name: slideIn; }
+  .drawer-flip { display: none; }
   .edit-banner { top: auto; bottom: 96px; white-space: normal; width: calc(100vw - 32px); text-align: center; }
 }
 
@@ -775,6 +796,7 @@ input, textarea {
 .palace-card h3 { margin: 0 0 4px; font-size: calc(20px * var(--text-scale)); font-variation-settings: 'CASL' 0.9; }
 .palace-card .muted { margin: 0; font-size: calc(13.5px * var(--text-scale)); }
 .menu-title { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; max-width: 640px; }
+.menu-nav { flex-basis: 100%; display: flex; justify-content: space-between; gap: 12px; }
 .menu-title input { flex: 1; min-width: 200px; font-size: calc(20px * var(--text-scale)); font-weight: 800; }
 
 /* ---------- custom route + confirm dialog ---------- */
@@ -812,11 +834,13 @@ input, textarea {
 .sky-image { background: #86b9df center / cover no-repeat; }
 
 .sign img { filter: var(--sign-filter, none); }
-.app .sign { height: calc(clamp(160px, 28dvh, 300px) * var(--sign-scale, 1)); }
+/* Inside a palace the sign is bigger than on the landing page, so it zooms less on hover. */
+.app .sign { height: calc(clamp(200px, 36dvh, 390px) * var(--sign-scale, 1)); }
+.app .sign:hover, .app .sign:focus-visible { transform: scale(1.45); }
 .app.signs-right .sign { left: auto; right: max(16px, 2.5vw); bottom: 92px; transform-origin: right bottom; }
 .app.signs-hidden .sign { display: none; }
 @media (max-width: 720px) {
-  .app .sign { height: calc(clamp(140px, 24dvh, 220px) * var(--sign-scale, 1)); }
+  .app .sign { height: calc(clamp(160px, 28dvh, 270px) * var(--sign-scale, 1)); }
   .app.signs-right .sign { bottom: 76px; }
 }
 
@@ -1110,8 +1134,9 @@ input, textarea {
   outline-offset: 3px;
   background: var(--highlight);
 }
-.photo-when { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.photo-when .chip { padding: 4px 10px; font-size: calc(12.5px * var(--text-scale)); }
+.card-photos { display: grid; gap: 10px; }
+.card-photo-label { font-size: calc(11px * var(--text-scale)); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.card-thumbs { display: flex; gap: 6px; }
 .card-photo .row small { align-self: center; font-size: calc(12px * var(--text-scale)); }
 
 /* Short messages (e.g. a website blocked copying its image) */
@@ -1216,7 +1241,12 @@ input, textarea {
 .adv-section summary::-webkit-details-marker { display: none; }
 .adv-section summary::after { content: '▾'; transition: transform 0.3s; }
 .adv-section[open] summary::after { transform: rotate(180deg); }
-.adv-section[open] { display: grid; gap: 10px; }
+/* A <details> doesn't lay its content out as grid/flex, so space the rows with margins. */
+.appearance .adv-section > * + * { margin-top: 10px; }
+.appearance .adv-section > .field-label { margin: 16px 0 0; }
+.appearance .adv-section > .field-label + * { margin-top: 6px; }
+.appearance .adv-section > label.btn { display: inline-flex; }
+.appearance .adv-section .hint { margin-bottom: 0; }
 
 /* ---------- card pin color (Advanced appearance) ---------- */
 .pin-new .pin-num { background: var(--pin-color, var(--orange)); color: var(--pin-text, var(--outline)); }
@@ -1234,6 +1264,14 @@ input, textarea {
 }
 .hex-field { width: 92px; padding: 6px 10px; font-family: ui-monospace, monospace; font-size: calc(14px * var(--text-scale)); }
 .hex-field.is-bad { border-color: var(--red); }
+/* Remembered / missed colors you picked win over the defaults (and colorblind mode). */
+.has-pin-good .pin-good .pin-num { background: var(--pin-good); color: var(--pin-good-text); }
+.has-pin-shaky .pin-shaky .pin-num { background: var(--pin-shaky); color: var(--pin-shaky-text); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets .swatch { width: 26px; height: 26px; border-width: 2px; }
+.pin-colors { display: grid; gap: 12px; }
+.pin-color { display: grid; gap: 6px; }
+.pin-color .field-label { margin: 0; }
 /* A pin color you picked wins over colorblind mode's neutral "new" pins. */
 :root[data-colorblind='on'] .has-pin-color .pin-new .pin-num { background: var(--pin-color); color: var(--pin-text); }
 

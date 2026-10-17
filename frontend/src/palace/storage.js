@@ -56,6 +56,12 @@ export const listPalaces = sub =>
 
 export const loadPalace = (sub, id) => read(palaceKey(sub, id))
 
+// New accounts are offered the tutorial once (taking it or skipping it both count).
+export const tutorialSeen = sub => !!readLibrary(sub).tutorialSeen
+export function markTutorialSeen(sub) {
+  write(libraryKey(sub), { ...readLibrary(sub), tutorialSeen: true })
+}
+
 export function savePalace(sub, id, palace) {
   write(palaceKey(sub, id), palace)
   const library = readLibrary(sub)
@@ -136,7 +142,7 @@ function hasTransparency(ctx, w, h) {
 export const imageIdsOf = palace => [
   palace.appearance?.skyImageId,
   palace.appearance?.signImageId,
-  ...palace.locations.flatMap(l => [l.imageId, ...l.pins.map(p => p.imageId)]),
+  ...palace.locations.flatMap(l => [l.imageId, ...l.pins.flatMap(p => [p.imageId, p.answerImageId])]),
 ].filter(Boolean)
 
 // Object URLs for the given IndexedDB image ids, loaded as they appear.

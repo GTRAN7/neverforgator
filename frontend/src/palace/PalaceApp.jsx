@@ -7,6 +7,8 @@ import Sky from './components/Sky'
 import stadiumUrl from './assets/stadium.webp'
 import smathersUrl from './assets/smathers.webp'
 import heavenerUrl from './assets/heavener.webp'
+import centuryTowerUrl from './assets/century-tower.webp'
+import malachowskyUrl from './assets/malachowsky.webp'
 import PinPlaque from './components/PinPlaque'
 import NotesDrawer from './components/NotesDrawer'
 import MenuOverlay from './components/MenuOverlay'
@@ -24,7 +26,7 @@ const stripOffset = ({ offset, ...k }) => (offset == null ? k : { ...k, offset: 
 const shuffled = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1])
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 // Images that ship with the app, referenced by name from seed data.
-const BUILTIN_IMAGES = { stadium: stadiumUrl, smathers: smathersUrl, heavener: heavenerUrl }
+const BUILTIN_IMAGES = { stadium: stadiumUrl, smathers: smathersUrl, heavener: heavenerUrl, century: centuryTowerUrl, malachowsky: malachowskyUrl }
 
 // Camera keyframes for the "fly forward into the distance" transition.
 const FAR = { transform: 'scale(0.28)', opacity: 0, filter: 'blur(14px)' }
@@ -69,6 +71,16 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
   const look = lookOf(palace)
   const setLook = patch => setPalace(p => ({ ...p, appearance: { ...lookOf(p), ...patch } }))
   const lookCss = lookStyle(look)
+  // Side panels (Notes, Advanced appearance) open on the side away from the sign,
+  // so they don't cover it; ⇄ in a panel's header moves it to the other side.
+  const awayFromSign = look.signSide === 'right' ? 'left' : 'right'
+  const [drawerSide, setDrawerSide] = useState(awayFromSign)
+  const [drawerSignSide, setDrawerSignSide] = useState(look.signSide)
+  if (look.signSide !== drawerSignSide) {
+    setDrawerSignSide(look.signSide)
+    setDrawerSide(awayFromSign)
+  }
+  const drawerProps = { side: drawerSide, onFlipSide: () => setDrawerSide(s => (s === 'left' ? 'right' : 'left')) }
   const signArt = { url: look.signImageId ? imageUrls[look.signImageId] : null, layout: signLayoutOf(look) }
   const urlFor = l => (l?.imageId ? imageUrls[l.imageId] : BUILTIN_IMAGES[l?.builtin] ?? null)
 
@@ -89,7 +101,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
     setActivePinId(pin.id)
   }
   // A card with nothing written and no photo is dropped when you close it.
-  const isBlankPin = p => !p.topic?.trim() && !p.question?.trim() && !p.answer?.trim() && !p.imageId
+  const isBlankPin = p => !p.topic?.trim() && !p.question?.trim() && !p.answer?.trim() && !p.imageId && !p.answerImageId
   const deselectPin = () => {
     const open = activePinId && cur.pins.find(p => p.id === activePinId)
     if (open && isBlankPin(open)) updateLoc(cur.id, l => ({ pins: l.pins.filter(p => p.id !== open.id) }))
@@ -303,7 +315,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       eyebrow: `${stepLoc.name}${pin?.topic ? ` · ${pin.topic}` : ''}`,
       question: pin?.question || 'What lives at this spot?',
       image: pin?.imageId ? imageUrls[pin.imageId] : null,
-      imageWithAnswer: pin?.photoWith === 'answer',
+      answerImage: pin?.answerImageId ? imageUrls[pin.answerImageId] : null,
       answer: pin?.answer || <em>No answer saved.</em>,
       starred: pin?.starred,
       onStar: pin ? () => updatePin(step.locId, step.pinId, { starred: !pin.starred }) : null,
@@ -424,6 +436,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
         <div className="hud-actions">
           <Settings
             prefs={prefs}
+            signs={{ on: look.showSigns, toggle: () => setLook({ showSigns: !look.showSigns }) }}
             onAppearance={() => {
               setMenuOpen(false)
               switchMode(null)
@@ -462,9 +475,10 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
           n={cur.pins.indexOf(activePin) + 1}
           editing={editing}
           photoUrl={activePin.imageId ? imageUrls[activePin.imageId] : null}
-          onPhoto={async file => {
+          answerPhotoUrl={activePin.answerImageId ? imageUrls[activePin.answerImageId] : null}
+          onPhoto={async (file, key) => {
             const stored = await storePhoto(file)
-            if (stored) updatePin(cur.id, activePin.id, { imageId: stored.id })
+            if (stored) updatePin(cur.id, activePin.id, { [key]: stored.id })
           }}
           onChange={patch => updatePin(cur.id, activePin.id, patch)}
           onDelete={() => deletePin(activePin.id)}
@@ -523,6 +537,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       {notesOpen && !busy && (
         <NotesDrawer
           key={cur.id}
+          {...drawerProps}
           loc={cur}
           activePinId={activePinId}
           imageUrls={imageUrls}
@@ -538,7 +553,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
             const doomed = cur
             ask({ title: 'Delete location', message: `Delete ${doomed.name} and its ${doomed.pins.length} cards?`, confirmLabel: 'Delete' }, () => {
               notesDirty.current = false
-              ;[doomed.imageId, ...doomed.pins.map(p => p.imageId)].filter(Boolean).forEach(id => deleteImage(id))
+              ;[doomed.imageId, ...doomed.pins.flatMap(p => [p.imageId, p.answerImageId])].filter(Boolean).forEach(id => deleteImage(id))
               setPalace(p => ({ ...p, locations: p.locations.filter(l => l.id !== doomed.id) }))
               setIndex(i => Math.max(0, Math.min(i, n - 2)))
             })
@@ -626,6 +641,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
 
       {appearanceOpen && (
         <AppearancePanel
+          {...drawerProps}
           look={look}
           night={prefs.night}
           onChange={setLook}

@@ -22,7 +22,9 @@ export const DEFAULT_LOOK = {
   signTint: '#d94f8c', // sign color when signColor is 'custom' (picked on the wheel)
   signNameScale: 1, // place-name text size on the sign
   signTopicScale: 1, // subject text size on the sign
-  pinColor: null, // card pin color (hex); null = UF orange
+  pinColor: null, // color of pins not quizzed yet (hex); null = orange
+  pinGoodColor: null, // pins you mostly remember; null = green
+  pinShakyColor: null, // pins you mostly miss; null = red
   pinColorAll: false, // true = every pin uses pinColor (hides remembered/missed colors)
   signLayout: null, // where the name / subject sit on the sign (null = DEFAULT_SIGN_LAYOUT)
 }
@@ -96,6 +98,20 @@ export const SIGN_COLORS = [
   { id: 'charcoal', label: 'Charcoal', swatch: '#3a3a3a', filter: 'grayscale(1) brightness(0.9)' },
 ]
 
+// Ready-made colors offered next to the sign and pin color pickers.
+export const PRESET_COLORS = [
+  { hex: '#e97451', label: 'Orange' },
+  { hex: '#f4a43c', label: 'Amber' },
+  { hex: '#c0392b', label: 'Red' },
+  { hex: '#d94f8c', label: 'Pink' },
+  { hex: '#7b5cc4', label: 'Purple' },
+  { hex: '#3399ff', label: 'Blue' },
+  { hex: '#2a9d8f', label: 'Teal' },
+  { hex: '#6fae5a', label: 'Green' },
+  { hex: '#4a4a4a', label: 'Charcoal' },
+  { hex: '#faf3e8', label: 'Cream' },
+]
+
 export const SIGN_SIZES = { small: 0.75, medium: 1, large: 1.3 }
 
 // CSS variables + classes the app root applies.
@@ -121,13 +137,15 @@ export function lookStyle(look) {
   const lettering = look.signText === 'dark' ? '#1d140c' : look.signText === 'custom' ? look.signTextColor : 'var(--light)'
   const tinted = !customSign && look.signColor === 'custom'
   return {
-    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}${tinted ? ' sign-tinted' : ''}${look.pinColor ? ' has-pin-color' : ''}${look.pinColor && look.pinColorAll ? ' pins-one-color' : ''}`,
+    className: `${look.signSide === 'right' ? ' signs-right' : ''}${look.showSigns ? '' : ' signs-hidden'}${cursor ? ' has-cursor' : ''}${customSign ? ' custom-sign' : ''}${tinted ? ' sign-tinted' : ''}${look.pinColor ? ' has-pin-color' : ''}${look.pinGoodColor ? ' has-pin-good' : ''}${look.pinShakyColor ? ' has-pin-shaky' : ''}${look.pinColor && look.pinColorAll ? ' pins-one-color' : ''}`,
     style: {
       ...(cursor && { '--cursor': cursor }),
       '--sign-ar': look.signAr ?? DEFAULT_LOOK.signAr,
       '--sign-text': lettering,
       '--sign-tint': look.signTint,
       ...(look.pinColor && { '--pin-color': look.pinColor, '--pin-text': textOn(look.pinColor) }),
+      ...(look.pinGoodColor && { '--pin-good': look.pinGoodColor, '--pin-good-text': textOn(look.pinGoodColor) }),
+      ...(look.pinShakyColor && { '--pin-shaky': look.pinShakyColor, '--pin-shaky-text': textOn(look.pinShakyColor) }),
       '--sign-name-scale': look.signNameScale ?? 1,
       '--sign-topic-scale': look.signTopicScale ?? 1,
       // Sign colors only recolor the built-in campus sign.

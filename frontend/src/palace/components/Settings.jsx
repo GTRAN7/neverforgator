@@ -39,9 +39,9 @@ function Switch({ label, hint, on, onToggle, knob }) {
   )
 }
 
-// Gear button + panel with the app's preferences. `onAppearance` (inside a
-// palace) adds a row that opens Advanced appearance.
-export default function Settings({ prefs, onAppearance, className = '' }) {
+// Gear button + panel with the app's preferences. Inside a palace, `signs`
+// adds a show/hide switch for its stop signs and `onAppearance` a row that opens Advanced appearance.
+export default function Settings({ prefs, signs, onAppearance, className = '' }) {
   const { night, toggleNight } = prefs
   const [open, setOpen] = useState(false)
   const [about, setAbout] = useState(false)
@@ -134,13 +134,22 @@ export default function Settings({ prefs, onAppearance, className = '' }) {
             </span>
             <button className="btn btn-small btn-ghost" onClick={() => { setOpen(false); setAbout(true) }}>Open</button>
           </div>
+          {signs && (
+            <Switch
+              label="Stop signs"
+              hint="Show the sign at each stop in this palace"
+              on={signs.on}
+              onToggle={signs.toggle}
+              knob={<span className="knob-sign" aria-hidden="true" />}
+            />
+          )}
           {onAppearance && (
             <div className="setting">
               <span className="setting-text">
                 <b>Advanced appearance</b>
                 <small>Sky, castle, sign colors for this palace</small>
               </span>
-              <button className="btn btn-small" onClick={() => { setOpen(false); onAppearance() }}>Open</button>
+              <button className="btn btn-small btn-ghost" onClick={() => { setOpen(false); onAppearance() }}>Open</button>
             </div>
           )}
         </section>

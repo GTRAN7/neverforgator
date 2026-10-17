@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { blankPalace, blankRoutePalace, customPalace, seedPalace, uid } from '../seed'
-import { createPalace, deletePalace, listPalaces, prepareImage, putImage } from '../storage'
+import { blankPalace, blankRoutePalace, customPalace, seedPalace, tutorialPalace, uid } from '../seed'
+import { createPalace, deletePalace, listPalaces, markTutorialSeen, prepareImage, putImage, tutorialSeen } from '../storage'
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import Settings from './Settings'
@@ -37,6 +37,16 @@ export default function Dashboard({ account, onOpen, prefs }) {
   const [photos, setPhotos] = useState([]) // custom route: { id, file, url, name }
   const [busy, setBusy] = useState(false)
   const [doomed, setDoomed] = useState(null) // palace waiting for delete confirmation
+  // Brand-new accounts get a welcome with the tutorial, or skip straight to creating.
+  const [welcome, setWelcome] = useState(() => !palaces.length && !tutorialSeen(sub))
+  const skipTutorial = () => {
+    markTutorialSeen(sub)
+    setWelcome(false)
+  }
+  const startTutorial = () => {
+    markTutorialSeen(sub)
+    onOpen(createPalace(sub, tutorialPalace()))
+  }
 
   const addPhotos = fileList => {
     // Copy now: the input is cleared right after, which empties its live FileList.
@@ -191,6 +201,19 @@ export default function Dashboard({ account, onOpen, prefs }) {
           onConfirm={() => remove(doomed)}
           onCancel={() => setDoomed(null)}
         />
+      )}
+      {welcome && (
+        <div className="dialog-backdrop">
+          <section className="plaque dialog welcome" role="dialog" aria-label="Welcome">
+            <p className="eyebrow">Welcome</p>
+            <h2 className="plaque-q">New to memory palaces?</h2>
+            <p>Take a quick tutorial with an example palace to see how stops, cards, walks and quizzes work, or skip it and build your own.</p>
+            <div className="row">
+              <button className="btn btn-ghost" onClick={skipTutorial}>Skip tutorial</button>
+              <button className="btn" autoFocus onClick={startTutorial}>Start tutorial</button>
+            </div>
+          </section>
+        </div>
       )}
     </main>
   )

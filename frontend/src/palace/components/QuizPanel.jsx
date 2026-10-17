@@ -48,7 +48,7 @@ export function QuizStart({ here, current, stops, onStart, onClose }) {
 }
 
 // One question. `onReveal` lets the app react (e.g. fly to the answer's location).
-export function QuizStep({ step, total, eyebrow, question, image, imageWithAnswer = false, answer, starred, onStar, onReveal, onGrade, onStop }) {
+export function QuizStep({ step, total, eyebrow, question, image, answerImage, answer, starred, onStar, onReveal, onGrade, onStop }) {
   const [typed, setTyped] = useState('')
   const [revealed, setRevealed] = useState(false)
   const reveal = () => {
@@ -60,7 +60,7 @@ export function QuizStep({ step, total, eyebrow, question, image, imageWithAnswe
       <div className="quiz-progress"><span style={{ width: `${(step / total) * 100}%` }} /></div>
       <p className="eyebrow">Question {step + 1} of {total} · {eyebrow}</p>
       <h2 className="plaque-q">{question}</h2>
-      {image && !imageWithAnswer && <img className="card-img" src={image} alt="" />}
+      {image && <img className="card-img" src={image} alt="" />}
       {!revealed ? (
         <form onSubmit={e => { e.preventDefault(); reveal() }}>
           <textarea autoFocus rows={2} value={typed} onChange={e => setTyped(e.target.value)} placeholder="Type what you remember (optional)…"
@@ -76,7 +76,7 @@ export function QuizStep({ step, total, eyebrow, question, image, imageWithAnswe
             {typed && <div><p className="eyebrow">You said</p><p>{typed}</p></div>}
             <div>
               <p className="eyebrow">Answer</p>
-              {image && imageWithAnswer && <img className="card-img" src={image} alt="" />}
+              {answerImage && <img className="card-img" src={answerImage} alt="" />}
               <div className="plaque-a">{answer}</div>
             </div>
           </div>

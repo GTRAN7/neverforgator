@@ -8,7 +8,10 @@ export default function MenuOverlay({ locations, index, account, title, onRename
     <div className="menu" role="dialog" aria-label="Palace map">
       <button className="icon-btn menu-close" onClick={onClose} aria-label="Close menu">×</button>
       <div className="menu-title">
-        <button className="btn btn-small btn-ghost" onClick={onExit}>← All palaces</button>
+        <div className="menu-nav">
+          <button className="btn btn-small btn-ghost" onClick={onClose}>← Back to palace</button>
+          <button className="btn btn-small btn-ghost" onClick={onExit}>All palaces</button>
+        </div>
         <input aria-label="Palace name" value={title ?? ''} onChange={e => onRename(e.target.value)} placeholder="Name this palace" />
       </div>
       <div className="account">

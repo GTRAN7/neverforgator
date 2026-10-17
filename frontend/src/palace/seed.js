@@ -20,6 +20,8 @@ export function newLocation({ name, description = '', subject = '' }, n = 0) {
   return { ...loc(name, subject, 'blank', n % 4, { concept: '', association: '' }, []), description }
 }
 
+const CENTURY_TOWER_PHOTO = { builtin: 'century', cutout: true, ar: 2000 / 1390 }
+
 export function seedPalace() {
   return {
     version: 2,
@@ -40,9 +42,16 @@ export function seedPalace() {
         concept: '14th Amendment',
         association: 'The bells ring 14 times for everyone born here, and every chime is exactly as loud as the last: equal protection.',
       }, [
-        card(23, 50, 'Reconstruction', 'What did the 14th Amendment guarantee?', 'Citizenship to all persons born or naturalized in the US, plus due process and equal protection of the laws.'),
-        card(24, 72, 'Civil War', 'In what year was the Emancipation Proclamation issued?', '1863 (announced Sept 1862, effective Jan 1, 1863).'),
-      ]),
+        card(80, 30, 'Reconstruction', 'What did the 14th Amendment guarantee?', 'Citizenship to all persons born or naturalized in the US, plus due process and equal protection of the laws.'),
+        card(79, 72, 'Civil War', 'In what year was the Emancipation Proclamation issued?', '1863 (announced Sept 1862, effective Jan 1, 1863).'),
+      ], CENTURY_TOWER_PHOTO),
+      loc('Malachowsky Hall', 'Computer Science', 'hall', 2, {
+        concept: 'Binary search',
+        association: 'Hunting for a room in Malachowsky, you always take the middle stairwell and rule out half the building each time.',
+      }, [
+        card(40, 60, 'Algorithms', 'What is the time complexity of binary search?', 'O(log n): each step halves the remaining range.'),
+        card(75, 82, 'Data structures', 'What does a hash table give you on average for lookups?', 'O(1) average-time lookup by key.'),
+      ], { builtin: 'malachowsky', cutout: true, ar: 2000 / 1390 }),
       loc('Marston Science Library', 'Cell Biology', 'library', 1, {
         concept: 'Mitochondria',
         association: 'Marston never sleeps: its glowing windows are the powerhouse of campus, burning energy all night.',
@@ -97,6 +106,7 @@ export function resetPalace(palace) {
   const { title } = palace
   if (palace.template === 'route') return blankRoutePalace(title)
   if (palace.template === 'blank') return blankPalace(title)
+  if (palace.template === 'tutorial') return tutorialPalace()
   if (palace.template === 'custom') return { ...palace, locations: clearStops(palace.locations) }
   return { ...seedPalace(), title }
 }
@@ -109,6 +119,15 @@ export function blankPalace(title) {
     template: 'blank',
     builtinsAdded: ['stadium', 'smathers', 'heavener'],
     locations: [newLocation({ name: 'First stop', description: 'Click the sign to rename me, and add a photo' }, 0)],
+  }
+}
+
+// The new-user tutorial. Placeholder until its example photos and steps are added.
+export function tutorialPalace() {
+  return {
+    ...blankPalace('Tutorial'),
+    template: 'tutorial',
+    locations: [newLocation({ name: 'Example stop', description: 'The tutorial example is coming soon' }, 0)],
   }
 }
 
@@ -166,6 +185,8 @@ export function upgradePalace(palace) {
       association: samples[l.name]?.association ?? notes ?? '',
       stats: { right: 0, wrong: 0 },
       ...l,
+      // Century Tower used to be a drawing; give it the photo unless you added your own.
+      ...(l.name === 'Century Tower' && !l.imageId && !l.builtin && CENTURY_TOWER_PHOTO),
     })),
   }
 }

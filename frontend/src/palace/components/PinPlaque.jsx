@@ -3,11 +3,9 @@ import CardPhoto from './CardPhoto'
 import StarButton from './StarButton'
 
 // The wooden "sign" that appears when you click a pin in the scene.
-export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto, onDelete, onClose }) {
+export default function PinPlaque({ pin, n, photoUrl, answerPhotoUrl, editing, onChange, onPhoto, onDelete, onClose }) {
   const [revealed, setRevealed] = useState(false)
   const set = field => e => onChange({ [field]: e.target.value })
-  const withAnswer = pin.photoWith === 'answer'
-  const photo = photoUrl && <img className="card-img" src={photoUrl} alt="" />
 
   return (
     <section className="plaque" aria-label={`Card ${n}`}>
@@ -21,8 +19,10 @@ export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto
           <label>Topic<input value={pin.topic} onChange={set('topic')} placeholder="e.g. Glycolysis" /></label>
           <label>Question<textarea autoFocus={!pin.question} value={pin.question} onChange={set('question')} rows={2} placeholder="What should this spot remind you of?" /></label>
           <label>Answer<textarea value={pin.answer} onChange={set('answer')} rows={3} placeholder="The thing to recall" /></label>
-          <CardPhoto url={photoUrl} onPick={onPhoto} onRemove={() => onChange({ imageId: null })}
-            withAnswer={withAnswer} onWithAnswer={a => onChange({ photoWith: a ? 'answer' : 'question' })} />
+          <div className="card-photos">
+            <CardPhoto label="Question photo" url={photoUrl} onPick={file => onPhoto(file, 'imageId')} onRemove={() => onChange({ imageId: null })} />
+            <CardPhoto label="Answer photo" url={answerPhotoUrl} onPick={file => onPhoto(file, 'answerImageId')} onRemove={() => onChange({ answerImageId: null })} />
+          </div>
           <div className="row">
             <button className="btn btn-danger" onClick={onDelete}>Delete card</button>
             <button className="btn" onClick={onClose}>Done</button>
@@ -30,10 +30,10 @@ export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto
         </div>
       ) : (
         <>
-          {!withAnswer && photo}
+          {photoUrl && <img className="card-img" src={photoUrl} alt="" />}
           <h2 className="plaque-q">{pin.question || <em>No question yet — switch to Edit to write one.</em>}</h2>
           {revealed
-            ? <>{withAnswer && photo}<p className="plaque-a">{pin.answer || <em>No answer saved.</em>}</p></>
+            ? <>{answerPhotoUrl && <img className="card-img" src={answerPhotoUrl} alt="" />}<p className="plaque-a">{pin.answer || <em>No answer saved.</em>}</p></>
             : <button className="btn" onClick={() => setRevealed(true)}>Reveal answer</button>}
         </>
       )}
