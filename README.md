@@ -36,10 +36,10 @@ Kira Luna Nichtawitz (UX Designer), Natasha Antoniuk (Frontend developer), Eric 
 | Map | Leaflet + OpenStreetMap *or* custom SVG campus map (TBD) | 2D interactive campus map |
 | Auth | Auth0 | Sign up, log in, access tokens for the API |
 | AI | Google Gemini API (Google Cloud) | Concept extraction, associations, quiz generation |
-| Backend | Node + Express (proposed) | API, Gemini calls, auth checks, database access |
+| Backend | Node + Express | API, Gemini calls, auth checks, database access |
 | Database | PostgreSQL | Users, palaces, stops, quiz questions |
 | Domain | GoDaddy | Production domain name |
-| Hosting | TBD (e.g. Vercel / Render / Cloud Run) | Running the frontend, backend and database |
+| Hosting | Vercel | Running the frontend, backend and database |
 
 ### Architecture
 
@@ -63,8 +63,6 @@ React app ──(Auth0 access token)──▶ Express API ──▶ PostgreSQL
 - `quiz_attempts` (optional): `palace_id`, `user_id`, `score`, `taken_at`
 
 ## Roles
-
-Owners are TBD. Assign them as a team.
 
 | Role | Owner | Responsibilities |
 | --- | --- | --- |
