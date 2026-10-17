@@ -75,7 +75,7 @@ function softenEdges(shader, partial, photo) {
 function PanoramaRoom({ url, photo, onPlace }) {
   const texture = useLoader(THREE.TextureLoader, url);
   texture.colorSpace = THREE.SRGBColorSpace;
-  const handleClick = usePlaceHandler(onPlace, (e) => ({
+  const placeHandlers = usePlaceHandler(onPlace, (e) => ({
     direction: e.point.clone().normalize().toArray(),
   }));
 
@@ -91,7 +91,7 @@ function PanoramaRoom({ url, photo, onPlace }) {
 
   return (
     // scale x = -1 mirrors the sphere so the photo isn't backwards when seen from inside.
-    <mesh scale={[-1, 1, 1]} onClick={handleClick} userData={{ room: true }}>
+    <mesh scale={[-1, 1, 1]} {...placeHandlers} userData={{ room: true }}>
       <sphereGeometry args={[PANO_RADIUS, 64, 32, startAngle, horizontalAngle, topAngle, verticalAngle]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} customProgramCacheKey={() => `pano-${partial}-${photo}`}
         onBeforeCompile={(shader) => softenEdges(shader, partial, photo)} />
