@@ -27,7 +27,7 @@ export function seedPalace() {
     version: 2,
     title: 'Sample UF route',
     template: 'sample',
-    builtinsAdded: ['stadium', 'smathers', 'heavener'],
+    builtinsAdded: ['stadium', 'smathers', 'heavener', 'pudong'],
     locations: [
       loc('Ben Hill Griffin Stadium', 'Statistics', 'stadium', 0, {
         concept: 'Normal distribution',
@@ -38,6 +38,20 @@ export function seedPalace() {
         card(34, 36, 'Inference', 'What does a p-value of 0.03 mean?', 'If the null hypothesis were true, results at least this extreme would happen 3% of the time.'),
       ], { builtin: 'stadium', cutout: true, ar: 2000 / 1270 }),
       ...builtinLocations(),
+
+
+      // // Custom added for template purpose (Pudong; adjust pin placement)
+      // loc('Pudong District','Architecture','pudong', 0, {
+      //   concept: 'Pudong Architecture',
+      //   association: 'Pudong District (in Shanghai) went through many phases as it grew into its place as a global financial sector. What buildings make up its skyline?',
+      // }, [
+      //   card(66, 82, 'Identification', 'What building is this? When was it built?', 'Oriental Pearl Tower (1991-1994)'),
+      //   card(45, 62, 'Identification', 'What building is this? When was it built?', 'Shanghai World Financial Center (1997-2008)'),
+      //   card(34, 36, 'Identification', 'What building is this? When was it built?', 'Shanghai Tower (2008-2014)'),
+      // ], { builtin: 'pudong', cutout: true, ar: 1280 / 720 }),
+      // ...builtinLocations(),
+
+     
       loc('Century Tower', 'US History', 'tower', 0, {
         concept: '14th Amendment',
         association: 'The bells ring 14 times for everyone born here, and every chime is exactly as loud as the last: equal protection.',
@@ -45,6 +59,8 @@ export function seedPalace() {
         card(80, 30, 'Reconstruction', 'What did the 14th Amendment guarantee?', 'Citizenship to all persons born or naturalized in the US, plus due process and equal protection of the laws.'),
         card(79, 72, 'Civil War', 'In what year was the Emancipation Proclamation issued?', '1863 (announced Sept 1862, effective Jan 1, 1863).'),
       ], CENTURY_TOWER_PHOTO),
+// I think CENTURY_TOWER_PHOTO used b/c not added to the buildins ://
+      
       loc('Malachowsky Hall', 'Computer Science', 'hall', 2, {
         concept: 'Binary search',
         association: 'Hunting for a room in Malachowsky, you always take the middle stairwell and rule out half the building each time.',

@@ -12,6 +12,8 @@ const TEMPLATES = [
   { id: 'sample', title: 'Sample palace', text: 'The same route already filled in, to see how it works.' },
   { id: 'custom', title: 'Custom route', text: 'Upload your own photos. Each one becomes a stop, in order.' },
   { id: 'blank', title: 'Blank palace', text: 'Start empty and add your own stops and photos as you go.' },
+  // { id: 'template', title: 'TEMPLATE', text: 'COMMENT OUT LATER.' },
+  // DOESN'T WORK :// 
 ]
 
 // "IMG_cafe-corner.png" → "Img Cafe Corner"
