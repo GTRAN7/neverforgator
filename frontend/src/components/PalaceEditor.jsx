@@ -12,6 +12,7 @@ import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import AccountMenu from './AccountMenu.jsx';
+import NightToggle from './NightToggle.jsx';
 import { useAccount } from '../lib/account.js';
 
 const MODES = [
@@ -240,6 +241,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
               <Sparkle /> Fill from notes
             </button>
           )}
+          <NightToggle />
           <AccountMenu account={account} />
         </div>
       </header>

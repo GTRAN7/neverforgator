@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePrefs } from '../lib/prefs.js';
+import { FONTS, TEXT_SIZES, useDisplay } from '../lib/display.js';
 
 // The avatar in the header: a menu with preferences, the tour and log out.
 export default function AccountMenu({ account }) {
@@ -41,7 +42,7 @@ export default function AccountMenu({ account }) {
             <strong>{fullName ?? 'Local user'}</strong>
             {user?.email && <span>{user.email}</span>}
           </div>
-          <button role="menuitem" onClick={() => { setOpen(false); setShowPrefs(true); }}>Study preferences</button>
+          <button role="menuitem" onClick={() => { setOpen(false); setShowPrefs(true); }}>Settings</button>
           <button role="menuitem" onClick={() => { setOpen(false); window.location.hash = '#/guide'; }}>Take the tour again</button>
           {account && <button role="menuitem" className="danger" onClick={account.logout}>Log out</button>}
         </div>
@@ -67,8 +68,22 @@ const CHOICES = {
   },
 };
 
+// One labeled on/off row.
+function Switch({ label, hint, on, onToggle }) {
+  return (
+    <div className="setting-row">
+      <span className="setting-text"><b>{label}</b>{hint && <small>{hint}</small>}</span>
+      <button className={`switch ${on ? 'on' : ''}`} role="switch" aria-checked={on} aria-label={label} onClick={onToggle}>
+        <span className="switch-knob" />
+      </button>
+    </div>
+  );
+}
+
+// Settings: how the app looks (shared with campus mode) and how you study.
 function PrefsModal({ onClose }) {
   const [prefs, update] = usePrefs();
+  const [display, setDisplay] = useDisplay();
   useEffect(() => {
     const esc = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -77,11 +92,42 @@ function PrefsModal({ onClose }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="prefs-card" role="dialog" aria-label="Study preferences" onClick={(e) => e.stopPropagation()}>
+      <div className="prefs-card" role="dialog" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
         <div className="feed-head">
-          <h2 className="card-title big">Study preferences</h2>
+          <h2 className="card-title big">Settings</h2>
           <button className="round-btn small" aria-label="Close" onClick={onClose}>×</button>
         </div>
+
+        <span className="eyebrow">Display</span>
+        <Switch label="Night mode" hint="Dark panels and a night sky with stars" on={display.night}
+          onToggle={() => setDisplay({ night: !display.night })} />
+        <div className="pref-group">
+          <span className="field-label">Font</span>
+          <div className="style-row" role="radiogroup" aria-label="Font">
+            {FONTS.map(([id, name, hint]) => (
+              <button key={id} role="radio" aria-checked={display.font === id} title={hint}
+                className={`style-btn font-${id} ${display.font === id ? 'on' : ''}`} onClick={() => setDisplay({ font: id })}>
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="pref-group">
+          <span className="field-label">Text size</span>
+          <div className="style-row" role="radiogroup" aria-label="Text size">
+            {TEXT_SIZES.map(([id, name], i) => (
+              <button key={id} role="radio" aria-checked={display.textSize === id} aria-label={name} title={name}
+                className={`style-btn size-btn ${display.textSize === id ? 'on' : ''}`} style={{ fontSize: 12 + i * 3 }}
+                onClick={() => setDisplay({ textSize: id })}>
+                A
+              </button>
+            ))}
+          </div>
+        </div>
+        <Switch label="Colorblind-friendly" hint="Blue / amber instead of green / purple, plus ✓ and ! marks"
+          on={display.colorblind} onToggle={() => setDisplay({ colorblind: !display.colorblind })} />
+
+        <span className="eyebrow">Studying</span>
         {Object.entries(CHOICES).map(([key, { label, hint, options }]) => (
           <div key={key} className="pref-group">
             <span className="field-label">{label}</span>
