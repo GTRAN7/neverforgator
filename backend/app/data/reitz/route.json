@@ -15,6 +15,18 @@
    "name": "Room 3",
    "type": "panorama",
    "file": "room-acfb93d8.jpg"
+  },
+  {
+   "name": "Inside (3D)",
+   "type": "splat",
+   "file": "reitz-inside.compressed.ply",
+   "flipped": true
+  },
+  {
+   "name": "Outside (3D)",
+   "type": "splat",
+   "file": "reitz-outside.compressed.ply",
+   "flipped": true
   }
  ],
  "stops": [
