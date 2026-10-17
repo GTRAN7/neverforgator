@@ -15,8 +15,9 @@ const loc = (name, subject, variant, palette, stop, pins, image = {}) => ({
   imageId: null, builtin: null, cutout: false, ar: 16 / 9, pins, ...image,
 })
 
-export function newLocation(n) {
-  return loc('New Spot', 'Subject', ['plaza', 'hall', 'lake'][n % 3], n % 4, { concept: '', association: '' }, [])
+// A location you add yourself: plain hills (no UF landmark) until you add a photo.
+export function newLocation({ name, description = '', subject = '' }, n = 0) {
+  return { ...loc(name, subject, 'blank', n % 4, { concept: '', association: '' }, []), description }
 }
 
 export function seedPalace() {
@@ -107,6 +108,8 @@ export function upgradePalace(palace) {
     version: 2,
     builtinsAdded: ['stadium', ...builtinLocations().map(l => l.builtin)],
     locations: locations.map(({ notes, ...l }) => ({
+      description: '',
+      definition: '',
       concept: samples[l.name]?.concept ?? '',
       association: samples[l.name]?.association ?? notes ?? '',
       stats: { right: 0, wrong: 0 },

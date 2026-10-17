@@ -23,7 +23,7 @@ export function QuizStart({ here, counts, onStart, onClose }) {
 }
 
 // One question. `onReveal` lets the app react (e.g. fly to the answer's location).
-export function QuizStep({ step, total, eyebrow, question, answer, onReveal, onGrade, onStop }) {
+export function QuizStep({ step, total, eyebrow, question, image, answer, onReveal, onGrade, onStop }) {
   const [typed, setTyped] = useState('')
   const [revealed, setRevealed] = useState(false)
   const reveal = () => {
@@ -35,6 +35,7 @@ export function QuizStep({ step, total, eyebrow, question, answer, onReveal, onG
       <div className="quiz-progress"><span style={{ width: `${(step / total) * 100}%` }} /></div>
       <p className="eyebrow">Question {step + 1} of {total} · {eyebrow}</p>
       <h2 className="plaque-q">{question}</h2>
+      {image && <img className="card-img" src={image} alt="" />}
       {!revealed ? (
         <form onSubmit={e => { e.preventDefault(); reveal() }}>
           <textarea autoFocus rows={2} value={typed} onChange={e => setTyped(e.target.value)} placeholder="Type what you remember (optional)…"
@@ -93,6 +94,7 @@ export function WalkPanel({ loc, stop, total, onPrev, onNext, onQuiz, onStop }) 
       <div className="quiz-progress"><span style={{ width: `${((stop + 1) / total) * 100}%` }} /></div>
       <p className="eyebrow">Stop {stop + 1} of {total} · {loc.name}</p>
       <h2 className="plaque-q">{loc.concept || <em>No concept at this stop yet</em>}</h2>
+      {loc.definition && <p className="definition">{loc.definition}</p>}
       {loc.association && <p className="plaque-a">{loc.association}</p>}
       <div className="row">
         <button className="btn btn-ghost" onClick={onPrev} disabled={stop === 0}>Back</button>

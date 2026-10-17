@@ -26,6 +26,7 @@ function Tree({ x, y, s = 1, c }) {
 }
 
 const Landmarks = {
+  blank: () => null,
   tower: () => (
     <g {...line}>
       <rect x="300" y="250" width="150" height="430" fill="#d9825a" />

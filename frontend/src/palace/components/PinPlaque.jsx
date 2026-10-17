@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import CardPhoto from './CardPhoto'
 
 // The wooden "sign" that appears when you click a pin in the scene.
-export default function PinPlaque({ pin, n, editing, onChange, onDelete, onClose }) {
+export default function PinPlaque({ pin, n, photoUrl, editing, onChange, onPhoto, onDelete, onClose }) {
   const [revealed, setRevealed] = useState(false)
   const set = field => e => onChange({ [field]: e.target.value })
 
@@ -13,14 +14,16 @@ export default function PinPlaque({ pin, n, editing, onChange, onDelete, onClose
           <label>Topic<input value={pin.topic} onChange={set('topic')} placeholder="e.g. Glycolysis" /></label>
           <label>Question<textarea autoFocus={!pin.question} value={pin.question} onChange={set('question')} rows={2} placeholder="What should this spot remind you of?" /></label>
           <label>Answer<textarea value={pin.answer} onChange={set('answer')} rows={3} placeholder="The thing to recall" /></label>
+          <CardPhoto url={photoUrl} onPick={onPhoto} onRemove={() => onChange({ imageId: null })} />
           <div className="row">
-            <button className="btn btn-ghost" onClick={onDelete}>Delete card</button>
+            <button className="btn btn-danger" onClick={onDelete}>Delete card</button>
             <button className="btn" onClick={onClose}>Done</button>
           </div>
         </div>
       ) : (
         <>
           <p className="eyebrow">#{n}{pin.topic && ` · ${pin.topic}`}</p>
+          {photoUrl && <img className="card-img" src={photoUrl} alt="" />}
           <h2 className="plaque-q">{pin.question || <em>No question yet — switch to Edit to write one.</em>}</h2>
           {revealed
             ? <p className="plaque-a">{pin.answer || <em>No answer saved.</em>}</p>

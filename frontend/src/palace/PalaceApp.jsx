@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { deleteImage, exportPalace, importPalace, loadPalace, prepareImage, putImage, savePalace, storageKey, useImageUrls } from './storage'
+import { deleteImage, exportPalace, imageIdsOf, importPalace, loadPalace, prepareImage, putImage, savePalace, storageKey, useImageUrls } from './storage'
 import { newLocation, seedPalace, uid, upgradePalace } from './seed'
 import Scene from './components/Scene'
 import Sky from './components/Sky'
@@ -10,6 +10,7 @@ import heavenerUrl from './assets/heavener.webp'
 import PinPlaque from './components/PinPlaque'
 import NotesDrawer from './components/NotesDrawer'
 import MenuOverlay from './components/MenuOverlay'
+import AddLocationDialog from './components/AddLocationDialog'
 import { QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -52,7 +53,8 @@ export default function PalaceApp({ account }) {
   const [activePinId, setActivePinId] = useState(null)
   const [quiz, setQuiz] = useState(null) // { stage: 'start' | 'run' | 'done', queue, i, results, revealed }
   const [walking, setWalking] = useState(false)
-  const imageUrls = useImageUrls(locs)
+  const [adding, setAdding] = useState(false)
+  const imageUrls = useImageUrls(imageIdsOf(palace))
 
   const cur = locs[Math.min(index, n - 1)]
   const urlFor = l => (l?.imageId ? imageUrls[l.imageId] : BUILTIN_IMAGES[l?.builtin] ?? null)
@@ -96,6 +98,19 @@ export default function PalaceApp({ account }) {
       if (old) deleteImage(old)
     } catch {
       alert('That image could not be read. Try a JPG or PNG (iPhone HEIC photos may need converting).')
+    }
+  }
+  // Card photos: stored right away; the card just keeps the image id.
+  const storePhoto = async file => {
+    if (!file?.type.startsWith('image/')) return null
+    try {
+      const { blob } = await prepareImage(file, 1600)
+      const id = uid()
+      await putImage(id, blob)
+      return { id, url: URL.createObjectURL(blob) }
+    } catch {
+      alert('That image could not be read. Try a JPG or PNG (iPhone HEIC photos may need converting).')
+      return null
     }
   }
   const removePhoto = () => {
@@ -210,7 +225,10 @@ export default function PalaceApp({ account }) {
       : { ...q, i: q.i + 1, results, revealed: false }))
   }
   const stepContent = () => {
-    const memory = stepLoc.association && <p className="muted">{stepLoc.association}</p>
+    const memory = <>
+      {stepLoc.definition && <p className="definition">{stepLoc.definition}</p>}
+      {stepLoc.association && <p className="muted">{stepLoc.association}</p>}
+    </>
     if (step.kind === 'what') {
       return {
         eyebrow: stepLoc.name,
@@ -230,6 +248,7 @@ export default function PalaceApp({ account }) {
     return {
       eyebrow: `${stepLoc.name}${pin?.topic ? ` · ${pin.topic}` : ''}`,
       question: pin?.question || 'What lives at this spot?',
+      image: pin?.imageId ? imageUrls[pin.imageId] : null,
       answer: pin?.answer || <em>No answer saved.</em>,
     }
   }
@@ -242,7 +261,7 @@ export default function PalaceApp({ account }) {
       if (isTyping(document.activeElement)) return
       if (e.key === 'ArrowRight' && !quiz && !(walking && index === n - 1)) next()
       if (e.key === 'ArrowLeft' && !quiz && !(walking && index === 0)) prev()
-      if (e.key === 'Escape') { setActivePinId(null); setMenuOpen(false) }
+      if (e.key === 'Escape') { setActivePinId(null); setMenuOpen(false); setAdding(false) }
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
@@ -327,6 +346,11 @@ export default function PalaceApp({ account }) {
           pin={activePin}
           n={cur.pins.indexOf(activePin) + 1}
           editing={editing}
+          photoUrl={activePin.imageId ? imageUrls[activePin.imageId] : null}
+          onPhoto={async file => {
+            const stored = await storePhoto(file)
+            if (stored) updatePin(cur.id, activePin.id, { imageId: stored.id })
+          }}
           onChange={patch => updatePin(cur.id, activePin.id, patch)}
           onDelete={() => deletePin(activePin.id)}
           onClose={() => setActivePinId(null)}
@@ -376,6 +400,8 @@ export default function PalaceApp({ account }) {
           key={cur.id}
           loc={cur}
           activePinId={activePinId}
+          imageUrls={imageUrls}
+          storePhoto={storePhoto}
           onSave={patch => updateLoc(cur.id, patch)}
           onDirty={d => { notesDirty.current = d }}
           onSelectPin={id => setActivePinId(id)}
@@ -407,10 +433,8 @@ export default function PalaceApp({ account }) {
             else if (i + d === index) setIndex(i)
           }}
           onAdd={() => {
-            setPalace(p => ({ ...p, locations: [...p.locations, newLocation(p.locations.length)] }))
             setMenuOpen(false)
-            setIndex(n)
-            switchMode('notes')
+            setAdding(true)
           }}
           onExport={() => exportPalace(palace)}
           onImport={async file => {
@@ -431,6 +455,20 @@ export default function PalaceApp({ account }) {
             setMenuOpen(false)
           }}
           onClose={() => setMenuOpen(false)}
+        />
+      )}
+
+      {adding && (
+        <AddLocationDialog
+          onClose={() => setAdding(false)}
+          onCreate={(fields, file) => {
+            const l = newLocation(fields, n)
+            setPalace(p => ({ ...p, locations: [...p.locations, l] }))
+            setAdding(false)
+            switchMode(null)
+            setIndex(n)
+            if (file) setPhoto(l.id, file)
+          }}
         />
       )}
 

@@ -71,9 +71,14 @@ function hasTransparency(ctx, w, h) {
   return clear / (data.length / (4 * 97)) > 0.02
 }
 
-export function useImageUrls(locations) {
+// Every uploaded photo in a palace: stop photos and card photos.
+export const imageIdsOf = palace =>
+  palace.locations.flatMap(l => [l.imageId, ...l.pins.map(p => p.imageId)]).filter(Boolean)
+
+// Object URLs for the given IndexedDB image ids, loaded as they appear.
+export function useImageUrls(imageIds) {
   const [urls, setUrls] = useState({})
-  const ids = locations.map(l => l.imageId).filter(Boolean).join(',')
+  const ids = imageIds.join(',')
   useEffect(() => {
     let cancelled = false
     for (const id of ids ? ids.split(',') : []) {
@@ -96,10 +101,9 @@ const toDataUrl = blob => new Promise(resolve => {
 
 export async function exportPalace(palace) {
   const images = {}
-  for (const l of palace.locations) {
-    if (!l.imageId) continue
-    const blob = await getImage(l.imageId)
-    if (blob) images[l.imageId] = await toDataUrl(blob)
+  for (const id of imageIdsOf(palace)) {
+    const blob = await getImage(id)
+    if (blob) images[id] = await toDataUrl(blob)
   }
   const file = new Blob([JSON.stringify({ ...palace, images })], { type: 'application/json' })
   const a = document.createElement('a')

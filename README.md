@@ -123,6 +123,10 @@ Each stop on the route is a full-screen scene: a campus photo (cutouts with a tr
 - **Edit** lets you click a scene to pin extra question cards to spots in the photo. **Notes** edits the stop's subject, concept, memory image and photo.
 - **Log in / Sign up** use Auth0. **Try the sample palace** opens the demo route without an account.
 
+- **+ Add location** (menu) asks for a name, description, optional subject and an optional photo. Without a photo the stop is plain hills; transparent PNGs stand on the sky like the campus cutouts.
+- **Cards** can have a photo, shown with the question and in the quiz.
+- **✨ Describe the subject / ✨ Define the term** fill the stop's Description and Definition with Gemini. They call `POST /api/describe` on the backend (port 3001, through the Vite `/api` proxy), which isn't built yet. Expected contract: request `{ kind: 'subject' | 'term', text, subject?, place? }`, response `{ description }` (2–3 plain sentences). Without the backend the buttons show a "backend not running" message.
+
 The sample route lives in `src/palace/seed.js`. Its fields follow the draft data model: each location holds `concept` and `association` (`palace_stops`), and `pins` are extra `quiz_questions`. Until the backend is ready, palaces are saved in the browser: `localStorage`, one per Auth0 user, and uploaded photos in IndexedDB. Export / Import in the menu moves a palace between browsers.
 
 ## Setting up on a new device

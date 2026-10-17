@@ -25,7 +25,7 @@ export default function MenuOverlay({ locations, index, account, onGo, onMove, o
             <button className="menu-go" onClick={() => onGo(i)}>
               <span className="menu-num">{String(i + 1).padStart(2, '0')}</span>
               <span className="menu-name">{l.name}</span>
-              <span className="menu-sub">{l.concept || l.subject} · {l.pins.length} cards</span>
+              <span className="menu-sub">{l.concept || l.description || l.subject || 'No concept yet'} · {l.pins.length} cards</span>
             </button>
             <span className="menu-order">
               <button className="icon-btn" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="Move earlier">↑</button>

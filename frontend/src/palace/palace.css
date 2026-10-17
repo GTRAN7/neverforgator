@@ -155,6 +155,7 @@ button:disabled { cursor: default; opacity: 0.45; }
 }
 .sign-subject { margin: 0; font-size: 9cqw; font-weight: 800; line-height: 1.05; color: var(--orange); }
 .sign-subject.is-long { font-size: 7cqw; line-height: 1.12; }
+.sign-subject { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .sign-count {
   justify-self: center;
   margin: 0;
@@ -619,3 +620,57 @@ input, textarea {
 /* While asking "where did you put…", show only the sky so the place can't give it away. */
 .stage { transition: opacity 0.4s ease; }
 .is-hiding-place .stage { opacity: 0; }
+
+/* ---------- new location dialog ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(59 42 30 / 0.35);
+  animation: fadeIn 0.2s;
+}
+.plaque.dialog { position: relative; left: auto; bottom: auto; transform: none; max-height: calc(100dvh - 32px); animation: none; }
+.optional { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.photo-pick { cursor: pointer; }
+.photo-drop {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border: 3px dashed var(--ink);
+  border-radius: 14px;
+  background: var(--cream);
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+}
+.photo-drop small { font-weight: 500; color: var(--muted); }
+.photo-drop img { width: 100%; max-height: 200px; object-fit: contain; background: #b9d6ea; }
+
+/* ---------- card photos ---------- */
+.card-photo { display: grid; gap: 8px; }
+.card-photo img, .card-img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 2.5px solid var(--ink);
+  background: var(--cream);
+}
+.card-img { margin: 0 0 12px; }
+.card-photo .row { justify-content: flex-start; margin: 0; }
+.card-thumb { width: 64px; height: 44px; object-fit: cover; border-radius: 8px; border: 2px solid var(--ink); margin-top: 4px; }
+
+/* ---------- AI generate buttons ---------- */
+.field-ai { display: grid; gap: 6px; }
+.ai { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.btn-ai { background: #cfe3f1; }
+.ai-error { flex: 1 1 200px; font-size: 12.5px; font-weight: 700; color: #b3361b; }
+.definition { margin: 0 0 8px; padding-left: 10px; border-left: 4px solid var(--orange); font-size: 15px; line-height: 1.45; }
