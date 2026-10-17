@@ -91,7 +91,8 @@ React app ──(Auth0 access token)──▶ Express API ──▶ PostgreSQL
 - [ ] Wireframes + campus route
 - [ ] Backend + database
 - [ ] Gemini integration
-- [ ] Map, walkthrough, quiz, dashboard
+- [x] Palace view: illustrated campus stops, guided walkthrough, two-way quiz (frontend only, saved in the browser)
+- [ ] Map, dashboard
 - [ ] Deployment + domain
 
 ## Project structure
@@ -99,12 +100,30 @@ React app ──(Auth0 access token)──▶ Express API ──▶ PostgreSQL
 ```
 swamphacks/
 ├── .mcp.json          # Auth0 MCP server config for Claude Code (optional)
-└── frontend/          # React + Vite app
-    ├── .env.local     # Auth0 settings (not committed, see setup below)
+└── frontend/                 # React + Vite app
+    ├── .env.local            # Auth0 settings (not committed, see setup below)
     └── src/
-        ├── main.jsx   # Wraps the app in Auth0Provider
-        └── App.jsx    # Sign-in page / signed-in view
+        ├── main.jsx          # Wraps the app in Auth0Provider
+        ├── App.jsx           # Sign-in landing page; shows the palace once signed in
+        └── palace/
+            ├── PalaceApp.jsx # Palace view: scenes, transitions, walkthrough, quiz
+            ├── seed.js       # Sample route (stops, concepts, quiz cards)
+            ├── storage.js    # Saves palaces + uploaded photos in the browser
+            ├── palace.css    # All palace styles (colors are variables at the top)
+            ├── assets/       # Campus cutout photos and the wayfinding sign
+            └── components/   # Scene, Sign, Sky, quiz/walkthrough panels, menus
 ```
+
+## Palace view (frontend)
+
+Each stop on the route is a full-screen scene: a campus photo (cutouts with a transparent background stand on an illustrated sky) and a wayfinding sign with the place name on top and the subject below. Moving to the next stop zooms forward, and the next place rises up from the horizon.
+
+- **Walk** runs the guided walkthrough. It visits the stops in order and shows each concept and its memory image.
+- **Quiz** asks questions both ways. On the walk it asks "What did you put at Century Tower?", and at the end it asks "Where did you put photosynthesis?" with the scene hidden until you reveal the answer. Pinned cards can be included too.
+- **Edit** lets you click a scene to pin extra question cards to spots in the photo. **Notes** edits the stop's subject, concept, memory image and photo.
+- **Log in / Sign up** use Auth0. **Try the sample palace** opens the demo route without an account.
+
+The sample route lives in `src/palace/seed.js`. Its fields follow the draft data model: each location holds `concept` and `association` (`palace_stops`), and `pins` are extra `quiz_questions`. Until the backend is ready, palaces are saved in the browser: `localStorage`, one per Auth0 user, and uploaded photos in IndexedDB. Export / Import in the menu moves a palace between browsers.
 
 ## Setting up on a new device
 
