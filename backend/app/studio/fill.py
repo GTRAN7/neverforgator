@@ -67,7 +67,7 @@ def find_extra_stops(palace: Palace, kept: list[PalaceStop], needed: int) -> lis
     return found
 
 
-def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str = "wild") -> Palace:
+def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str = "silly") -> Palace:
     if not palace.rooms:
         raise HTTPException(400, "Add a room first")
     ideas = gemini.split_notes(notes)

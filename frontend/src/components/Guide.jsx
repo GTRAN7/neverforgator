@@ -5,7 +5,7 @@ import SettingsMenu from './SettingsMenu.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
-// The example is real study material (the phases of mitosis) stored along 5 stops in the Reitz,
+// The example is real study material (the Bill of Rights, amendments 1-5) stored along 5 stops in the Reitz,
 // and step 5 makes you recall it, so by the end you've felt the method work.
 export const TOUR_DONE_KEY = 'neverforgator-tour-done';
 
@@ -13,42 +13,42 @@ const STOPS = [
   {
     place: 'front doors',
     icon: '🚪',
-    term: 'Prophase',
-    fact: 'Chromosomes condense into X shapes and the nuclear envelope breaks down.',
-    hook: 'PRO-phase → PRO wrestlers',
-    scene: 'PRO wrestlers kick the doors in, arms crossed into giant X’s. Glass envelopes shatter.',
+    term: '1st Amendment',
+    fact: 'Freedom of speech, religion and the press.',
+    hook: '1 → BUN · speech, religion, press → megaphone, choir, newspaper',
+    scene: 'A giant hamburger BUN bursts through the doors yelling into a megaphone, a choir behind it, newspapers flying.',
   },
   {
     place: 'giant chess board',
     icon: '♟️',
-    term: 'Metaphase',
-    fact: 'Chromosomes line up across the middle of the cell.',
-    hook: 'META → MIDDLE',
-    scene: 'Every chess piece shuffles into one line straight down the MIDDLE of the board.',
+    term: '2nd Amendment',
+    fact: 'The right to bear arms.',
+    hook: '2 → SHOE · bear arms → a BEAR with big ARMS',
+    scene: 'A giant SHOE stomps onto the board, and a BEAR inside it flexes huge hairy ARMS at the chess pieces.',
   },
   {
     place: 'foosball table',
     icon: '⚽',
-    term: 'Anaphase',
-    fact: 'Sister chromatids are pulled apart to opposite ends.',
-    hook: 'ANA → AWAY',
-    scene: 'You spin the rods and the twin players rip AWAY from each other, to opposite goals.',
+    term: '3rd Amendment',
+    fact: 'Soldiers can’t be housed in your home.',
+    hook: '3 → TREE · soldiers → toy soldiers',
+    scene: 'A TREE grows out of the table and flicks the toy SOLDIERS out of their tiny HOUSE, one by one.',
   },
   {
     place: 'TV screen',
     icon: '📺',
-    term: 'Telophase',
-    fact: 'Two new nuclei form, one at each end.',
-    hook: 'TELO → TELE-vision → TWO screens',
-    scene: 'The TV cracks into TWO screens, with a brand-new news anchor in each.',
+    term: '4th Amendment',
+    fact: 'No searches without a warrant.',
+    hook: '4 → DOOR · warrant → a WARRANT paper',
+    scene: 'A DOOR opens in the TV; a cop reaches in to SEARCH and a giant WARRANT slaps him: “Show me the paper!”',
   },
   {
     place: 'vending machine',
     icon: '🥤',
-    term: 'Cytokinesis',
-    fact: 'The cytoplasm pinches in two, leaving two daughter cells.',
-    hook: 'CYTO-KINESIS → psycho-kinesis',
-    scene: 'A psychic glares until the machine pinches in half and drops TWO identical sodas.',
+    term: '5th Amendment',
+    fact: 'You can stay silent instead of testifying against yourself.',
+    hook: '5 → HIVE · stay silent → zipped lips',
+    scene: 'A buzzing HIVE drops out of the machine and the bees ZIP your lips shut. You stay SILENT.',
   },
 ];
 
@@ -56,9 +56,9 @@ const STOPS = [
 const MAP_POINTS = [[14, 72], [34, 34], [58, 62], [78, 24], [88, 70]];
 
 const QUIZ = [
-  { stop: 2, question: 'Walk to the foosball table. What’s happening there?' },
-  { stop: 1, question: 'Now step back to the chess board. Which phase lives there?' },
-  { stop: 4, question: 'Last stop on the route: the vending machine?' },
+  { stop: 3, question: 'Walk to the TV screen. Which amendment lives there?' },
+  { stop: 1, question: 'Now the chess board. Which one is it?' },
+  { stop: 4, question: 'Last stop: the vending machine?' },
 ];
 
 function RouteMap({ active = -1, showTerms = false }) {
@@ -202,8 +202,8 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the <strong>phases of mitosis</strong>, a classic exam question. NeverForgator cuts your notes into
-          small ideas, each the size of one picture, and gives every idea its own stop.</p>
+        <p>Let’s learn the <strong>Bill of Rights</strong> (the first 5 amendments). NeverForgator cuts your notes into
+          small ideas, each the size of one picture, and gives every idea its own stop: amendment 1 at stop 1, and so on.</p>
         <p>Too many ideas for your route? It tells you to add a room instead of cramming. Crammed stops blur together.</p>
       </>
     ),
@@ -211,7 +211,7 @@ const STEPS = [
       <div className="guide-art split-art">
         <div className="notes-card">
           <span className="sticky-label">your notes</span>
-          <p>Mitosis: prophase, chromosomes condense… metaphase, line up in the middle… anaphase… telophase… cytokinesis…</p>
+          <p>1st: speech, religion, press… 2nd: bear arms… 3rd: no soldiers in your home… 4th: warrants… 5th: stay silent…</p>
         </div>
         <span className="split-arrow">→</span>
         <ol className="idea-stack">
@@ -225,7 +225,9 @@ const STEPS = [
     body: (
       <>
         <p>Your brain ignores the normal and remembers the bizarre. Each scene happens <strong>at the object</strong>, moves,
-          makes noise, and turns hard words into a sound-alike <strong>hook</strong> (meta → middle).</p>
+          makes noise, and turns hard words into pictures (<strong>bear arms</strong> → a bear with arms).</p>
+        <p>Numbers become rhymes memory champions use: <strong>1 bun, 2 shoe, 3 tree, 4 door, 5 hive</strong>. So the 4th
+          Amendment has a door in it.</p>
         <p>Read each scene once and picture it. Really picture it.</p>
       </>
     ),
@@ -327,7 +329,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
                 <button className="btn accent big" disabled={busy} onClick={() => go(onStart)}>
                   <Sparkle size={20} /> {busy ? 'Setting up…' : 'Start memorizing in the Reitz'}
                 </button>
-                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the mitosis example in 3D</button>}
+                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the full Bill of Rights in 3D</button>}
               </>
             ) : (
               <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Make my free account</button>
