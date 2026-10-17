@@ -5,7 +5,7 @@ import { hatchedPath } from '../lib/path.js';
 
 // Wander (study): walk the path friend by friend. The camera turns to each one and
 // this polaroid shows its picture, its scene, and the fact to remember.
-export default function WanderCard({ palace, images, selectedId, goToSpot, onQuiz, onFeed }) {
+export default function WanderCard({ palace, images, selectedId, goToSpot, onQuiz, onFeed, onClose }) {
   const path = hatchedPath(palace);
   const found = path.findIndex(({ spot }) => spot.id === selectedId);
   const index = Math.max(0, found);
@@ -40,6 +40,7 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
   if (!current) {
     return (
       <div className="float-card note-card">
+        <button className="round-btn small card-close" aria-label="Close" onClick={onClose}>×</button>
         <h2 className="card-title">No friends yet</h2>
         <p className="scrawl">feed your palace some notes and they’ll hatch right here in your room</p>
         <button className="btn accent" onClick={onFeed}><Sparkle /> Fill from notes</button>
@@ -54,6 +55,7 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
   return (
     <div className="float-card polaroid" key={spot.id}>
       <div className="tape" />
+      <button className="round-btn small card-close" aria-label="Close" title="Close (click a friend to bring it back)" onClick={onClose}>×</button>
       <SpotImage palaceId={palace.id} spot={spot} status={images.status[spot.id]}
         onRetry={() => images.enqueue([spot.id])} className="polaroid-photo" />
       <p className="scrawl scene-text">{spot.scene}</p>

@@ -265,6 +265,22 @@ def update_room(palace_id: int, room_id: int, body: RoomPatch,
     return reload(db, palace, user)
 
 
+@router.put("/palaces/{palace_id}/rooms/order")
+def reorder_rooms(palace_id: int, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Reorder the rooms. Body: {ids: [roomId, ...]} in the new order. The walk goes room by room,
+    so the stops are renumbered to follow (keeping their order within each room)."""
+    palace = load_palace(db, palace_id, user, write=True)
+    by_id = {r.id: r for r in palace.rooms}
+    ids = body.get("ids") or []
+    if len(ids) != len(by_id) or set(ids) != set(by_id):
+        raise HTTPException(400, "Order must list every room exactly once")
+    for position, room_id in enumerate(ids):
+        by_id[room_id].position = position
+    place = {room_id: i for i, room_id in enumerate(ids)}
+    set_order(db, sorted(studio_stops(palace), key=lambda s: (place[s.room_id], s.stop_order)))
+    return reload(db, palace, user)
+
+
 @router.delete("/palaces/{palace_id}/rooms/{room_id}")
 def delete_room(palace_id: int, room_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     palace = load_palace(db, palace_id, user, write=True)
