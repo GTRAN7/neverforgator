@@ -5,12 +5,14 @@ import { firstBuiltIn, openPalace, startInBuiltIn, openSample } from '../lib/sta
 import { switchMode } from '../lib/mode.js';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
+import SkyPage from './SkyPage.jsx';
+import NightToggle from './NightToggle.jsx';
 import AccountMenu from './AccountMenu.jsx';
 import { TOUR_DONE_KEY } from './Guide.jsx';
 
 // Home: the built-in Reitz route (start memorizing right away), other campus routes,
 // your own place, and the palaces you've made.
-export default function PalaceList() {
+function PalaceListContent() {
   const account = useAccount();
   const [palaces, setPalaces] = useState(null);
   const [name, setName] = useState('');
@@ -78,6 +80,7 @@ export default function PalaceList() {
             <span aria-hidden="true">🏛</span> Campus mode
           </button>
           <a className="nav-pill" href="#/guide"><span aria-hidden="true">?</span> How it works</a>
+          <NightToggle />
           <AccountMenu account={account} />
         </div>
       </header>
@@ -183,4 +186,13 @@ function ReviewChip({ at }) {
   const days = (new Date(at) - Date.now()) / 86400000;
   if (days <= 0) return <span className="chip yellow tiny">review due</span>;
   return <span className="chip tiny">review in {days < 1 ? `${Math.max(1, Math.round(days * 24))}h` : `${Math.round(days)}d`}</span>;
+}
+
+// The page sits in front of campus mode's sky (with the castle: your memory palace).
+export default function PalaceList(props) {
+  return (
+    <SkyPage castle>
+      <PalaceListContent {...props} />
+    </SkyPage>
+  );
 }

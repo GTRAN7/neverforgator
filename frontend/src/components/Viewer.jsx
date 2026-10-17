@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { fileUrl } from '../api.js';
 import { usePlaceHandler } from '../lib/placing.js';
 import Creature from './Creature.jsx';
+import { useDisplay } from '../lib/display.js';
 
 // The splat renderer is big, so it only downloads when a splat room is opened.
 const SplatRoom = lazy(() => import('./SplatRoom.jsx'));
@@ -40,7 +41,9 @@ const PHOTO_FOV = 1.75;
 // This blends both ends into their blurred average over the last few percent of the photo
 // (textureLod reads a small mipmap = a blurred copy). A panorama that doesn't cover the whole
 // sphere also fades its top and bottom edges into the room color instead of cutting off.
-const ROOM_COLOR = new THREE.Color('#F3E3C8');
+const ROOM_DAY = '#F3E3C8';
+const ROOM_NIGHT = '#16203A';
+const ROOM_COLOR = new THREE.Color(ROOM_DAY);
 // A flat photo fades out on all four sides instead.
 function softenEdges(shader, partial, photo) {
   shader.uniforms.edgeColor = { value: ROOM_COLOR };
@@ -246,6 +249,10 @@ function LoadingOverlay({ message }) {
 // friends: [{ spot, number, state, tag, active }] for this room (see PalaceEditor).
 // onPlace: set only while placing spots. visitedUpTo: trail is "walked" up to this friend number.
 export default function Viewer({ palaceId, room, friends, focusSpot, visitedUpTo = 0, onPlace, onFriendClick }) {
+  // The space around a room (and the fade at photo edges) follows night mode.
+  const [{ night }] = useDisplay();
+  const roomColor = night ? ROOM_NIGHT : ROOM_DAY;
+  ROOM_COLOR.set(roomColor); // shared with the panorama shader's edge fade
   const [splatMessage, setSplatMessage] = useState(null);
   const url = fileUrl(palaceId, room.file);
   const panorama = room.type !== 'splat';
@@ -256,7 +263,7 @@ export default function Viewer({ palaceId, room, friends, focusSpot, visitedUpTo
         camera={{ fov: 75, near: 0.005, far: 1000, position: [0, 0, 0] }}
         gl={{ preserveDrawingBuffer: true }}
       >
-        <color attach="background" args={['#F3E3C8']} />
+        <color attach="background" args={[roomColor]} />
         <Suspense fallback={null}>
           {panorama
             ? <PanoramaRoom url={url} photo={room.type === 'photo'} onPlace={onPlace} />

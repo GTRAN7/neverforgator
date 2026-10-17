@@ -1,5 +1,7 @@
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
+import SkyPage from './SkyPage.jsx';
+import NightToggle from './NightToggle.jsx';
 
 const STEPS = [
   {
@@ -45,12 +47,13 @@ function HeroScene() {
 }
 
 // The front door: what NeverForgator is, why it works, and log in / sign up.
-export default function Landing({ error, onLogin, onSignup, onTour }) {
+function LandingContent({ error, onLogin, onSignup, onTour }) {
   return (
     <div className="landing">
       <header className="landing-nav">
         <Logo />
         <div className="nav-actions">
+          <NightToggle />
           {onTour && <button className="nav-pill" onClick={onTour}><span aria-hidden="true">?</span> 1-minute tour</button>}
           <button className="nav-pill solid" onClick={onLogin}>Log in</button>
         </div>
@@ -110,5 +113,14 @@ export default function Landing({ error, onLogin, onSignup, onTour }) {
         <span className="scrawl">made by gators, with too much coffee, at SwampHacks</span>
       </footer>
     </div>
+  );
+}
+
+// The page sits in front of campus mode's sky (with the castle: your memory palace).
+export default function Landing(props) {
+  return (
+    <SkyPage castle>
+      <LandingContent {...props} />
+    </SkyPage>
   );
 }
