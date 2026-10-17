@@ -3,8 +3,7 @@ import { blankPalace, blankRoutePalace, customPalace, seedPalace, uid } from '..
 import { createPalace, deletePalace, listPalaces, prepareImage, putImage } from '../storage'
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
-import NightToggle from './NightToggle'
-import FontToggle from './FontToggle'
+import Settings from './Settings'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
@@ -98,8 +97,7 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
         <header className="dashboard-head">
           <div className="brand">UF<span>·</span>MP</div>
           <div className="row">
-            <FontToggle />
-            <NightToggle night={night} onToggle={onToggleNight} />
+            <Settings night={night} onToggleNight={onToggleNight} />
             {account.user ? (
               <>
                 {account.user.picture && <img className="avatar" src={account.user.picture} alt="" />}

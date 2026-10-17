@@ -52,8 +52,8 @@ export function QuizStep({ step, total, eyebrow, question, image, answer, onReve
             <div><p className="eyebrow">Answer</p><div className="plaque-a">{answer}</div></div>
           </div>
           <div className="row">
-            <button className="btn btn-miss" onClick={() => onGrade(false)}>Missed it</button>
-            <button className="btn btn-hit" autoFocus onClick={() => onGrade(true)}>Got it</button>
+            <button className="btn btn-miss" onClick={() => onGrade(false)}>✗ Missed it</button>
+            <button className="btn btn-hit" autoFocus onClick={() => onGrade(true)}>✓ Got it</button>
           </div>
         </>
       )}

@@ -4,8 +4,7 @@ import PalaceApp from './palace/PalaceApp.jsx'
 import Dashboard from './palace/components/Dashboard.jsx'
 import { loadPalace } from './palace/storage'
 import { useNightMode } from './palace/night'
-import NightToggle from './palace/components/NightToggle.jsx'
-import FontToggle from './palace/components/FontToggle.jsx'
+import Settings from './palace/components/Settings.jsx'
 import Sky from './palace/components/Sky.jsx'
 import signUrl from './palace/assets/sign.webp'
 
@@ -56,10 +55,7 @@ function App() {
   return (
     <main className="landing">
       <Sky night={night} />
-      <div className="landing-corner">
-        <FontToggle />
-        <NightToggle night={night} onToggle={toggleNight} />
-      </div>
+      <Settings night={night} onToggleNight={toggleNight} className="landing-corner" />
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />

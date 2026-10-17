@@ -1,5 +1,5 @@
 // Full-screen route map, like Blueprint's hamburger menu.
-export default function MenuOverlay({ locations, index, account, title, onRename, onExit, onGo, onMove, onAdd, onAddPhotos, onAppearance, onExport, onImport, onReset, onClose }) {
+export default function MenuOverlay({ locations, index, account, title, onRename, onExit, onGo, onMove, onAdd, onAddPhotos, onExport, onImport, onReset, onClose }) {
   return (
     <div className="menu" role="dialog" aria-label="Palace map">
       <button className="icon-btn menu-close" onClick={onClose} aria-label="Close menu">×</button>
@@ -41,7 +41,6 @@ export default function MenuOverlay({ locations, index, account, title, onRename
       <div className="row menu-actions">
         <button className="btn" onClick={onAdd}>+ Add location</button>
         <label className="btn btn-ghost">+ Add photos as stops<input type="file" accept="image/*" multiple hidden onChange={e => { onAddPhotos([...e.target.files]); e.target.value = '' }} /></label>
-        <button className="btn btn-ghost" onClick={onAppearance}>Advanced: appearance</button>
         <button className="btn btn-ghost" onClick={onExport}>Export</button>
         <label className="btn btn-ghost">Import<input type="file" accept="application/json" hidden onChange={e => e.target.files[0] && onImport(e.target.files[0])} /></label>
         <button className="btn btn-ghost" onClick={onReset}>Reset palace</button>

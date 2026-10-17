@@ -30,6 +30,26 @@ function Cloud() {
   )
 }
 
+// At night the birds become little bats: plain silhouettes in three-quarter
+// view (the far wing is shorter), each tilted a little differently.
+function Bat({ x, y, i }) {
+  const tilt = [-14, -8, -18, -11][i % 4]
+  return (
+    <span className="bird bat" style={{ left: x, top: y, transform: `rotate(${tilt}deg)` }}>
+      <svg viewBox="0 0 56 24" width="46" height="20">
+        <path
+          fill="#15111f"
+          d="M27 11 Q16 1 3 3 Q8 7 7 12 Q10 10 13 12 Q15 15 18 15 Q21 13 23 15 L27 17
+             L31 17 Q35 14 37 15 Q39 13 42 14 Q43 11 46 11 Q45 7 52 5 Q41 1 31 11 Z"
+        />
+        <ellipse cx="29" cy="13.5" rx="3.2" ry="4.6" fill="#15111f" />
+        <path fill="#15111f" d="M26.6 10 L26.4 5.6 L28.6 8.6 Z M31.4 10 L32.2 5.8 L30 8.6 Z" />
+        <circle cx="29" cy="9.6" r="2.6" fill="#15111f" />
+      </svg>
+    </span>
+  )
+}
+
 function Bird({ x, y }) {
   return (
     <span className="bird" style={{ left: x, top: y }}>
@@ -115,7 +135,7 @@ export default function Sky({ look = {}, imageUrl = null, night = false }) {
             className="flock"
             style={{ left: `${f.left}%`, top: `${f.top}%`, '--s': f.size }}
           >
-            {f.birds.map(([x, y], j) => <Bird key={j} x={x} y={y} />)}
+            {f.birds.map(([x, y], j) => (dark ? <Bat key={j} x={x} y={y} i={i + j} /> : <Bird key={j} x={x} y={y} />))}
           </div>
         ))}
       </div>

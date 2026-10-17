@@ -17,6 +17,17 @@ export default function AddLocationDialog({ campus = [], imageFor, onPickCampus,
     setPreview(next ? URL.createObjectURL(next) : null)
   }
 
+  const pickButton = c => (
+    <li key={c.name}>
+      <button type="button" className="campus-pick" onClick={() => onPickCampus(c)}>
+        <span className="campus-thumb">
+          {imageFor(c) ? <img src={imageFor(c)} alt="" /> : <Placeholder variant={c.variant} palette={c.palette} />}
+        </span>
+        <span>{c.name}</span>
+      </button>
+    </li>
+  )
+
   const submit = e => {
     e.preventDefault()
     if (!form.name.trim()) return
@@ -32,18 +43,13 @@ export default function AddLocationDialog({ campus = [], imageFor, onPickCampus,
         {campus.length > 0 && (
           <>
             <p className="field-label">Pick a UF place</p>
-            <ul className="campus-picks">
-              {campus.map(c => (
-                <li key={c.name}>
-                  <button type="button" className="campus-pick" onClick={() => onPickCampus(c)}>
-                    <span className="campus-thumb">
-                      {imageFor(c) ? <img src={imageFor(c)} alt="" /> : <Placeholder variant={c.variant} palette={c.palette} />}
-                    </span>
-                    <span>{c.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <ul className="campus-picks">{campus.slice(0, 3).map(pickButton)}</ul>
+            {campus.length > 3 && (
+              <details className="more-places">
+                <summary>More UF places ({campus.length - 3})</summary>
+                <ul className="campus-picks">{campus.slice(3).map(pickButton)}</ul>
+              </details>
+            )}
             <p className="field-label">Or make your own</p>
           </>
         )}
