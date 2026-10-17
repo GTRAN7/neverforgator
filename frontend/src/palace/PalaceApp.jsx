@@ -14,6 +14,7 @@ import AddLocationDialog from './components/AddLocationDialog'
 import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import NightToggle from './components/NightToggle'
+import FontToggle from './components/FontToggle'
 import { lookOf, lookStyle } from './appearance'
 import { EndOfRoute, QuizStart, QuizStep, QuizSummary, WalkPanel } from './components/QuizPanel'
 
@@ -362,6 +363,7 @@ export default function PalaceApp({ account, palaceId, onExit, night, onToggleNi
       <header className="hud-top">
         <div className="brand">UF<span>·</span>MP</div>
         <div className="hud-actions">
+          <FontToggle />
           <NightToggle night={night} onToggle={onToggleNight} />
           <button className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Open map"><span /><span /><span /></button>
         </div>

@@ -20,8 +20,8 @@
   --outline: #3b2a1e;
   --light: #faf3e8;
   /* UF accent for buttons: orange by day, blue at night (overridden below). */
-  --accent: #fa4616;
-  --accent-deep: #c73a10;
+  --accent: #e97451;
+  --accent-deep: #c95a3a;
   --on-accent: #2a1d12;
   --font: 'Recursive', system-ui, sans-serif;
   color-scheme: light;
@@ -852,9 +852,10 @@ input, textarea {
   --menu-bg: rgb(22 30 52 / 0.97);
   --highlight: #33416a;
   --shadow: #0b1020;
-  --accent: #2456d6;
-  --accent-deep: #0021a5;
-  --on-accent: #fff;
+  --accent: #3399ff;
+  --accent-deep: #1f7ad9;
+  /* Dark text reads better than white on this lighter blue. */
+  --on-accent: #0b1630;
   color-scheme: dark;
 }
 :root[data-theme='night'] body { background: #1d2b53; }
@@ -875,7 +876,7 @@ input, textarea {
 }
 .night-toggle svg { width: 24px; height: 24px; }
 .hud-top .hud-actions { grid-area: menu; display: flex; align-items: center; gap: 8px; }
-.landing-corner { position: fixed; top: 16px; right: 16px; z-index: 5; }
+.landing-corner { position: fixed; top: 16px; right: 16px; z-index: 5; display: flex; gap: 8px; }
 
 /* ---------- castle, moon, stars ---------- */
 .castle {
@@ -909,4 +910,9 @@ input, textarea {
 .btn-hit, .btn-ai { color: var(--outline); }
 /* The moon/sun button wears the accent too: orange by day, blue at night. */
 .night-toggle { background: var(--accent); color: var(--outline); }
-:root[data-theme='night'] .night-toggle { color: var(--light); }
+:root[data-theme='night'] .night-toggle { color: var(--on-accent); }
+
+/* ---------- dyslexia-friendly font ---------- */
+:root[data-font='comic'] { --font: 'Comic Sans MS', 'Comic Sans', 'Comic Neue', cursive; }
+:root[data-font='comic'] body { letter-spacing: 0.02em; }
+.font-toggle span { font-family: 'Comic Sans MS', 'Comic Sans', 'Comic Neue', cursive; font-weight: 700; font-size: 17px; line-height: 1; }

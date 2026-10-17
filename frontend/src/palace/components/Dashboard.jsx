@@ -4,6 +4,7 @@ import { createPalace, deletePalace, listPalaces, prepareImage, putImage } from 
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
 import NightToggle from './NightToggle'
+import FontToggle from './FontToggle'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
@@ -97,6 +98,7 @@ export default function Dashboard({ account, onOpen, night, onToggleNight }) {
         <header className="dashboard-head">
           <div className="brand">UF<span>·</span>MP</div>
           <div className="row">
+            <FontToggle />
             <NightToggle night={night} onToggle={onToggleNight} />
             {account.user ? (
               <>

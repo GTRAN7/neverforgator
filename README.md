@@ -127,6 +127,7 @@ Each stop on the route is a full-screen scene: a campus photo (cutouts with a tr
 - Pressing **→** on the last stop shows an end card with **Quiz me!** or **Continue** from the start.
 - **Create** offers four starting points: the **UF campus route** (starts with the stadium and Smathers; pick each next UF place from **+ Add location** or the end-of-route card), the filled-in **Sample palace**, a **Custom route** (upload several photos; each becomes a stop, and you can rename and reorder them), or a **Blank palace** (one empty stop). Inside a palace, the menu's **+ Add photos as stops** adds a batch of photos at once.
 - **Reset palace** (menu) puts the palace back the way it started; deleting a palace from the dashboard asks the same way. Both show a warning, and the red button only works after a countdown (5 seconds for reset, 3 for delete).
+- **Dyslexia-friendly font:** the **Aa** button (next to the moon) switches all text to Comic Sans, or Comic Neue on devices without it. Remembered in this browser.
 - **Night mode:** the moon/sun button (top right on every page) switches to a moonlit sky with stars and dark panels. It follows the computer's dark-mode setting until you click it.
 - **Advanced: appearance** (menu) changes the sky (day, sunset, night, overcast or your own photo), hides clouds, birds, sun, hills or the castle, and changes the signs' color, side and size. Settings are saved with each palace.
 
