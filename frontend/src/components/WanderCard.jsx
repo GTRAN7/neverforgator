@@ -17,10 +17,10 @@ export default function WanderCard({ palace, images, selectedId, goToSpot, onQui
     if (found === -1 && path.length) goToSpot(path[0].spot);
   }, []);
 
-  // Pictures are drawn on the way: this friend and the next two, each only once (then cached).
-  // So you only pay for pictures of friends you actually visit.
+  // Pictures are drawn on the way: this friend and the next three (one batch, one Gemini call),
+  // each only once (then saved). So you only pay for pictures of friends you actually visit.
   useEffect(() => {
-    const ahead = path.slice(index, index + 3).map(({ spot }) => spot)
+    const ahead = path.slice(index, index + 4).map(({ spot }) => spot)
       .filter((spot) => spot.imagePrompt && !spot.image && !images.status[spot.id]);
     if (ahead.length) images.enqueue(ahead.map((spot) => spot.id));
   }, [current?.spot.id, current?.spot.imagePrompt]);

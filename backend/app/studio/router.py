@@ -407,24 +407,54 @@ def fill(palace_id: int, body: FillIn, user: User = Depends(get_current_user), d
     return reload(db, palace, user)
 
 
+def _draw(db: Session, palace: Palace, stops: list[PalaceStop]) -> list[dict]:
+    """Draw pictures for these stops (doodles: a few per Gemini call). A stand-in sketch (Gemini was
+    busy) is shown but not saved, so the real picture is tried again next time. Only call this for
+    palaces the user may change (shared palaces come with their pictures)."""
+    stops = [s for s in stops if s.image_prompt and not s.image]
+    style = palace.style or "storybook"
+    if gemini.PICTURES == "doodle":
+        names = gemini.generate_doodles([s.image_prompt for s in stops], style)
+        drawn = [(s, n, True) if n else (s, gemini._placeholder(s.image_prompt, style), False) for s, n in zip(stops, names)]
+    else:
+        drawn = []
+        for s in stops:
+            crop_path = palace_dir(palace.id) / s.crop if s.crop else None
+            crop = crop_path.read_bytes() if crop_path and crop_path.exists() else None
+            drawn.append((s, *gemini.generate_image(s.image_prompt, crop, style)))
+    out = []
+    for stop, name, final in drawn:
+        if final:
+            stop.image = name
+        out.append({**spot_json(stop), "image": name, "imageFinal": final})
+    db.commit()
+    return out
+
+
+class PicturesIn(BaseModel):
+    ids: list[int] = Field(max_length=8)
+
+
+@router.post("/palaces/{palace_id}/pictures", dependencies=[Depends(quota("picture"))])
+def draw_pictures(palace_id: int, body: PicturesIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Pictures for a few stops at once (the next friends on your walk). One request, few Gemini calls."""
+    palace = load_palace(db, palace_id, user)
+    stops = [load_stop(palace, i) for i in body.ids]
+    if not can_write(palace, user):
+        return [spot_json(s) for s in stops]
+    return _draw(db, palace, stops)
+
+
 @router.post("/palaces/{palace_id}/spots/{spot_id}/image", dependencies=[Depends(quota("picture"))])
 def draw_picture(palace_id: int, spot_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Draw (or fetch from the cache) one stop's picture. The client asks a few at a time."""
+    """One stop's picture (same as /pictures with one id)."""
     palace = load_palace(db, palace_id, user)
     stop = load_stop(palace, spot_id)
     if not stop.image_prompt:
         raise HTTPException(400, "This spot has no scene yet")
     if not can_write(palace, user):
-        return spot_json(stop)  # shared palaces come with their pictures already drawn
-    crop_path = palace_dir(palace.id) / stop.crop if stop.crop else None
-    crop = crop_path.read_bytes() if crop_path and crop_path.exists() else None
-    prompt = stop.image_prompt
-    image = gemini.generate_image(prompt, crop, palace.style or "storybook")
-    db.refresh(stop)
-    if stop.image_prompt == prompt:  # only if the scene didn't change while we were drawing
-        stop.image = image
-        db.commit()
-    return spot_json(stop)
+        return spot_json(stop)
+    return _draw(db, palace, [stop])[0] if not stop.image else spot_json(stop)
 
 
 class ResultIn(BaseModel):
@@ -466,6 +496,26 @@ def add_review(palace_id: int, body: ReviewIn, user: User = Depends(get_current_
     db.commit()
     return {"nextReviewAt": palace.next_review_at.isoformat(),
             "reviews": [{"at": a.taken_at and a.taken_at.isoformat(), "score": a.score, "total": a.total} for a in palace.attempts]}
+
+
+class WeirderIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=40)
+
+
+@router.post("/palaces/{palace_id}/weirder", dependencies=[Depends(quota("scene"))])
+def weirder_many(palace_id: int, body: WeirderIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """End of a quiz: every missed stop gets a new, weirder scene, all in one Gemini call."""
+    palace = load_palace(db, palace_id, user, write=True)
+    path = studio_stops(palace)
+    stops = [s for s in (load_stop(palace, i) for i in body.ids) if s.concept]
+    asks = [{"fact": s.concept, "label": s.label or f"spot {path.index(s) + 1}", "scene": s.association or "",
+             "level": min(5, s.weirdness + 1), "kind": s.kind or "fact"} for s in stops]
+    for stop, ask, result in zip(stops, asks, gemini.weirder_scenes(asks, palace.flavor or "wild")):
+        if result:
+            stop.association, stop.hook, stop.image_prompt = result["scene"], result["hook"], result["imagePrompt"]
+            stop.image, stop.weirdness = None, ask["level"]
+    db.commit()
+    return [spot_json(s) for s in stops]
 
 
 @router.post("/palaces/{palace_id}/spots/{spot_id}/weirder", dependencies=[Depends(quota("scene"))])

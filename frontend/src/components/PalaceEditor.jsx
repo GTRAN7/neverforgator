@@ -391,7 +391,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
       </div>
 
       {feeding && (
-        <FeedModal palace={palace} setPalace={setPalace} onClose={closeFeed} onReady={palaceReady}
+        <FeedModal palace={palace} setPalace={setPalace} images={images} onClose={closeFeed} onReady={palaceReady}
           onDone={() => { setFeeding(false); switchMode('wander'); }}
           onQuiz={() => { setFeeding(false); switchMode('quiz'); }} />
       )}
