@@ -27,8 +27,10 @@ if not MOCK:
     _client = genai.Client(api_key=config.GEMINI_API_KEY, http_options=types.HttpOptions(timeout=TIMEOUT_MS))
 
 # ---- Model choice ----
-# Model names change often. Unless .env names one, ask Google which models this key can
-# use and pick the newest "flash" text model and "flash-image" model.
+# Model names change often. Unless .env names one, ask Google which models this key can use and
+# pick the newest "flash-lite" text model (it has by far the biggest free quota; the bigger "flash"
+# models allow only ~20 requests a day, which one palace fill can nearly use up) and the newest
+# "flash-image" model.
 models = {"text": config.GEMINI_TEXT_MODEL, "image": config.GEMINI_IMAGE_MODEL}
 
 
@@ -46,7 +48,8 @@ def choose_models():
         key = lambda n: [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", n)]
         return max(found, key=key) if found else None
 
-    models["text"] = models["text"] or newest(r"gemini-[\d.]+-flash") or "gemini-2.5-flash"
+    models["text"] = (models["text"] or newest(r"gemini-[\d.]+-flash-lite") or newest(r"gemini-[\d.]+-flash")
+                      or "gemini-2.5-flash-lite")
     models["image"] = models["image"] or newest(r"gemini-[\d.]+-flash-image") or "gemini-2.5-flash-image"
     return models
 
