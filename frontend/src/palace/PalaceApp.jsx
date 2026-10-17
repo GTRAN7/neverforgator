@@ -9,6 +9,8 @@ import smathersUrl from './assets/smathers.webp'
 import heavenerUrl from './assets/heavener.webp'
 import centuryTowerUrl from './assets/century-tower.webp'
 import malachowskyUrl from './assets/malachowsky.webp'
+import pudongUrl from './assets/pudong.webp'
+import brainUrl from './assets/brain.jpg'
 import PinPlaque from './components/PinPlaque'
 import NotesDrawer from './components/NotesDrawer'
 import MenuOverlay from './components/MenuOverlay'
@@ -29,7 +31,7 @@ const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').match
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 // Moves a pin in the Notes draft (see NotesDrawer).
 const moveDraftPin = (id, x, y) => dispatchEvent(new CustomEvent('uf-mp:move-draft-pin', { detail: { id, x, y } }))
-const BUILTIN_IMAGES = { stadium: stadiumUrl, smathers: smathersUrl, heavener: heavenerUrl, century: centuryTowerUrl, malachowsky: malachowskyUrl }
+const BUILTIN_IMAGES = { stadium: stadiumUrl, smathers: smathersUrl, heavener: heavenerUrl, century: centuryTowerUrl, malachowsky: malachowskyUrl, pudong: pudongUrl, brain: brainUrl }
 
 // Camera keyframes for the "fly forward into the distance" transition.
 const FAR = { transform: 'scale(0.28)', opacity: 0, filter: 'blur(14px)' }

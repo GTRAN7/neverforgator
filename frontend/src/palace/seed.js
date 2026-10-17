@@ -27,7 +27,7 @@ export function seedPalace() {
     version: 2,
     title: 'Sample UF route',
     template: 'sample',
-    builtinsAdded: ['stadium', 'smathers', 'heavener', 'pudong'],
+    builtinsAdded: ['stadium', 'smathers', 'heavener'],
     locations: [
       loc('Ben Hill Griffin Stadium', 'Statistics', 'stadium', 0, {
         concept: 'Normal distribution',
@@ -38,20 +38,6 @@ export function seedPalace() {
         card(34, 36, 'Inference', 'What does a p-value of 0.03 mean?', 'If the null hypothesis were true, results at least this extreme would happen 3% of the time.'),
       ], { builtin: 'stadium', cutout: true, ar: 2000 / 1270 }),
       ...builtinLocations(),
-
-
-      // // Custom added for template purpose (Pudong; adjust pin placement)
-      // loc('Pudong District','Architecture','pudong', 0, {
-      //   concept: 'Pudong Architecture',
-      //   association: 'Pudong District (in Shanghai) went through many phases as it grew into its place as a global financial sector. What buildings make up its skyline?',
-      // }, [
-      //   card(66, 82, 'Identification', 'What building is this? When was it built?', 'Oriental Pearl Tower (1991-1994)'),
-      //   card(45, 62, 'Identification', 'What building is this? When was it built?', 'Shanghai World Financial Center (1997-2008)'),
-      //   card(34, 36, 'Identification', 'What building is this? When was it built?', 'Shanghai Tower (2008-2014)'),
-      // ], { builtin: 'pudong', cutout: true, ar: 1280 / 720 }),
-      // ...builtinLocations(),
-
-     
       loc('Century Tower', 'US History', 'tower', 0, {
         concept: '14th Amendment',
         association: 'The bells ring 14 times for everyone born here, and every chime is exactly as loud as the last: equal protection.',
@@ -59,8 +45,6 @@ export function seedPalace() {
         card(80, 30, 'Reconstruction', 'What did the 14th Amendment guarantee?', 'Citizenship to all persons born or naturalized in the US, plus due process and equal protection of the laws.'),
         card(79, 72, 'Civil War', 'In what year was the Emancipation Proclamation issued?', '1863 (announced Sept 1862, effective Jan 1, 1863).'),
       ], CENTURY_TOWER_PHOTO),
-// I think CENTURY_TOWER_PHOTO used b/c not added to the buildins ://
-      
       loc('Malachowsky Hall', 'Computer Science', 'hall', 2, {
         concept: 'Binary search',
         association: 'Hunting for a room in Malachowsky, you always take the middle stairwell and rule out half the building each time.',
@@ -68,12 +52,33 @@ export function seedPalace() {
         card(40, 60, 'Algorithms', 'What is the time complexity of binary search?', 'O(log n): each step halves the remaining range.'),
         card(75, 82, 'Data structures', 'What does a hash table give you on average for lookups?', 'O(1) average-time lookup by key.'),
       ], { builtin: 'malachowsky', cutout: true, ar: 2000 / 1390 }),
+      // Examples of other ways to use a palace (any photo works, not just campus).
+      // They stay out of the "Pick a UF place" list (see campusCatalog).
+      loc('Pudong District', 'Architecture', 'blank', 0, {
+        concept: 'Pudong skyline',
+        association: 'Pudong (Shanghai) grew in phases into a global financial center. Read its skyline left to right, oldest tower to newest.',
+      }, [
+        card(27.6, 35.4, 'Identification', 'What building is this? When was it built?', 'Oriental Pearl Tower (1991-1994)'),
+        card(58.4, 45.8, 'Identification', 'What building is this? When was it built?', 'Shanghai World Financial Center (1997-2008)'),
+        card(67.4, 41.7, 'Identification', 'What building is this? When was it built?', 'Shanghai Tower (2008-2014)'),
+      ], { builtin: 'pudong', cutout: false, ar: 1280 / 720, example: true }),
+      loc('The Brain', 'Anatomy', 'blank', 1, {
+        concept: 'Parts of the brain',
+        association: 'Label a diagram instead of a place: each pin is a region, and the quiz asks you to name it.',
+      }, [
+        card(34.0, 35.1, 'Lobes', 'What part of the brain is this?', 'Frontal lobe: planning, decisions, movement and personality.'),
+        card(59.5, 33.8, 'Lobes', 'What part of the brain is this?', 'Parietal lobe: touch, temperature, pain and sense of space.'),
+        card(77.2, 48.8, 'Lobes', 'What part of the brain is this?', 'Occipital lobe: vision.'),
+        card(44.7, 62.4, 'Lobes', 'What part of the brain is this?', 'Temporal lobe: hearing, language and memory.'),
+        card(65.0, 72.7, 'Structures', 'What part of the brain is this?', 'Cerebellum: balance, posture and coordination.'),
+        card(50.0, 75.3, 'Structures', 'What part of the brain is this?', 'Brain stem: breathing, heart rate and other automatic functions.'),
+      ], { builtin: 'brain', cutout: false, ar: 600 / 465, example: true }),
     ],
   }
 }
 
 // Every UF place you can add to a palace, with no notes yet. New campus photos go here.
-export const campusCatalog = () => clearStops(seedPalace().locations)
+export const campusCatalog = () => clearStops(seedPalace().locations.filter(l => !l.example))
 
 // A fresh palace on the UF route: starts with the first two campus stops; you
 // choose the next ones from the catalog as you go.
