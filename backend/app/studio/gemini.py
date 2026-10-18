@@ -191,7 +191,10 @@ FLAVORS = {
 
 def scene_rules(flavor: str = "silly") -> str:
     return f"""A great memory scene:
-- happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
+- happens AT that exact location and uses what the object really does (a door opens or blocks, a vending
+  machine sells, an elevator skips floors, a staircase is climbed): the object takes part in the fact,
+- ACTS OUT the meaning: the action in the scene IS the fact, so replaying it gives the answer back
+  (not just the key words sitting near the object),
 - is {FLAVORS.get(flavor, FLAVORS['silly'])}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - uses the technique for its kind of idea (given per stop),
@@ -200,7 +203,10 @@ def scene_rules(flavor: str = "silly") -> str:
   person, the amendment's right) must still be clearly in the scene,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
-imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image."""
+imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image.
+Example (for the style only; don't reuse it): "Mitochondria make ATP" at a microwave → "You open the microwave and a
+MIGHTY CONDOR flaps out, spitting glowing batteries labeled A-T-P at you: it powers the whole kitchen."
+hook: "mitochondria → mighty condor · ATP → batteries"."""
 
 
 def split_notes(notes: str) -> list[dict]:
@@ -305,7 +311,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v9", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v10", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
