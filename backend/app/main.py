@@ -5,6 +5,7 @@ Run from the backend/ folder:
 Then open http://localhost:8000/docs to try every endpoint in the browser.
 """
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -80,7 +81,14 @@ def gemini_failed(request: Request, err: gemini.GeminiError):
 
 
 gemini.choose_models()
-seed_if_missing()  # the built-in Reitz route and the mitosis example (app/studio/seed_samples.py)
+seed_if_missing()  # the built-in Reitz route and the cell example (app/studio/seed_samples.py)
 logging.getLogger("loci").info(
     "Gemini: %s", "MOCK mode (no GEMINI_API_KEY)" if gemini.MOCK
     else f"text={gemini.models['text']}, pictures={gemini.PICTURES}")
+
+# Production: the built site (`npm run build` in frontend/) from the same server, so one droplet
+# serves the app, the API and the files. Mounted last: API routes and /files, /cache match first.
+# The app routes with #/..., so index.html at / is the only page. In development Vite serves it.
+SITE = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if SITE.is_dir():
+    app.mount("/", StaticFiles(directory=SITE, html=True), name="site")

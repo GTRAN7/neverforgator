@@ -22,9 +22,9 @@ function keyWords(text) {
 
 // keyTerms (from Gemini when the palace was filled, e.g. ["anaphase", "sister chromatids"]) are the
 // words a right answer must contain. A term counts if any of its words shows up in the answer.
+const hasTerm = (term, given) => [...keyWords(term).keys()].some((w) => given.has(w));
 function keyTermShare(keyTerms, given) {
-  const hits = keyTerms.filter((term) => [...keyWords(term).keys()].some((w) => given.has(w)));
-  return hits.length / keyTerms.length;
+  return keyTerms.filter((term) => hasTerm(term, given)).length / keyTerms.length;
 }
 
 // → 'right' | 'close' (let the user decide) | 'wrong'
@@ -35,7 +35,8 @@ export function checkAnswer(fact, answer, keyTerms) {
   const numbersOk = [...wanted.keys()].filter((w) => /\d/.test(w)).every((w) => given.has(w));
   if (keyTerms?.length) {
     const share = keyTermShare(keyTerms, given);
-    if (share >= 0.66 && numbersOk) return 'right';
+    // The first key term is what the fact is about (Zeus, the nucleus): leaving it out is only close.
+    if (share >= 0.66 && numbersOk && hasTerm(keyTerms[0], given)) return 'right';
     if (share > 0) return 'close';
   }
   let total = 0;
