@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 
 // Each step points at part of the screen (a CSS selector) and explains it.
-// Steps without a target show in the middle.
+// Steps without a target show in the middle. `stop` is the palace stop to show (from then on);
+// the tour starts on the first one, the UF campus stop. `corner` steps leave the whole photo
+// in view (no dimming) and sit in the bottom corner, above the arrows.
 const STEPS = [
   {
     title: 'Welcome to your first memory palace!',
@@ -20,7 +22,19 @@ const STEPS = [
   {
     target: '.arrows',
     title: 'Walk the route',
-    text: 'Use the arrows (or ← → on your keyboard) to move between stops. Here the route goes Century Tower → Pudong skyline → the brain.',
+    text: 'Use the arrows (or ← → on your keyboard) to move between stops. Here the route goes Century Tower → Pudong skyline → the brain. Click Next to walk there.',
+  },
+  {
+    stop: 1,
+    corner: true,
+    title: 'Name what you see',
+    text: 'A palace doesn’t have to be about a place you walk. This is the Pudong skyline, seen from the Bund in Shanghai: each pin sits on a tower and asks you to name it. Use any photo to learn landmarks, buildings or places on a map.',
+  },
+  {
+    stop: 2,
+    corner: true,
+    title: 'Label a diagram',
+    text: 'Pins work on charts and diagrams too. Each pin marks a part of the brain, and the quiz asks you to name it. Try it with a skeleton, a cell, a graph or anything with labeled parts.',
   },
   {
     target: '[data-tour="notes"]',
@@ -63,9 +77,13 @@ const CARD_WIDTH = 360
 const GAP = 14
 
 // Highlights the step's target (dimming everything else) with a card next to it.
-export default function TutorialTour({ onDone, onMakeOwn }) {
+export default function TutorialTour({ onDone, onMakeOwn, onStop, hidden = false }) {
   const [i, setI] = useState(0)
   const step = STEPS[i]
+
+  // Walk the palace to this step's stop (going Back walks back too).
+  const stop = STEPS.slice(0, i + 1).reduce((at, s) => s.stop ?? at, 0)
+  useEffect(() => { onStop(stop) }, [stop]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-measure the highlighted element whenever the window changes size.
   const [, setResized] = useState(0)
@@ -79,6 +97,7 @@ export default function TutorialTour({ onDone, onMakeOwn }) {
 
   useEffect(() => {
     const onKey = e => {
+      if (hidden) return // wait until the palace has arrived at the stop
       if (e.key === 'Escape') onDone()
       else if (e.key === 'ArrowRight') setI(n => Math.min(n + 1, STEPS.length - 1))
       else if (e.key === 'ArrowLeft') setI(n => Math.max(n - 1, 0))
@@ -89,7 +108,7 @@ export default function TutorialTour({ onDone, onMakeOwn }) {
     }
     addEventListener('keydown', onKey, true)
     return () => removeEventListener('keydown', onKey, true)
-  }, [onDone])
+  }, [onDone, hidden])
 
   // Put the card below the target, or above it when the target is low on screen.
   const width = Math.min(CARD_WIDTH, innerWidth - 32)
@@ -102,12 +121,14 @@ export default function TutorialTour({ onDone, onMakeOwn }) {
   }
   const pad = 6
 
+  // Hidden while the palace flies between stops; it keeps its place in the tour.
+  if (hidden) return null
   return (
     <div className="tour" role="dialog" aria-label="Tutorial" aria-live="polite">
       {rect
         ? <div className="tour-spot" style={{ top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }} />
-        : <div className="tour-dim" />}
-      <section className={`plaque tour-card${rect ? '' : ' is-center'}`} style={cardStyle}>
+        : !step.corner && <div className="tour-dim" />}
+      <section className={`plaque tour-card${rect ? '' : step.corner ? ' is-corner' : ' is-center'}`} style={cardStyle}>
         <p className="eyebrow">Tutorial · {i + 1} of {STEPS.length}</p>
         <h2 className="plaque-q">{step.title}</h2>
         <p>{step.text}</p>

@@ -19,6 +19,7 @@ import ConfirmDialog from './components/ConfirmDialog'
 import AppearancePanel from './components/AppearancePanel'
 import Settings from './components/Settings'
 import TutorialTour from './components/TutorialTour'
+import StudioButton from './components/StudioButton'
 import { lookOf, lookStyle, signLayoutOf } from './appearance'
 import { imagesFromDrop, notify } from './useFileDrop'
 import { saveToAccount } from './account'
@@ -80,7 +81,8 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
   const locs = palace.locations
   const n = locs.length
 
-  const [index, setIndex] = useState(() => Math.max(0, locs.findIndex(l => slug(l.name) === location.hash.split('/')[1])))
+  // The tutorial always opens on its first stop (the UF one).
+  const [index, setIndex] = useState(() => palace.template === 'tutorial' ? 0 : Math.max(0, locs.findIndex(l => slug(l.name) === location.hash.split('/')[1])))
   const [trans, setTrans] = useState(null) // { from, to, dir }
   const [editing, setEditing] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
@@ -523,6 +525,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
       <header className="hud-top">
         <Brand onHome={onExit} />
         <div className="hud-actions">
+          <StudioButton />
           <Settings
             prefs={prefs}
             signs={{ on: look.showSigns, toggle: () => setLook({ showSigns: !look.showSigns }) }}
@@ -657,8 +660,8 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
         />
       )}
 
-      {touring && !trans && (
-        <TutorialTour onDone={endTour} onMakeOwn={() => { endTour(); onExit() }} />
+      {touring && (
+        <TutorialTour hidden={!!trans} onStop={to => goTo(to)} onDone={endTour} onMakeOwn={() => { endTour(); onExit() }} />
       )}
 
       {menuOpen && (
@@ -741,6 +744,7 @@ export default function PalaceApp({ account, palaceId, onExit, prefs }) {
             setMenuOpen(false)
             switchMode(null)
             setActivePinId(null)
+            setIndex(0)
             setTouring(true)
           } : null}
           onClose={() => setMenuOpen(false)}

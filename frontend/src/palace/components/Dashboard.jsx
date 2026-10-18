@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { blankPalace, blankRoutePalace, customPalace, seedPalace, tutorialPalace, uid } from '../seed'
+import { blankPalace, blankRoutePalace, customPalace, tutorialPalace, uid } from '../seed'
 import { createPalace, deletePalace, listPalaces, loadPalace, markTutorialSeen, prepareImage, putImage, savePalace, tutorialSeen } from '../storage'
 import Sky from './Sky'
 import ConfirmDialog from './ConfirmDialog'
@@ -8,10 +8,10 @@ import { notify, useFileDrop } from '../useFileDrop'
 import { openFromAccount } from '../account'
 import Brand from './Brand'
 import AccountMenu from './AccountMenu'
+import StudioButton from './StudioButton'
 
 const TEMPLATES = [
   { id: 'route', title: 'UF campus route', text: 'The campus stops, ready for your own topics, terms and cards.' },
-  { id: 'sample', title: 'Sample palace', text: 'The same route already filled in, to see how it works.' },
   { id: 'custom', title: 'Custom route', text: 'Upload your own photos. Each one becomes a stop, in order.' },
   { id: 'blank', title: 'Blank palace', text: 'Start empty and add your own stops and photos as you go.' },
   // { id: 'template', title: 'TEMPLATE', text: 'COMMENT OUT LATER.' },
@@ -100,9 +100,9 @@ export default function Dashboard({ account, onOpen, prefs }) {
 
   const create = async e => {
     e.preventDefault()
-    const name = title.trim() || ({ sample: 'Sample palace', custom: 'My route', blank: 'Blank palace' }[template] ?? 'New palace')
+    const name = title.trim() || ({ custom: 'My route', blank: 'Blank palace' }[template] ?? 'New palace')
     if (template !== 'custom') {
-      const make = { sample: () => ({ ...seedPalace(), title: name }), route: () => blankRoutePalace(name), blank: () => blankPalace(name) }
+      const make = { route: () => blankRoutePalace(name), blank: () => blankPalace(name) }
       return onOpen(createPalace(sub, make[template]()))
     }
     setBusy(true)
@@ -155,6 +155,7 @@ export default function Dashboard({ account, onOpen, prefs }) {
         <header className="dashboard-head">
           <Brand />
           <div className="row">
+            <StudioButton />
             <Settings prefs={prefs} />
             <AccountMenu account={account} />
           </div>
