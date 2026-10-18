@@ -8,20 +8,20 @@ theater doors ("members only"), lysosomes in the recycling bins (Lysol-like juic
 TV ("NEW CLUES!"), the Golgi on the putting green (a golfer putting gift boxes into holes). The atrium
 and hallway stay empty to show a palace can grow. Great for quizzing a judge ("what does the Golgi do?").
 
-**Generated live in the demo: the first 8 U.S. presidents.** The walk keeps the order (stop 3 =
-3rd president, no number codes) and names become sound-alikes (Washington → a washing machine,
-Jackson → a jack-in-the-box, Van Buren → a burning van). Tested: ~20 s to fill.
+**Generated live in the demo: Greek gods.** No numbers, everyone knows a few, and each god shows up as
+themselves with their symbol, at an object that fits (Ares starts a war on the chess set, Poseidon putts a
+ball into the ocean on the putting green). Easy to quiz a judge: "who's the god of war?"
 
 ```
-The first 8 U.S. presidents, in order:
-1. George Washington
-2. John Adams
-3. Thomas Jefferson
-4. James Madison
-5. James Monroe
-6. John Quincy Adams
-7. Andrew Jackson
-8. Martin Van Buren
+Greek gods and what they rule:
+Zeus is king of the gods and god of the sky and thunder.
+Poseidon is god of the sea and earthquakes.
+Hades rules the underworld.
+Athena is goddess of wisdom and strategy.
+Ares is god of war.
+Aphrodite is goddess of love and beauty.
+Hermes is the messenger of the gods.
+Apollo is god of music and the sun.
 ```
 
 Backup if you want something everyone already knows (more reliable scenes, less "wow"):
@@ -55,8 +55,8 @@ Shape your own notes like these: one short line per thing to remember. A numbere
 ## Story (3 minutes)
 
 1. 20 s: the problem: notes don't stick; memory athletes use palaces, but building one is the hard part.
-2. 40 s: paste the presidents (or show "Photo or PDF" with a printed page) → "Your palace is ready!"
-3. 60 s: Wander 3–4 stops: point out the washing machine at stop 1, the burning van at stop 8.
-4. 40 s: Quiz: ask a judge "who was the 8th president?"; show "Close! Did you have it?" and Round 2.
+2. 40 s: paste the Greek gods (or show "Photo or PDF" with a printed page) → "Your palace is ready!"
+3. 60 s: Wander 3–4 stops: point out Zeus at the foosball table, Ares on the chess set.
+4. 40 s: Quiz: ask a judge "who's the god of war?"; show "Close! Did you have it?" and Round 2.
    (Or open the built-in cell and ask "what does the cell membrane do?")
 5. 20 s: night mode / dyslexia font, spaced review, campus route.

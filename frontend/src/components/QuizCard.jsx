@@ -7,7 +7,7 @@ import { checkAnswer } from '../lib/grade.js';
 import { readPrefs } from '../lib/prefs.js';
 
 // Quiz, in up to two rounds (the "Quiz me by…" setting picks one or both):
-//   Round 1 · Walk the path   "Who lives at your desk?"   in path order, like walking it in your head.
+//   Round 1 · Walk the path   "What fact did you leave at the desk?" in path order, like walking it in your head.
 //                             Type it; it's checked instantly in the browser against the key terms.
 //   Round 2 · Find it         "Where did you put photosynthesis?"   shuffled, so the order of the
 //                             path can't give the answer away. Tap the friend in 3D or pick a place.
@@ -72,7 +72,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     setAnswer('');
     setGraded(null);
     setShowPicture(false);
-    // "Who lives here?" walks you to the friend. "Where did you put it?" can't: it'd give it away.
+    // "What fact did you leave here?" walks you to the friend. "Where did you put it?" can't: it'd give it away.
     if (list[index].kind === 'what') goToSpot(path[list[index].at].spot);
   }
 
@@ -185,7 +185,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
       <div className="float-card quiz-card">
         <span className="chip green">{path.length} friends to visit</span>
         <h2 className="card-title big">Ready to visit your friends?</h2>
-        {quiz !== 'tap' && <p><strong>Walk the path:</strong> at each stop, say who lives there.</p>}
+        {quiz !== 'tap' && <p><strong>Walk the path:</strong> at each stop, type the fact you left there.</p>}
         {quiz !== 'type' && <p><strong>Find it:</strong> then, a few facts in random order: where did you put them?</p>}
         <button className="btn ink wide" onClick={start}>Start the quiz</button>
         <p className="scrawl">right answers make them bounce, misses put them to sleep</p>
@@ -268,10 +268,12 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
         </>
       ) : (
         <>
-          <h2 className="card-title big">Who lives at your {place}?</h2>
+          <h2 className="card-title big">What fact did you leave at the {place}?</h2>
           {!graded && (
             <>
-              <label htmlFor="guess" className="field-label">Your guess</label>
+              {/* The scene is only the key: the answer is the fact itself (graded on its key words). */}
+              <p className="hint-text quiz-hint">Picture its scene, then type the fact it stands for, in your own words.</p>
+              <label htmlFor="guess" className="field-label">The fact</label>
               <input
                 id="guess"
                 className="pill-input"
@@ -280,7 +282,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && answer.trim() && submit({ answer })}
-                placeholder="type what you remember…"
+                placeholder="e.g. what it is or what it does…"
               />
             </>
           )}

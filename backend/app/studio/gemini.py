@@ -161,7 +161,9 @@ TECHNIQUES = {
               "(3 branches → three judges arguing), a big one tied to something familiar with that number "
               "(12 → a dozen eggs, 100 → a football field), and someone says the number out loud.",
     "date": "Put a period detail from that time into the scene and have someone shout the year as part of the action.",
-    "name": "Replace the person or place name with a concrete sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed; the sound-alike is the star of the scene, not the person.",
+    "name": "A famous figure people can already picture (Zeus, Einstein, a pharaoh) appears as THEMSELVES with their "
+            "signature look or item, doing their deed. Only a name you can't picture becomes a concrete sound-alike "
+            "(e.g. Darwin → a DART that keeps WINNING) doing the deed.",
     "vocabulary": "Keyword method: a sound-alike of the word (in your language) interacting with an image of its meaning.",
     "list": "Each item becomes its own character, all crowded into one scene in the right order (left to right).",
     "sequence": "Show the steps as a chain reaction in order: the first step causes the second, and so on.",
@@ -284,7 +286,7 @@ def _write_scene_batch(ideas, locations, flavor):
             extra = ""
             if idea["kind"] == "name":
                 # A name is the hardest thing to see: it needs its own picture.
-                extra = "; turn the name into a concrete sound-alike object (Washington -> a washing machine)"
+                extra = "; the name needs its own picture: the famous figure themselves, or a sound-alike if they're hard to picture"
             lines.append(f'{i + 1}. At "{locations[i]}" ({idea["kind"]}; key terms: {", ".join(idea["keyTerms"])}{extra}): {idea["text"]}')
         kinds = list(dict.fromkeys(idea["kind"] for idea in ideas))
         techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
@@ -303,7 +305,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v12", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v13", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----

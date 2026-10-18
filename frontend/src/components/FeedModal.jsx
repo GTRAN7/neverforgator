@@ -7,15 +7,15 @@ import { placeName } from '../lib/path.js';
 
 const NOTES_CAP = 20_000; // characters, ≈ 5,000 tokens (the server enforces the same cap)
 
-const SAMPLE_NOTES = `Chapter 4: Cell organelles
-The nucleus holds the cell's DNA and controls its activity.
-The cell membrane controls what enters and leaves the cell.
-Mitochondria produce ATP, the cell's main energy source.
-Ribosomes build proteins from amino acids.
-The Golgi apparatus packages and ships proteins.
-Vacuoles store water and nutrients.
-The endoplasmic reticulum is a network that transports materials.
-Lysosomes break down waste with enzymes.`;
+const SAMPLE_NOTES = `Greek gods and what they rule:
+Zeus is king of the gods and god of the sky and thunder.
+Poseidon is god of the sea and earthquakes.
+Hades rules the underworld.
+Athena is goddess of wisdom and strategy.
+Ares is god of war.
+Aphrodite is goddess of love and beauty.
+Hermes is the messenger of the gods.
+Apollo is god of music and the sun.`;
 
 const STYLES = [
   { id: 'storybook', label: 'Storybook' },
