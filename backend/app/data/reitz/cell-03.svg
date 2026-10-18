@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 468" stroke="#3B2A1E" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+<rect x="0" y="0" width="768" height="360" fill="#FDEBD0" stroke="none"/>
+<rect x="0" y="360" width="768" height="108" fill="#EBCDA6" stroke="none"/>
+<line x1="0" y1="360" x2="768" y2="360"/>
+
+<rect x="60" y="60" width="440" height="240" fill="#DDF3F8"/>
+<rect x="60" y="300" width="440" height="40" fill="#C89B6D"/>
+<circle cx="250" cy="170" r="50" fill="#F6C9A0"/>
+<path d="M200 150 Q250 100 300 150 Z" fill="#FFFFFF"/><path d="M290 150 L330 158 L298 160 Z" fill="#FFFFFF"/>
+<circle cx="238.0" cy="176.0" r="4.0" fill="#3B2A1E" stroke="none"/><circle cx="262.0" cy="176.0" r="4.0" fill="#3B2A1E" stroke="none"/><path d="M238.0 188.0 Q250 200.0 262.0 188.0" fill="none"/><circle cx="228.0" cy="188.0" r="5.0" fill="#F4A3A3" stroke="none" opacity="0.8"/><circle cx="272.0" cy="188.0" r="5.0" fill="#F4A3A3" stroke="none" opacity="0.8"/>
+<path d="M190 300 Q190 225 250 225 Q310 225 310 300 Z" fill="#F7A6C1"/>
+<path d="M215 245 L235 265 L215 285 M250 245 L270 265 L250 285 M285 245 L265 265" fill="none" stroke-width="3"/>
+<rect x="320" y="230" width="90" height="70" fill="#9ED36A"/><path d="M365 230 L365 300 M320 265 L410 265" stroke="#E8553E" stroke-width="8"/>
+<path d="M365 230 Q340 200 352 222 M365 230 Q390 200 378 222" fill="#E8553E" stroke-width="4"/>
+<line x1="110" y1="120" x2="140" y2="300" stroke-width="7"/><path d="M140 300 L172 296 L170 286 L138 290 Z" fill="#B9B1A6"/>
+<rect x="560" y="260" width="170" height="70" rx="8" fill="#F0A35E"/><circle cx="590" cy="345" r="18" fill="#3B2A1E"/><circle cx="700" cy="345" r="18" fill="#3B2A1E"/>
+<rect x="575" y="200" width="60" height="60" fill="#7CC6F2"/><path d="M605 200 L605 260 M575 230 L635 230" stroke="#FFD93D" stroke-width="7"/>
+<rect x="645" y="210" width="70" height="50" fill="#F7A6C1"/><path d="M680 210 L680 260" stroke="#9ED36A" stroke-width="7"/>
+<rect x="600" y="140" width="50" height="50" fill="#FFD93D" transform="rotate(-15 625 165)"/>
+<path d="M520 150 Q560 120 590 140" fill="none" stroke-dasharray="8 12"/>
+<path d="M530 280 L550 280 M520 300 L548 300" stroke-width="4"/>
+
+</svg>

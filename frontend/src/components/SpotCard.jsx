@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fileUrl } from '../api.js';
+import { fileUrl, imageUrl } from '../api.js';
 import Creature from './Creature.jsx';
 import { placeName } from '../lib/path.js';
 
@@ -64,12 +64,14 @@ export default function SpotCard({ palace, spot, number, moving, onRename, onMov
         </form>
       ) : spot.fact ? (
         <>
+          {/* Same order as the Wander card: picture, scene, hook, then the idea. */}
+          {spot.image && <img className="spot-image spot-card-photo" src={imageUrl(spot.image)} alt={spot.scene ?? ''} />}
+          <p className="scrawl scene-text">{spot.scene}</p>
+          {spot.hook && <span className="hook">hook: {spot.hook}</span>}
           <div className="sticky">
             <span className="sticky-label">Holds</span>
             <p>{spot.fact}</p>
           </div>
-          <p className="scrawl scene-text">{spot.scene}</p>
-          {spot.hook && <span className="hook">hook: {spot.hook}</span>}
         </>
       ) : (
         <p className="hint-text">An empty egg. “Fill from notes” gives it an idea to hold.</p>

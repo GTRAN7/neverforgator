@@ -152,26 +152,15 @@ MAX_IDEAS = 40
 IDEA_KINDS = ["definition", "fact", "number", "date", "name", "list", "sequence", "formula",
               "vocabulary", "cause-effect", "comparison"]
 
-# The classic "number rhyme" pegs: each digit always becomes the same image.
-PEGS = ["hero", "bun", "shoe", "tree", "door", "hive", "sticks", "heaven (an angel)", "gate", "wine"]
-NUMBER_RHYMES = ", ".join(f"{d} = {peg}" for d, peg in enumerate(PEGS))
-
-
-def number_pegs(text: str) -> str:
-    """The digit images for the numbers in an idea, worked out here so the model only has to use
-    them: "Hans Krebs found it in 1937" -> '1937 = bun, wine, tree, heaven (an angel)'."""
-    # Plain numbers and ordinals ("4th Amendment" -> 4 = door).
-    numbers = list(dict.fromkeys(re.findall(r"\b(\d{1,4})(?:st|nd|rd|th)?\b", text)))
-    return "; ".join(f"{n} = {', '.join(PEGS[int(d)] for d in n)}" for n in numbers)
-
-
 # The memory technique for each kind of idea. Gemini gets the ones it needs.
 TECHNIQUES = {
     "definition": "Turn the term into a sound-alike image (the hook) and make that image physically DO the meaning.",
     "fact": "Turn every key word into a concrete object or character and make them interact in one action.",
-    "number": f"Turn each digit into its number-rhyme image, exactly this table: {NUMBER_RHYMES}.\n"
-              "Show those images in order in the scene (e.g. 23 → a SHOE kicking a TREE).",
-    "date": f"Encode the digits of the year/day with exactly this number-rhyme table: {NUMBER_RHYMES}, in order, acting with the event.",
+    # No digit-code tables (number rhymes, major system): they only work after you've memorized the code.
+    "number": "Make the number something you can see or already know: a small count as that many things in the scene "
+              "(3 branches → three judges arguing), a big one tied to something familiar with that number "
+              "(12 → a dozen eggs, 100 → a football field), and someone says the number out loud.",
+    "date": "Put a period detail from that time into the scene and have someone shout the year as part of the action.",
     "name": "Replace the person or place name with a concrete sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed; the sound-alike is the star of the scene, not the person.",
     "vocabulary": "Keyword method: a sound-alike of the word (in your language) interacting with an image of its meaning.",
     "list": "Each item becomes its own character, all crowded into one scene in the right order (left to right).",
@@ -203,8 +192,8 @@ def scene_rules(flavor: str = "silly") -> str:
   the place. Don't fill the scene with random objects that have nothing to do with the idea,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
-- number images come ON TOP of the key terms, never instead of them: the main subject (the planet, the
-  person, the amendment's right) must still be clearly in the scene,
+- the main subject (the planet, the person, the right) is clearly in the scene. Its place in a list (1st, 4th...)
+  needs no image: the stop's place on the walk already holds the order,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
 imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image.
@@ -292,11 +281,10 @@ def _write_scene_batch(ideas, locations, flavor):
             return _mock_scenes(ideas, locations)
         lines = []
         for i, idea in enumerate(ideas):
-            pegs = number_pegs(idea["text"])
-            extra = f"; number images to use, in order: {pegs}" if pegs else ""
+            extra = ""
             if idea["kind"] == "name":
-                # Names need their own picture too, or the number image takes over the scene.
-                extra += "; ALSO turn the name into a concrete sound-alike object (Washington -> a washing machine)"
+                # A name is the hardest thing to see: it needs its own picture.
+                extra = "; turn the name into a concrete sound-alike object (Washington -> a washing machine)"
             lines.append(f'{i + 1}. At "{locations[i]}" ({idea["kind"]}; key terms: {", ".join(idea["keyTerms"])}{extra}): {idea["text"]}')
         kinds = list(dict.fromkeys(idea["kind"] for idea in ideas))
         techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
@@ -315,7 +303,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v11", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v12", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
@@ -401,13 +389,13 @@ key words impossible to miss. Technique for this kind of idea ({kind}): {TECHNIQ
 {scene_rules(flavor)}""",
             _obj(scene=STRING, hook=STRING, imagePrompt=STRING),
         )
-    return cached_json(["weirder-v6", models["text"], fact, kind, label, scene, level, flavor], produce)
+    return cached_json(["weirder-v7", models["text"], fact, kind, label, scene, level, flavor], produce)
 
 
 def weirder_scenes(stops: list[dict], flavor: str = "silly") -> list[dict]:
     """Weirder scenes for several missed stops in one call (end of a quiz). Each stop:
     {fact, label, scene, level, kind}. Results already cached are reused."""
-    keys = [["weirder-v6", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
+    keys = [["weirder-v7", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
     results = [None] * len(stops)
     todo = []
     for i, key in enumerate(keys):
