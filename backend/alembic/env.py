@@ -32,6 +32,11 @@ def run_migrations_online() -> None:
     # Reuse the app's engine so migrations connect exactly like the app does
     # (same driver, same SSL settings).
     with engine.connect() as connection:
+        if IS_SQLITE:
+            # Batch mode rebuilds a table by copying it and dropping the old one. With foreign keys
+            # on (app/db.py turns them on), dropping `palaces` would cascade-delete every stop, room
+            # and score. Must be set outside a transaction, so on the raw connection.
+            connection.connection.driver_connection.execute("PRAGMA foreign_keys=OFF")
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

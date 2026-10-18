@@ -14,17 +14,9 @@ import { readPrefs } from '../lib/prefs.js';
 // Like memory athletes, you check yourself: if only some key terms match, you see the fact and say
 // whether you had it, and you can always overrule a verdict. A friend bounces if you got all of
 // its questions right; otherwise it falls asleep and Gemini dreams up a weirder scene for it.
-// At the end the score sets the next spaced review (see /reviews in the backend).
+// At the end the score is saved (quiz attempts).
 // `results` ({ spotId: true/false }, or null before starting) lives in PalaceEditor because the
 // 3D friends and the score in the header need it too.
-
-// "in 3 days", "tomorrow", "in 10 minutes"
-function whenText(iso) {
-  const minutes = Math.round((new Date(iso) - Date.now()) / 60000);
-  if (minutes < 60) return `in ${Math.max(1, minutes)} minutes: walk the sleepy friends, then quiz again`;
-  const days = Math.round(minutes / 1440);
-  return days <= 1 ? 'tomorrow' : `in ${days} days`;
-}
 
 const shuffle = (list) => list.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(([, v]) => v);
 const FIND_ROUND_MAX = 6; // with both rounds, round 2 asks about a handful of friends, not all
@@ -54,7 +46,6 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
   const [graded, setGraded] = useState(null); // { correct: true | false | null (close: you decide) }
   const [showPicture, setShowPicture] = useState(false);
   const [rewriting, setRewriting] = useState({}); // spotId -> true while Gemini rewrites it
-  const [nextReviewAt, setNextReviewAt] = useState(null);
   const [finished, setFinished] = useState(false);
 
   const question = questions[q];
@@ -91,7 +82,6 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     setAnswers({});
     setResults({});
     setFinished(false);
-    setNextReviewAt(null);
     ask(0, list);
   }
 
@@ -149,7 +139,7 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
     setGraded(null);
     const happy = path.filter(({ spot: s }) => results?.[s.id] !== false).length;
     if (!palace.readOnly) {
-      api.addReview(palace.id, happy, path.length).then((r) => setNextReviewAt(r.nextReviewAt)).catch(() => {});
+      api.addReview(palace.id, happy, path.length).catch(() => {}); // keeps the score history
       reimagineAll(path.map(({ spot: s }) => s).filter((s) => results?.[s.id] === false)); // no await: shows on the results screen
     }
   }
@@ -234,10 +224,6 @@ export default function QuizCard({ palace, images, updateSpot, results, setResul
             </ul>
           </>
         )}
-        {!palace.readOnly && <p className="review-note">
-          <strong>Next review:</strong> {nextReviewAt ? whenText(nextReviewAt) : 'saving…'}
-          <small>Memory athletes re-walk a palace after 1, 3, 7 and 21 days. Each good quiz stretches the gap.</small>
-        </p>}
         <div className="btn-row">
           {sleepers.length > 0 && (
             <button className="btn ghost" onClick={() => onWake(sleepers[0].spot)}>Wake them up</button>

@@ -147,6 +147,9 @@ def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str
     set_order(db, walk)
 
     your_stops = sum(1 for s in kept if walk.index(s) < stop_count)
+    # A palace is named after its topic, unless you renamed it yourself.
+    if palace.title in (palace.place, "My palace", "My place", None):
+        palace.title = gemini.notes_topic(notes)[:80]
     palace.source_text = notes
     palace.style = style
     palace.flavor = flavor

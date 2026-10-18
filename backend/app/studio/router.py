@@ -152,7 +152,9 @@ class NameIn(BaseModel):
 
 @router.post("/palaces", status_code=201)
 def create_palace(body: NameIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    palace = Palace(user_id=user.id, title=body.name.strip()[:80] or "My palace")
+    place = body.name.strip()[:80] or "My place"
+    # Named after its place until it's filled; then after its topic (see fill.py).
+    palace = Palace(user_id=user.id, title=place, place=place)
     db.add(palace)
     db.commit()
     return palace_json(load_palace(db, palace.id, user), user)
@@ -184,7 +186,8 @@ def delete_palace(palace_id: int, user: User = Depends(get_current_user), db: Se
 def copy_palace(db: Session, source: Palace, owner: User) -> Palace:
     """A copy with the same rooms and stops (positions and names), but no facts yet.
     Files are hard-linked, so a 95 MB scan isn't duplicated per user."""
-    copy = Palace(user_id=owner.id, title=source.title, copied_from=source.id)
+    place = source.place or source.title
+    copy = Palace(user_id=owner.id, title=place, place=place, copied_from=source.id)
     db.add(copy)
     db.flush()
     src_dir, dst_dir = palace_dir(source.id), palace_dir(copy.id)

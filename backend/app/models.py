@@ -79,6 +79,9 @@ class Palace(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     # --- NeverForgator studio (palaces built in rooms) ---
+    # The place it's built in ("my dorm room", "Reitz Union"). The title is the topic stored there.
+    # Several palaces can share a place: "New topic here" copies its rooms and stops.
+    place: Mapped[str | None] = mapped_column(String(80))
     style: Mapped[str | None] = mapped_column(String(20))   # picture style
     flavor: Mapped[str | None] = mapped_column(String(20))  # how weird scenes get
     # Shared palaces everyone can open and copy (the built-in Reitz route, the example).

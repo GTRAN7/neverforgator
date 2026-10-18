@@ -252,26 +252,6 @@ const STEPS = [
     ),
     art: () => <QuizStep />,
   },
-  {
-    title: 'Step 5 · Walk it again, a little later',
-    body: (
-      <>
-        <p>Memories fade on a curve; each review flattens it. NeverForgator schedules your next walk:
-          <strong> tomorrow, then 3, 7 and 21 days</strong>, a bit longer each time you ace the quiz.
-          Friends you forget dream up an even weirder scene.</p>
-      </>
-    ),
-    art: () => (
-      <div className="guide-art timeline">
-        {['today', '+1 day', '+3 days', '+7 days', '+21 days'].map((label, i) => (
-          <div key={label} className="timeline-stop">
-            <Creature number={i + 1} state={i < 2 ? 'happy' : 'awake'} size="sm" />
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
 ];
 
 // onStart: start memorizing (copy the built-in Reitz). onSample: open the finished example in 3D.

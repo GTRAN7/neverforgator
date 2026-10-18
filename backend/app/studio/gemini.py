@@ -191,7 +191,10 @@ FLAVORS = {
 
 def scene_rules(flavor: str = "silly") -> str:
     return f"""A great memory scene:
-- happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
+- happens AT that exact location and uses what the object really does (a door opens or blocks, a vending
+  machine sells, an elevator skips floors, a staircase is climbed): the object takes part in the fact,
+- ACTS OUT the meaning: the action in the scene IS the fact, so replaying it gives the answer back
+  (not just the key words sitting near the object),
 - is {FLAVORS.get(flavor, FLAVORS['silly'])}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - STAYS ON TOPIC: build images from the idea's own subject first (mitochondria → a tiny power plant,
@@ -204,15 +207,37 @@ def scene_rules(flavor: str = "silly") -> str:
   person, the amendment's right) must still be clearly in the scene,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
-imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image."""
+imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image.
+Example (for the style only; don't reuse it): "Plants make sugar from sunlight" at an elevator → "You ride the
+elevator and a SUNFLOWER in the corner gulps the ceiling light, then spits SUGAR cubes at the doors."
+hook: "sunlight → sunflower gulping light · sugar → sugar cubes"."""
 
 
 def split_notes(notes: str) -> list[dict]:
     """How many stops do these notes need? One per idea, where an idea is what fits in one
     picture. Returns [{text, kind, keyTerms}]."""
+    return _split(notes)["ideas"]
+
+
+def notes_topic(notes: str) -> str:
+    """A short title for the notes ("The Bill of Rights"), from the same Gemini call as the split."""
+    return _split(notes)["title"]
+
+
+def _first_line_title(notes: str) -> str:
+    line = next((l.strip() for l in notes.splitlines() if l.strip()), "My notes")
+    return re.sub(r"[:.\s]+$", "", line)[:60] or "My notes"
+
+
+def _split(notes: str) -> dict:
+    # Notes split before titles existed: reuse that split (no new Gemini call), title from line 1.
+    older = lookup_json(["split-v5", models["text"], notes])
+    if older is not None:
+        return {"title": _first_line_title(notes), "ideas": older}
+
     def produce():
         if MOCK:
-            return _mock_split(notes)
+            return {"title": _first_line_title(notes), "ideas": _mock_split(notes)}
         result = _generate_json(
             f'''You coach memory athletes. A student will store these notes in a memory palace, one idea per stop.
 
@@ -234,13 +259,15 @@ what they did, a number and what it counts.
 For each idea also give:
 - kind: {", ".join(IDEA_KINDS)}. Use "name" whenever the thing to remember is mainly a person's or
   place's name (even in an ordered list: "the 3rd president was Thomas Jefferson" is a name).
-- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).''',
-            _obj(ideas={"type": "array", "items": _obj(
+- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).
+Also give the notes a title: the topic in 2-6 words, like a chapter title ("The Bill of Rights",
+"Cell organelles").''',
+            _obj(title=STRING, ideas={"type": "array", "items": _obj(
                 text=STRING, kind={"type": "string", "enum": IDEA_KINDS},
                 keyTerms={"type": "array", "items": STRING})}),
         )
-        return result["ideas"][:MAX_IDEAS]
-    return cached_json(["split-v5", models["text"], notes], produce)
+        return {"title": result["title"].strip()[:60] or _first_line_title(notes), "ideas": result["ideas"][:MAX_IDEAS]}
+    return cached_json(["split-v6", models["text"], notes], produce)
 
 
 SCENE_BATCH = 5  # scenes are written in parallel batches: much faster than one long answer
@@ -288,7 +315,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v10", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v11", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----

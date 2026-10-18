@@ -255,7 +255,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
       <header className="topbar">
         <div className="brand">
           <Logo href="#/" />
-          <span className="scrawl palace-name">{palace.name}</span>
+          <span className="scrawl palace-name">{palace.name}{palace.place && palace.place !== palace.name ? ` · in ${palace.place}` : ''}</span>
           {mock && <span className="chip yellow tiny" title="Set GEMINI_API_KEY in .env for real AI">mock AI</span>}
         </div>
 

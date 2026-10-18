@@ -7,11 +7,11 @@
   {
    "room": 0,
    "direction": [
-    0.9298438185361052,
-    -0.22742084372356366,
-    0.28925807330177883
+    -0.9892940367131077,
+    0.14473937901039766,
+    0.018649962133171053
    ],
-   "label": "foosball table",
+   "label": "tv screen",
    "crop": null,
    "fact": "The 1st Amendment protects freedom of speech, religion and the press.",
    "kind": "definition",
@@ -21,51 +21,10 @@
     "religion",
     "press"
    ],
-   "scene": "You see a giant hamburger bun sitting on the foosball table, shouting speeches and holding a glowing press while praying loudly.",
-   "hook": "1st Amendment → bun",
-   "imagePrompt": "A giant soft hamburger bun is sitting on top of a wooden foosball table. The bun is speaking into a microphone while holding a glowing newspaper and praying. Bright daylight illuminates the playful, cartoonish scene.",
-   "image": "930b5b50b21617f755a33e54.svg"
-  },
-  {
-   "room": 0,
-   "direction": [
-    0.41184941050573753,
-    -0.33505783153562735,
-    0.8474174370360333
-   ],
-   "label": "putting green",
-   "crop": null,
-   "fact": "The 2nd Amendment grants the right to bear arms.",
-   "kind": "definition",
-   "keyTerms": [
-    "2nd Amendment",
-    "bear arms"
-   ],
-   "scene": "You see a giant leather shoe bouncing on the putting green, holding a tiny wooden bear and shooting confetti arms into the sky.",
-   "hook": "2nd Amendment → shoe",
-   "imagePrompt": "A massive leather shoe stands on a green turf putting green, holding a cute teddy bear and shooting colorful confetti from its sides. The scene is bright and cheerful under clear skies.",
-   "image": "de64049730025cb78703970f.svg"
-  },
-  {
-   "room": 0,
-   "direction": [
-    -0.2945198992046343,
-    -0.1300253065579898,
-    0.9467583897843171
-   ],
-   "label": "equipment rental kiosk",
-   "crop": null,
-   "fact": "The 3rd Amendment prohibits soldiers from being housed in private homes.",
-   "kind": "definition",
-   "keyTerms": [
-    "3rd Amendment",
-    "soldiers",
-    "homes"
-   ],
-   "scene": "You see a leafy green tree crashing through the equipment rental kiosk roof, gently lifting toy soldiers out of tiny paper homes with its branches.",
-   "hook": "3rd Amendment → tree",
-   "imagePrompt": "A leafy green tree bursts through the roof of a small wooden equipment rental kiosk. The tree branches are gently lifting miniature plastic toy soldiers away from tiny cardboard houses. Soft sunlight filters through the leaves.",
-   "image": "d461a4c542c0121d28eed10c.svg"
+   "scene": "A giant hamburger BUN reads the news on the TV: it SPEAKS into a mic, a choir PRAYS behind it, and newspapers PRINT out of the screen.",
+   "hook": "1 → bun · speech, religion, press → a mic, a choir, a printing press",
+   "imagePrompt": "A cheerful hamburger bun news anchor on a TV screen holding a microphone, a small choir singing behind it, newspapers flying out of the screen",
+   "image": "69f9c51f3f80b8e29c3cfbec.svg"
   },
   {
    "room": 0,
@@ -76,6 +35,47 @@
    ],
    "label": "chess set",
    "crop": null,
+   "fact": "The 2nd Amendment grants the right to bear arms.",
+   "kind": "definition",
+   "keyTerms": [
+    "2nd Amendment",
+    "bear arms"
+   ],
+   "scene": "A grizzly BEAR in giant SHOES sits at the chess set, flexing two huge hairy ARMS, and sweeps every chess piece off the board.",
+   "hook": "2 → shoe · bear arms → a BEAR with huge ARMS",
+   "imagePrompt": "A grizzly bear wearing giant sneakers sitting at a giant chess board, flexing huge muscular arms, chess pieces flying off the board",
+   "image": "527b75bddee2d335e908f7fc.svg"
+  },
+  {
+   "room": 0,
+   "direction": [
+    0.9298438185361052,
+    -0.22742084372356366,
+    0.28925807330177883
+   ],
+   "label": "foosball table",
+   "crop": null,
+   "fact": "The 3rd Amendment prohibits soldiers from being housed in private homes.",
+   "kind": "definition",
+   "keyTerms": [
+    "3rd Amendment",
+    "soldiers",
+    "homes"
+   ],
+   "scene": "The foosball players are tiny SOLDIERS trying to move into your HOUSE. A TREE grows through the table and flicks them out, one by one: not in my home!",
+   "hook": "3 → tree · foosball men → soldiers",
+   "imagePrompt": "A foosball table whose little players are toy soldiers carrying suitcases toward a tiny house, a tree growing through the table flicking them away",
+   "image": "d2f16cbc2d7c6e26e83af49b.svg"
+  },
+  {
+   "room": 1,
+   "direction": [
+    0.99556196460308,
+    6.123233995736766e-17,
+    0.09410831331851431
+   ],
+   "label": "glass doors",
+   "crop": null,
    "fact": "The 4th Amendment protects against searches without a warrant.",
    "kind": "definition",
    "keyTerms": [
@@ -83,19 +83,19 @@
     "searches",
     "warrant"
    ],
-   "scene": "You see a giant wooden door slamming down on the chess set, searching every chess piece with a flashing police warrant.",
-   "hook": "4th Amendment → door",
-   "imagePrompt": "A massive wooden door rests sideways across a concrete chess table. A glowing paper warrant is stuck to the surface while toy chess pieces scatter in surprise. Dramatic overhead lighting highlights the cartoon action.",
-   "image": "29a0d3a055ba77761d21dd86.svg"
+   "scene": "Police knock on the glass DOORS to SEARCH the Reitz. You hold the door shut until they press a WARRANT to the glass: no warrant, no search.",
+   "hook": "4 → door · search → police at the door · warrant → the paper on the glass",
+   "imagePrompt": "Two police officers at tall glass doors holding magnifying glasses, a person inside holding the door shut, a big paper warrant pressed against the glass",
+   "image": "846d61bcdc9a446e33054fd8.svg"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.9099635088662971,
-    0.1300253065579899,
-    0.39377637332150495
+    -0.9053299132647713,
+    -0.10231357595590654,
+    -0.4122010193135341
    ],
-   "label": "wall art",
+   "label": "gator statue",
    "crop": null,
    "fact": "The 5th Amendment allows individuals to remain silent instead of testifying against themselves.",
    "kind": "definition",
@@ -104,19 +104,19 @@
     "silent",
     "testifying"
    ],
-   "scene": "You see a buzzing beehive stuck to the wall art, where a tiny bee zips its lips shut and refuses to testify against the painting.",
-   "hook": "5th Amendment → hive",
-   "imagePrompt": "A large cartoon beehive is attached to a colorful piece of wall art. A fuzzy bee stands nearby, holding a finger to its zipped mouth in silence. Bright gallery lighting illuminates the playful scene.",
-   "image": "abdb30c763b01aa16c736d7b.svg"
+   "scene": "A HIVE of bees buzzes around the gator statue asking questions, but the gator SNAPS its jaws shut and won't say a word. It pleads the Fifth.",
+   "hook": "5 → hive · stay silent → the gator's jaws snapped shut",
+   "imagePrompt": "A bronze alligator statue with its jaws clamped shut and a zipper over its mouth, a buzzing beehive with bees holding tiny microphones around it",
+   "image": "3484da27aa8eb40fe6a3ee2a.svg"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.9892940367131077,
-    0.14473937901039766,
-    0.018649962133171053
+    0.5560690592052944,
+    0.14589586456296422,
+    -0.8182307731306395
    ],
-   "label": "tv screen",
+   "label": "staircase",
    "crop": null,
    "fact": "The 6th Amendment guarantees a speedy trial with a lawyer.",
    "kind": "definition",
@@ -125,19 +125,19 @@
     "speedy trial",
     "lawyer"
    ],
-   "scene": "You see six sticks forming a frame around the TV screen, where a speedy lawyer runs a race while waving a gavel.",
-   "hook": "6th Amendment → 6 sticks; lawyer → speedy lawyer",
-   "imagePrompt": "A flat-screen TV on a wall is surrounded by six wooden sticks. Inside the screen, a cartoon lawyer in a suit sprints across a track while holding a wooden gavel, cinematic lighting.",
-   "image": "85f6d8f936a51e52f9f36e41.svg"
+   "scene": "A LAWYER in a suit sprints up the staircase on six wooden STICKS for stilts, waving a stopwatch and yelling 'SPEEDY TRIAL!'",
+   "hook": "6 → sticks · speedy trial → a lawyer racing a stopwatch",
+   "imagePrompt": "A lawyer in a suit with a briefcase sprinting up a staircase on stilts made of wooden sticks, holding a stopwatch, speed lines",
+   "image": "9de9ae94653fad0123360b27.svg"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.947750778245027,
-    -0.12183821572323215,
-    -0.2948286138171206
+    -0.9528661800538767,
+    -0.12413465805535565,
+    0.276833216177201
    ],
-   "label": "recycling bins",
+   "label": "orange chairs",
    "crop": null,
    "fact": "The 7th Amendment guarantees a jury trial in civil lawsuits.",
    "kind": "definition",
@@ -146,19 +146,19 @@
     "jury trial",
     "civil lawsuits"
    ],
-   "scene": "An angel flies out of the recycling bins, holding a tiny jury box and tossing civil lawsuit papers everywhere like confetti.",
-   "hook": "7th Amendment → angel; jury trial → jury box; civil lawsuits → civil lawsuit papers",
-   "imagePrompt": "A glowing cartoon angel hovers above blue recycling bins. The angel holds a miniature wooden jury box in one hand and scatters official legal documents into the air, bright airy lighting.",
-   "image": "2c93eae8274d319dddddfad8.svg"
+   "scene": "Twelve ANGELS float down into the rows of orange chairs: they're the JURY. On the big screen, two neighbors sue each other over a lawnmower: a CIVIL lawsuit.",
+   "hook": "7 → heaven (angels) · jury → angels in the jury chairs · civil → neighbors suing",
+   "imagePrompt": "Angels with halos sitting in rows of orange armchairs like a jury box, watching a big screen showing two neighbors arguing over a lawnmower",
+   "image": "0e2e6c1e56b062fdbbb528cd.svg"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    -0.5234579333905711,
-    0.08078945931039284,
-    -0.8482127417309921
+    -0.3081883946610741,
+    0.07318210209940289,
+    -0.948506348596857
    ],
-   "label": "constans theatre door",
+   "label": "barbershop",
    "crop": null,
    "fact": "The 8th Amendment prohibits cruel or unusual punishment.",
    "kind": "definition",
@@ -166,19 +166,19 @@
     "8th Amendment",
     "cruel or unusual punishment"
    ],
-   "scene": "A massive gate blocks the theatre door, where you watch a cruel-looking mask trying to break through but failing to enter.",
-   "hook": "8th Amendment → gate; cruel or unusual punishment → cruel mask",
-   "imagePrompt": "A heavy iron gate is bolted shut against a theatre door. A whimsical, exaggerated cruel-looking mask with pointy features leans against the gate, vibrant theatre lobby lighting.",
-   "image": "dc0521f7050b5d3d6af4c01a.svg"
+   "scene": "In the barbershop, a barber gives a CRUEL and UNUSUAL haircut: half mohawk, half bowl cut. A GATE slams down over the door: that punishment is banned!",
+   "hook": "8 → gate · cruel and unusual punishment → a cruel, unusual haircut",
+   "imagePrompt": "A barbershop with a barber giving a customer a ridiculous half-mohawk half-bowl-cut haircut, a metal gate slamming down in front of the shop",
+   "image": "b0aa136a49254b0619a2949e.svg"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    -0.15630130153393215,
-    0.04125237396305191,
-    -0.9868475793055436
+    0.9044387133941867,
+    0.02929484135074659,
+    0.4255965530688691
    ],
-   "label": "red armchair",
+   "label": "vending machine",
    "crop": null,
    "fact": "The 9th Amendment states that rights not listed still belong to the people.",
    "kind": "definition",
@@ -187,19 +187,19 @@
     "rights",
     "people"
    ],
-   "scene": "You spill a glass of wine onto the red armchair, and suddenly little people made of lights pop out of the fabric to claim the seat.",
-   "hook": "9th Amendment → wine; rights → rights/people; people → people",
-   "imagePrompt": "A glass of red wine spills onto a plush red armchair. From the wet fabric, tiny glowing people figures emerge, sitting on the cushions, cozy warm indoor lighting.",
-   "image": "2768e2d8919a1ab4cd2acf6f.svg"
+   "scene": "The vending machine sells WINE that isn't on its menu. The label says 'not listed', but the PEOPLE in line take it anyway: it still belongs to them.",
+   "hook": "9 → wine · rights not listed → things not on the menu",
+   "imagePrompt": "A snack vending machine with bottles of wine in a slot labeled 'not listed', a happy line of people taking them",
+   "image": "05ed83e101b6457b8ad883a0.svg"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    0.19963136586085448,
-    0.02805589464654429,
-    -0.9794693382337762
+    0.9038629987141252,
+    0.11692803619631204,
+    -0.41153312613540993
    ],
-   "label": "reception desk",
+   "label": "elevator",
    "crop": null,
    "fact": "The 10th Amendment states that powers not given to the federal government belong to the states.",
    "kind": "definition",
@@ -208,10 +208,10 @@
     "federal government",
     "states"
    ],
-   "scene": "You find a hero eating a massive bun at the reception desk, handing out power badges to the states while ignoring the federal building.",
-   "hook": "10th Amendment → bun, hero; federal government → federal building; states → state badges",
-   "imagePrompt": "A comic-book hero sits at a wooden reception desk eating a large hamburger bun. The hero pins star-shaped badges labeled with state names onto the desk, soft office lighting.",
-   "image": "5bb1834082f23422e41ed6f5.svg"
+   "scene": "A superHERO eating a BUN rides the elevator. It skips the 'FEDERAL' floor and opens on 'THE STATES', where he hands out glowing POWER buttons.",
+   "hook": "10 → bun + hero · powers → the elevator's buttons, given to the states",
+   "imagePrompt": "A superhero eating a hamburger bun inside an elevator, the button for a 'Federal' floor crossed out, handing glowing power buttons to people waving state flags",
+   "image": "a88d3d9e189b3a5b6513230a.svg"
   }
  ]
 }
