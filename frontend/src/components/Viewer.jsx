@@ -413,7 +413,13 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
         gl={{ preserveDrawingBuffer: true }}
       >
         <color attach="background" args={[roomColor]} />
-        <Suspense fallback={null}>
+        {/* On slow Wi-Fi a full panorama takes a while: show the small thumbnail (same shape, blurry)
+            right away and swap in the sharp photo when it arrives. */}
+        <Suspense fallback={panorama && room.thumb ? (
+          <Suspense fallback={null}>
+            <PanoramaRoom url={fileUrl(palaceId, room.thumb)} photo={room.type === 'photo'} onPlace={roomClick} />
+          </Suspense>
+        ) : null}>
           {panorama
             ? <PanoramaRoom url={url} photo={room.type === 'photo'} onPlace={roomClick} />
             : <SplatRoom url={url} flipped={room.flipped} onPlace={roomClick} onStatus={setSplatMessage} />}
