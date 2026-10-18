@@ -40,6 +40,7 @@ export default function AccountMenu({ account }) {
             <strong>{fullName ?? 'Local user'}</strong>
             {user?.email && <span>{user.email}</span>}
           </div>
+          <button role="menuitem" onClick={() => { setOpen(false); window.location.hash = '#/'; }}>Dashboard</button>
           <button role="menuitem" onClick={() => { setOpen(false); window.location.hash = '#/guide'; }}>Take the tour again</button>
           {account && <button role="menuitem" className="danger" onClick={account.logout}>Log out</button>}
         </div>
