@@ -102,6 +102,9 @@ export default function PalaceEditor({ palaceId, startAction }) {
 
   const switchMode = useCallback((next) => {
     if (next === 'quiz') setQuizResults(null); // every visit to Quiz starts fresh
+    // Wander always starts at friend 1 (WanderCard walks to it when no friend is selected).
+    // Something that wants another friend picks it right after, like the quiz's "wake this friend".
+    if (next === 'wander') setSelectedId(null);
     setInspecting(false);
     setMovingId(null);
     setMode(next);

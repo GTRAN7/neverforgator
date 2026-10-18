@@ -128,6 +128,7 @@ button { font: inherit; color: inherit; }
 /* ---- Top bar ---- */
 .editor { height: 100%; display: flex; flex-direction: column; }
 .topbar {
+  position: relative; z-index: 20; /* its settings and profile menus open over the room (and its garland) */
   flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 16px; padding: 14px 24px;
 }
@@ -481,7 +482,10 @@ img.spot-image { object-fit: contain; background: #FFF8EB; }
 @keyframes wobble { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 @keyframes pulse { 50% { opacity: 0.4; } }
 @keyframes drop-in { from { opacity: 0; transform: rotate(4deg) translateY(-12px); } }
-@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; } }
+/* The computer asks for less motion, unless Settings → Reduce motion was turned off here. */
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion='full']) :is(*, *::before) { animation: none !important; } }
+/* Settings → Reduce motion: friends stop bobbing, the garland stops swaying, nothing wobbles or hops. */
+:root[data-motion='reduced'] *, :root[data-motion='reduced'] *::before, :root[data-motion='reduced'] *::after { animation: none !important; }
 
 /* ---- Small screens: path card on top, cards become a bottom sheet ---- */
 @media (max-width: 900px) {
@@ -530,6 +534,8 @@ img.spot-image { object-fit: contain; background: #FFF8EB; }
 .gear-btn:hover, .gear-btn.is-open { background: var(--sticky); }
 .sky-page .gear-btn { box-shadow: none; } /* the profile pill has none on the sky pages either */
 .gear-btn svg { width: 24px; height: 24px; }
+.gear-btn .gear-hole { fill: var(--card); } /* the gear's middle matches the button behind it */
+.gear-btn:hover .gear-hole, .gear-btn.is-open .gear-hole { fill: var(--sticky); }
 .gear-btn.is-open, .gear-btn:hover { transform: rotate(45deg); }
 .gear-pop {
   position: absolute; top: calc(100% + 10px); right: 0; z-index: 60; width: min(360px, calc(100vw - 32px));
@@ -557,6 +563,7 @@ img.spot-image { object-fit: contain; background: #FFF8EB; }
 }
 .gear-switch.is-on .gear-switch-knob { transform: translateX(28px); }
 .gear-switch-knob svg { width: 16px; height: 16px; }
+.gear-knob-calm { font-size: 9px; line-height: 1; color: var(--ink); }
 .gear-knob-cb { width: 12px; height: 12px; border-radius: 50%; background: conic-gradient(#0072B2 0 50%, #E69F00 0); }
 .gear-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .gear-chip {
@@ -993,7 +1000,7 @@ img.spot-image { object-fit: contain; background: #FFF8EB; }
 /* ---- Readability on the sky ----
    The sky is scenery: every piece of text sits on a surface (bar, card or tag), never on clouds. */
 .sky-page .home-nav, .sky-page .guide-nav, .sky-page .landing-nav {
-  position: relative; z-index: 2; padding: 8px 10px 8px 16px; margin-top: 12px;
+  position: relative; z-index: 20; /* menus open over the page (and the garland) */ padding: 8px 10px 8px 16px; margin-top: 12px;
   background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(6px);
   border: 2px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--edge);
 }

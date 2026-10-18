@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import './palace.css'
-import { switchMode } from '../lib/mode.js'
 import PalaceApp from './PalaceApp.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import { loadPalace } from './storage'
 import { useNightMode } from './night'
 import Settings from './components/Settings.jsx'
 import Sky from './components/Sky.jsx'
+import StudioButton from './components/StudioButton.jsx'
 import signUrl from './assets/sign.webp'
 
 // Campus mode (Natasha's app): the UF campus walk with photo signs, pins and a dashboard.
@@ -73,7 +73,10 @@ function App() {
   return (
     <main className="landing">
       <Sky night={night} castle />
-      <Settings prefs={prefs} className="landing-corner" />
+      <div className="landing-corner">
+        <StudioButton />
+        <Settings prefs={prefs} />
+      </div>
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />
@@ -83,7 +86,7 @@ function App() {
           </div>
         </div>
         <section className="landing-card">
-          <p className="eyebrow">SwampHacks 2026</p>
+          <p className="eyebrow">NeverForgator (2D) · SwampHacks 2026</p>
           <h2>Turn your notes into a walk across UF.</h2>
           <p className="muted">
             The method of loci is a memory trick: put each idea somewhere you know, then
@@ -105,19 +108,4 @@ function App() {
   )
 }
 
-const SWITCH_STYLE = {
-  position: 'fixed', left: 12, bottom: 12, zIndex: 9999, padding: '6px 14px', cursor: 'pointer',
-  border: '2px solid #3B2A1E', borderRadius: 999, background: '#FFFDF7', color: '#3B2A1E', font: '600 13px system-ui',
-}
-
-// A small way back to the 3D studio, shown on every campus-mode screen.
-function CampusMode() {
-  return (
-    <>
-      <App />
-      <button onClick={() => switchMode('studio')} title="Back to the 3D studio" style={SWITCH_STYLE}>← 3D studio</button>
-    </>
-  )
-}
-
-export default CampusMode
+export default App
