@@ -276,10 +276,20 @@ button { font: inherit; color: inherit; }
   position: absolute; left: calc(50% - 45px); top: -12px; width: 90px; height: 24px; z-index: 1;
   background: rgba(127, 169, 139, 0.7); transform: rotate(-3deg);
 }
+/* The Wander card: drag it anywhere, resize it evenly from the corner handle (WanderCard.jsx) */
+.movable-card { transform-origin: top left; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.movable-card:active { cursor: grabbing; }
+.card-resize {
+  position: absolute; right: -10px; bottom: -10px; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; padding: 0;
+  border-radius: 50%; border: 2px solid var(--ink); background: var(--card); color: var(--ink); cursor: nwse-resize; touch-action: none;
+}
+.card-resize:hover { background: var(--sticky); }
+.card-resize svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 /* × on a floating card (Wander): sits on its corner, like a pin */
 .float-card .card-close { position: absolute; top: -12px; right: -12px; z-index: 2; background: var(--card); border: 2px solid var(--ink); }
 .float-card .card-close:hover { background: var(--sticky); }
-.polaroid-photo { height: 190px; flex: 0 1 190px; min-height: 64px; object-fit: cover; }
+/* 304px makes the Wander card ~1.25x as tall as it was (190px); it still shrinks if the room view is short */
+.polaroid-photo { height: 304px; flex: 0 1 304px; min-height: 64px; object-fit: cover; }
 .scene-text { margin: 10px 4px 0; font-size: calc(20px * var(--ts)); line-height: 1.15; color: var(--ink-2); flex: none; }
 .polaroid .hook { flex: none; }
 .polaroid .sticky, .polaroid .btn-row, .polaroid .card-foot { flex: none; }
@@ -329,6 +339,9 @@ button { font: inherit; color: inherit; }
 .sleeper-list small { color: var(--muted); }
 
 .spot-image { display: block; width: 100%; object-fit: cover; border-radius: 3px; background: var(--sand); }
+/* Finished pictures: shrink to fit (never cropped) on a plain warm-cream card. Doodles are see-through,
+   so without it the room showed through them; it stays light at night so dark lines read. */
+img.spot-image { object-fit: contain; background: #FFF8EB; }
 .spot-image.placeholder {
   display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center;
   position: relative; background: var(--sand) center / cover; font: 600 calc(22px * var(--ts)) var(--hand); color: var(--ink-2);
@@ -481,7 +494,7 @@ button { font: inherit; color: inherit; }
     left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-width: none;
     max-height: 60%; overflow-y: auto; transform: none;
   }
-  .polaroid-photo { height: 130px; }
+  .polaroid-photo { height: 163px; }
   .wordmark.huge { font-size: calc(40px * var(--ts)); }
 }
 .fill-report {
@@ -511,9 +524,11 @@ button { font: inherit; color: inherit; }
 .gear-menu { position: relative; }
 .gear-btn {
   display: grid; place-items: center; width: 40px; height: 40px; padding: 0; cursor: pointer;
-  border: 2px solid var(--ink); border-radius: 50%; background: var(--accent); color: var(--edge);
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--card); color: var(--ink); /* like .account-btn */
   box-shadow: 0 3px 0 var(--edge); transition: transform 0.25s;
 }
+.gear-btn:hover, .gear-btn.is-open { background: var(--sticky); }
+.sky-page .gear-btn { box-shadow: none; } /* the profile pill has none on the sky pages either */
 .gear-btn svg { width: 24px; height: 24px; }
 .gear-btn.is-open, .gear-btn:hover { transform: rotate(45deg); }
 .gear-pop {
@@ -572,6 +587,11 @@ button { font: inherit; color: inherit; }
   width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 26px;
   background: var(--card); border: 2px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--edge);
 }
+/* "Replace your current friends?" in the notes window, instead of a browser pop-up */
+.replace-confirm { display: grid; gap: 12px; padding: 14px 16px; border: 2px solid var(--ink); border-radius: 20px; background: var(--sticky); color: var(--ink); }
+.replace-confirm p { margin: 0; font-size: calc(15px * var(--ts)); line-height: 1.45; }
+.replace-confirm .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.replace-confirm .btn { flex: 1; }
 .pref-group { display: flex; flex-direction: column; gap: 8px; }
 .pref-group .hint-text { margin-top: 0; }
 .pref-toggle { display: flex; align-items: center; gap: 8px; font-size: calc(14px * var(--ts)); }
@@ -718,7 +738,7 @@ button { font: inherit; color: inherit; }
   font: 600 calc(18px * var(--ts)) var(--display); animation: banner 2.2s ease-out forwards;
 }
 .sprite-picture {
-  width: 150px; max-height: 110px; object-fit: cover; margin-bottom: 2px;
+  width: 150px; height: 110px; object-fit: contain; background: #FFF8EB; margin-bottom: 2px;
   border: 4px solid var(--card); border-radius: 6px; box-shadow: 0 6px 16px rgba(59, 42, 30, 0.3); transform: rotate(-3deg);
 }
 @keyframes fade-in { from { opacity: 0; } }

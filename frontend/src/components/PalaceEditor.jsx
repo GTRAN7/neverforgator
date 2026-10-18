@@ -307,6 +307,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 visitedUpTo={visitedUpTo}
                 onPlace={mode === 'build' && !palace.readOnly ? handlePlace : undefined}
                 onRoomClick={mode === 'wander' ? () => setWanderClosed(true) : undefined}
+                avoidCard={mode === 'wander' && !wanderClosed}
                 onFriendClick={handleFriendClick}
                 onMoveFriend={mode === 'build' && !palace.readOnly ? dropSpot : undefined}
               />

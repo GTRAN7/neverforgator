@@ -271,7 +271,31 @@ function TrailDots({ friends, panorama, visitedUpTo }) {
 // ---- Camera ----
 // Smoothly turns (and for splats, moves) the camera to the focused spot.
 // In splat rooms, WASD walks and Q/E go down/up.
-function CameraRig({ focus, walk }) {
+// Wander: where on screen the friend should land so the friend card doesn't cover it, as -1 (left
+// edge) .. 1 (right edge): right next to the card, on the side with more open space, with room for
+// the friend's picture. 0 = straight ahead.
+const CARD_WIDTH = 360; // .float-card, for the moment before the card is on the page
+const CARD_RIGHT = 28;
+const NEXT_TO_CARD = 110; // px from the card's edge to the friend's middle (half its 150px picture + a gap)
+function besideCard(viewerEl) {
+  const frameEl = viewerEl?.parentElement;
+  if (!frameEl) return 0;
+  const frame = frameEl.getBoundingClientRect();
+  const card = frameEl.querySelector('.movable-card')?.getBoundingClientRect()
+    ?? { left: frame.right - CARD_RIGHT - CARD_WIDTH, right: frame.right - CARD_RIGHT };
+  const openLeft = card.left - frame.left;
+  const openRight = frame.right - card.right;
+  // Next to the card; if the open space is too narrow for that, its middle.
+  const center = openLeft >= openRight
+    ? Math.max(card.left - NEXT_TO_CARD, frame.left + openLeft / 2)
+    : Math.min(card.right + NEXT_TO_CARD, card.right + openRight / 2);
+  return Math.max(-0.85, Math.min(0.85, ((center - frame.left) / frame.width) * 2 - 1));
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+// aim(): where the friend should land on screen (see besideCard); 0 or missing = centered.
+function CameraRig({ focus, walk, aim }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
   const goal = useRef(null);
@@ -279,9 +303,24 @@ function CameraRig({ focus, walk }) {
   const focusRef = useRef(focus);
   focusRef.current = focus;
 
+  const aimRef = useRef(aim);
+  aimRef.current = aim;
+
   // Start a turn when the focused spot changes (by id, so data updates don't re-trigger it).
+  // With aim, the camera looks a little to the side so the friend lands beside the card.
   useEffect(() => {
-    if (focusRef.current) goal.current = { ...spotView(focusRef.current), started: performance.now() };
+    if (!focusRef.current) return;
+    const view = spotView(focusRef.current);
+    const at = aimRef.current?.() ?? 0;
+    if (at) {
+      const halfWidth = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
+      // Turn around the camera's own up (not the world's), so a friend below eye level lands
+      // exactly where aimed instead of drifting farther to the side.
+      const right = new THREE.Vector3().crossVectors(view.look, UP).normalize();
+      const up = new THREE.Vector3().crossVectors(right, view.look).normalize();
+      view.look.applyAxisAngle(up, Math.atan(at * halfWidth));
+    }
+    goal.current = { ...view, started: performance.now() };
   }, [focus?.id]);
 
   // Grabbing the view cancels the animation.
@@ -348,7 +387,8 @@ function LoadingOverlay({ message }) {
 // onPlace: set only while placing spots. visitedUpTo: trail is "walked" up to this friend number.
 // onMoveFriend(spot, placement): set when friends can be dragged to a new spot (Build).
 // onRoomClick: a click on the room itself when not placing (Wander closes the friend's card).
-export default function Viewer({ palaceId, room, friends: placed, focusSpot, visitedUpTo = 0, onPlace, onRoomClick, onFriendClick, onMoveFriend }) {
+// avoidCard (Wander): turn to friends so they land beside the friend card, not under it.
+export default function Viewer({ palaceId, room, friends: placed, focusSpot, visitedUpTo = 0, onPlace, onRoomClick, onFriendClick, onMoveFriend, avoidCard = false }) {
   // The space around a room (and the fade at photo edges) follows night mode.
   const [{ night }] = useDisplay();
   const roomColor = night ? ROOM_NIGHT : ROOM_DAY;
@@ -357,6 +397,7 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
   const [dragSpot, setDragSpot] = useState(null); // the friend being dragged, where it is right now
   const pins = useRef(new Map()); // spot id -> its pin element (see SpriteProjector)
   const stateRef = useRef(null); // R3F's get(), for dragging from outside the canvas
+  const viewerRef = useRef(null);
   const url = fileUrl(palaceId, room.file);
   const panorama = room.type !== 'splat';
   // A click on the room places a spot (Build) or, if not placing, is just a click (onRoomClick).
@@ -366,7 +407,7 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
     : placed;
 
   return (
-    <div className={`viewer-canvas ${onPlace ? 'placing' : ''}`}>
+    <div className={`viewer-canvas ${onPlace ? 'placing' : ''}`} ref={viewerRef}>
       <Canvas
         camera={{ fov: 75, near: 0.005, far: 1000, position: [0, 0, 0] }}
         gl={{ preserveDrawingBuffer: true }}
@@ -381,7 +422,7 @@ export default function Viewer({ palaceId, room, friends: placed, focusSpot, vis
         <SpriteProjector friends={friends} pins={pins} stateRef={stateRef} />
         {/* Negative speed: dragging feels like grabbing the room. */}
         <OrbitControls makeDefault target={START_TARGET} enableZoom={false} enablePan={false} rotateSpeed={-0.35} />
-        <CameraRig focus={focusSpot} walk={!panorama} />
+        <CameraRig focus={focusSpot} walk={!panorama} aim={avoidCard ? () => besideCard(viewerRef.current) : undefined} />
       </Canvas>
       <div className="sprite-layer">
         {friends.map((friend) => (

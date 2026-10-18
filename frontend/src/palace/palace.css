@@ -1022,13 +1022,13 @@ input, textarea {
   padding: 0;
   border-radius: 50%;
   border: 3px solid var(--ink);
-  background: var(--accent);
-  color: var(--outline);
+  background: var(--paper); /* like the profile pill (.acct-btn) */
+  color: var(--ink);
   box-shadow: 0 3px 0 var(--shadow);
   transition: transform 0.25s;
 }
 .settings-btn svg { width: 26px; height: 26px; }
-.settings-btn.is-open, .settings-btn:hover { transform: rotate(45deg); }
+.settings-btn.is-open, .settings-btn:hover { transform: rotate(45deg); background: #FDE9A9; color: #3B2A1E; }
 .settings-pop {
   position: absolute;
   top: calc(100% + 10px);
