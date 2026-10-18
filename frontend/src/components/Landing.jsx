@@ -6,15 +6,15 @@ import SettingsMenu from './SettingsMenu.jsx';
 const STEPS = [
   {
     title: 'Pick a place',
-    text: 'The Reitz Union is built in, stops and all, so you can start memorizing right away. Or snap a panorama of your own room.',
+    text: 'The Reitz Union is built in by default for you to start memorizing right away. (But we encourage you to snap a panorama of your own room.)',
   },
   {
     title: 'Feed it your notes',
-    text: 'Paste a chapter, snap a photo of your notes or just talk. It cuts them into bite-size ideas and hatches a friend at each stop, acting out a weird, vivid scene.',
+    text: 'Paste a chapter, snap a photo of your notes, or just talk! We cut them into bite-size ideas and hatch a friend at each stop, acting out a weird, vivid scene.',
   },
   {
-    title: 'Wander, then quiz',
-    text: 'Walk the route and meet each friend, then quiz yourself. Forgotten friends dream up weirder scenes, so next time they stick.',
+    title: 'Wander, then quiz yourself',
+    text: "Walk your palace route and meet each friend, then quiz yourself on what you've learned. Forgotten friends dream up weirder scenes, so next time they stick.",
   },
 ];
 
@@ -80,7 +80,7 @@ function LandingContent({ error, onLogin, onSignup, onTour }) {
       </section>
 
       <section className="landing-section">
-        <h2 className="section-tag">How it works</h2>
+        <h2 className="section-tag">How It Works</h2>
         <ol className="steps">
           {STEPS.map((step, i) => (
             <li key={step.title} className="step-card" style={{ '--tilt': `${[-1, 0.8, -0.6][i]}deg` }}>
@@ -110,7 +110,7 @@ function LandingContent({ error, onLogin, onSignup, onTour }) {
 
       <footer className="landing-foot">
         <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Start remembering</button>
-        <span className="scrawl">made by gators, with too much coffee, at SwampHacks</span>
+        <span className="scrawl">Made by gators (with too much coffee) at SwampHacks XII</span>
       </footer>
     </div>
   );
