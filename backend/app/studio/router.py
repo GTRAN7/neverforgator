@@ -194,6 +194,8 @@ def copy_palace(db: Session, source: Palace, owner: User) -> Palace:
     room_ids = {}
     for room in source.rooms:
         link_or_copy(src_dir / room.file, dst_dir / room.file)
+        if (src_dir / f"thumb-{room.file}").exists():
+            link_or_copy(src_dir / f"thumb-{room.file}", dst_dir / f"thumb-{room.file}")
         new = Room(palace_id=copy.id, position=room.position, name=room.name, type=room.type,
                    file=room.file, flipped=room.flipped)
         db.add(new)
@@ -296,6 +298,7 @@ def delete_room(palace_id: int, room_id: int, user: User = Depends(get_current_u
     db.flush()
     set_order(db, [s for s in studio_stops(palace) if s.room_id != room_id])
     (palace_dir(palace.id) / room.file).unlink(missing_ok=True)
+    (palace_dir(palace.id) / f"thumb-{room.file}").unlink(missing_ok=True)
     return reload(db, palace, user)
 
 

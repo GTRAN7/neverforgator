@@ -1,5 +1,6 @@
 """Palaces as JSON for the frontend (the shape the React app has always used, camelCase)."""
 from app.models import Palace, PalaceStop, Room, User
+from app.studio.files import palace_dir
 
 
 def can_read(palace: Palace, user: User) -> bool:
@@ -15,8 +16,16 @@ def iso(dt):
     return dt.isoformat() if dt else None
 
 
+def thumb_of(room: Room):
+    """A small copy of the room photo for the room strip and home cards, when there is one
+    (thumb-<file>, shipped with the built-in rooms), so they don't download the full panorama."""
+    name = f"thumb-{room.file}"
+    return name if (palace_dir(room.palace_id) / name).exists() else None
+
+
 def room_json(room: Room) -> dict:
-    return {"id": room.id, "name": room.name, "type": room.type, "file": room.file, "flipped": room.flipped}
+    return {"id": room.id, "name": room.name, "type": room.type, "file": room.file, "flipped": room.flipped,
+            "thumb": thumb_of(room)}
 
 
 def spot_json(stop: PalaceStop) -> dict:
@@ -67,7 +76,8 @@ def palace_json(palace: Palace, user: User) -> dict:
 def summary_json(palace: Palace, user: User) -> dict:
     """One row on the home screen."""
     spots = [s for s in palace.stops if s.room_id is not None]
-    cover = next((r.file for r in palace.rooms if r.type != "splat"), None)
+    first = next((r for r in palace.rooms if r.type != "splat"), None)
+    cover = (thumb_of(first) or first.file) if first else None
     return {
         "id": palace.id,
         "name": palace.title,

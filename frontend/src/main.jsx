@@ -8,7 +8,9 @@ import { currentMode } from './lib/mode.js'
 //   campus   Natasha's UF campus walk (src/palace/CampusApp.jsx)
 // Each mode loads only its own code and styles.
 const campus = currentMode() === 'campus'
-const App = lazy(() => (campus ? import('./palace/CampusApp.jsx') : import('./App.jsx')))
+// Two separate lazy() calls: one `campus ? import(a) : import(b)` made the production build preload
+// the studio's CSS for both, so campus mode came up with the wrong styles (its own never loaded).
+const App = campus ? lazy(() => import('./palace/CampusApp.jsx')) : lazy(() => import('./App.jsx'))
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
