@@ -2,13 +2,14 @@
 
 ## Two examples
 
-**Built in (already filled, opens from "See a finished example" and the tour): the Bill of Rights.**
-10 stops, amendment N at stop N, each scene carrying its number image (1 bun, 2 shoe, 3 tree, 4 door,
-5 hive, 6 sticks, 7 heaven/angel, 8 gate, 9 wine, 10 bun + hero). Great for showing the method and
-for quizzing a judge ("What's the 4th Amendment?" → stop 4 → a door and a warrant).
+**Built in (already filled, opens from "See a finished example" and the tour): parts of a cell.**
+10 organelles across the 3 Reitz rooms, each at an object that already does its job: the cell membrane
+at the glass doors ("members only"), lysosomes at the barbershop (lice, a tub of digestive juice),
+mitochondria at the vending machine (sandwich in, ATP batteries out), the Golgi at the elevator (a
+golfer delivering packages floor by floor). Great for quizzing a judge ("what does the Golgi do?").
 
-**Generated live in the demo: the first 8 U.S. presidents.** Shows the two classic techniques at
-once: number images (which president) and sound-alikes for names (Washington → a washing machine,
+**Generated live in the demo: the first 8 U.S. presidents.** The walk keeps the order (stop 3 =
+3rd president, no number codes) and names become sound-alikes (Washington → a washing machine,
 Jackson → a jack-in-the-box, Van Buren → a burning van). Tested: ~20 s to fill.
 
 ```
@@ -57,5 +58,5 @@ Shape your own notes like these: one short line per thing to remember. A numbere
 2. 40 s: paste the presidents (or show "Photo or PDF" with a printed page) → "Your palace is ready!"
 3. 60 s: Wander 3–4 stops: point out the washing machine at stop 1, the burning van at stop 8.
 4. 40 s: Quiz: ask a judge "who was the 8th president?"; show "Close! Did you have it?" and Round 2.
-   (Or open the built-in Bill of Rights and ask "what's the 4th Amendment?")
+   (Or open the built-in cell and ask "what does the cell membrane do?")
 5. 20 s: night mode / dyslexia font, spaced review, campus route.

@@ -156,7 +156,7 @@ button { font: inherit; color: inherit; }
 }
 .stage { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .scene-frame {
-  flex: 1; min-height: 0; position: relative; overflow: hidden;
+  flex: 1; min-height: 0; position: relative; overflow: hidden; container: room / size;
   background: var(--room); border: 2px solid var(--line); border-radius: 24px;
 }
 .empty-room .card-title { color: var(--ink); }
@@ -290,8 +290,16 @@ button { font: inherit; color: inherit; }
 .float-card .card-close:hover { background: var(--sticky); }
 /* 304px makes the Wander card ~1.25x as tall as it was (190px); it still shrinks if the room view is short */
 .polaroid-photo { height: 304px; flex: 0 1 304px; min-height: 64px; object-fit: cover; }
+/* A short room view squeezed the picture into a thin strip. Then the picture sits beside the text
+   instead, as a big square (wider card, same height). */
+@container room (max-height: 700px) and (min-width: 720px) {
+  .polaroid { display: grid; grid-template-columns: 230px minmax(0, 1fr); column-gap: 16px; width: 610px; align-content: start; }
+  .polaroid > .polaroid-photo { grid-column: 1; grid-row: 1 / span 5; height: auto; aspect-ratio: 1; min-height: 0; align-self: start; margin-top: 6px; }
+  .polaroid > :not(.polaroid-photo) { grid-column: 2; }
+}
 .scene-text { margin: 10px 4px 0; font-size: calc(20px * var(--ts)); line-height: 1.15; color: var(--ink-2); flex: none; }
 .polaroid .hook { flex: none; }
+
 .polaroid .sticky, .polaroid .btn-row, .polaroid .card-foot { flex: none; }
 .sticky { margin: 12px 4px 0; padding: 10px 12px; background: var(--sticky); border-radius: 12px; transform: rotate(-1.5deg); }
 .sticky p { margin-top: 2px; font-weight: 800; font-size: calc(15px * var(--ts)); line-height: 1.35; }
@@ -311,7 +319,7 @@ button { font: inherit; color: inherit; }
 .quiz-card .btn-row { margin-top: 0; }
 .quiz-card .sticky { margin: 0; padding: 14px 16px; border-radius: 18px; }
 .quiz-card .sticky p { font-weight: 400; }
-.quiz-photo { aspect-ratio: auto; height: clamp(90px, 22vh, 160px); flex: none; }
+.quiz-photo { aspect-ratio: auto; height: clamp(150px, 30vh, 240px); flex: none; }
 .quiz-card .btn-row .link { flex: none; align-self: center; }
 .review-note { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--mint); color: var(--mint-ink); font-size: calc(14px * var(--ts)); }
 .review-note small { color: var(--mint-muted); }
@@ -327,7 +335,8 @@ button { font: inherit; color: inherit; }
 .spot-card-head .chip { margin-right: auto; white-space: nowrap; }
 .round-btn.small { width: 32px; height: 32px; font: 700 calc(18px * var(--ts)) var(--display); color: var(--ink); }
 .spot-crop { width: 100%; height: 110px; object-fit: cover; border-radius: 14px; border: 1.5px solid var(--line); }
-.spot-card .sticky { margin: 0; }
+.spot-card .sticky { margin: 4px 0 0; }
+.spot-card-photo { height: 220px; flex: 0 1 220px; min-height: 120px; border-radius: 10px; }
 .spot-card .scene-text { font-size: calc(19px * var(--ts)); min-height: 0; margin: 0 4px; }
 .spot-card .btn-row { flex-wrap: wrap; margin-top: 4px; gap: 8px; }
 .spot-card .btn-row .btn { flex: 1 1 40%; height: 36px; }

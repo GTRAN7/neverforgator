@@ -4,8 +4,8 @@
 1. "Reitz Union" (built in): three panoramas (game room, atrium, barbershop hallway) with their stops,
    no facts. "Start memorizing" gives each user their own copy, so they can paste notes right away
    without taking any photos.
-2. "Sample: the Bill of Rights": the same route already filled with a real study example, amendment N
-   at stop N (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
+2. "Sample: parts of a cell": the same route already filled with a real study example, each organelle
+   at an object that does the same job (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
 
 They belong to the "system" user, so nobody can change or delete them. The backend creates them on
 startup if they're missing or the files here changed; to rebuild them by hand, from backend/:

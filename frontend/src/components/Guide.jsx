@@ -7,7 +7,7 @@ import { useAccount } from '../lib/account.js';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
-// The example is real study material (the Bill of Rights, amendments 1-5) stored along 5 stops in the Reitz,
+// The example is real study material (parts of a cell) stored along 5 stops in the Reitz,
 // and step 5 makes you recall it, so by the end you've felt the method work.
 export const TOUR_DONE_KEY = 'neverforgator-tour-done';
 
@@ -21,44 +21,44 @@ const HOME_STOPS = [
 
 const STOPS = [
   {
-    place: 'front doors',
-    icon: '🚪',
-    term: '1st Amendment',
-    fact: 'Freedom of speech, religion and the press.',
-    hook: '1 → BUN · speech, religion, press → megaphone, choir, newspaper',
-    scene: 'A giant hamburger BUN bursts through the doors yelling into a megaphone, a choir behind it, newspapers flying.',
+    place: 'TV screen',
+    icon: '📺',
+    term: 'Nucleus',
+    fact: 'The control center of the cell. It holds the DNA.',
+    hook: 'nucleus → “NEW CLUES!” on the news · DNA → the twisted-ladder script',
+    scene: 'BREAKING NEWS: “NEW CLUES!” The anchor reads orders off a twisting DNA ladder, and every game in the room obeys the TV.',
   },
   {
-    place: 'giant chess board',
+    place: 'chess set',
     icon: '♟️',
-    term: '2nd Amendment',
-    fact: 'The right to bear arms.',
-    hook: '2 → SHOE · bear arms → a BEAR with big ARMS',
-    scene: 'A giant SHOE stomps onto the board, and a BEAR inside it flexes huge hairy ARMS at the chess pieces.',
+    term: 'Ribosomes',
+    fact: 'They build proteins.',
+    hook: 'ribosomes → builders in RIBBONS · proteins → a PROTEIN bar',
+    scene: 'Tiny builders in RIBBONS snap the chess pieces into one long chain, then hand you a PROTEIN bar made of it.',
   },
   {
     place: 'foosball table',
     icon: '⚽',
-    term: '3rd Amendment',
-    fact: 'Soldiers can’t be housed in your home.',
-    hook: '3 → TREE · soldiers → toy soldiers',
-    scene: 'A TREE grows out of the table and flicks the toy SOLDIERS out of their tiny HOUSE, one by one.',
+    term: 'Rough ER',
+    fact: 'Covered in ribosomes, it carries new proteins through the cell.',
+    hook: 'rough ER → a ROUGH, bumpy E.R. · ribosomes → builders on the rods',
+    scene: 'The table becomes a ROUGH, bumpy E.R.: ribbon-builders stud every rod and rush protein bars down the table on stretchers.',
   },
   {
-    place: 'TV screen',
-    icon: '📺',
-    term: '4th Amendment',
-    fact: 'No searches without a warrant.',
-    hook: '4 → DOOR · warrant → a WARRANT paper',
-    scene: 'A DOOR opens in the TV; a cop reaches in to SEARCH and a giant WARRANT slaps him: “Show me the paper!”',
+    place: 'glass doors',
+    icon: '🚪',
+    term: 'Cell membrane',
+    fact: 'It controls what enters and leaves the cell.',
+    hook: 'membrane → MEMBERS-ONLY doors',
+    scene: 'The doors are a MEMBERS-ONLY bouncer: they slide open for water and snacks, then slam shut on a giant pizza.',
   },
   {
-    place: 'vending machine',
-    icon: '🥤',
-    term: '5th Amendment',
-    fact: 'You can stay silent instead of testifying against yourself.',
-    hook: '5 → HIVE · stay silent → zipped lips',
-    scene: 'A buzzing HIVE drops out of the machine and the bees ZIP your lips shut. You stay SILENT.',
+    place: 'gator statue',
+    icon: '🐊',
+    term: 'Cell wall',
+    fact: 'Plant cells have a stiff wall for support and protection.',
+    hook: 'cell wall → the gator’s stiff armor · plant cells → a potted plant',
+    scene: 'A potted PLANT hides inside the gator’s stiff, armored scales. You knock: hard as a WALL.',
   },
 ];
 
@@ -66,9 +66,9 @@ const STOPS = [
 const MAP_POINTS = [[14, 72], [34, 34], [58, 62], [78, 24], [88, 70]];
 
 const QUIZ = [
-  { stop: 3, question: 'Walk to the TV screen. Which amendment lives there?' },
-  { stop: 1, question: 'Now the chess board. Which one is it?' },
-  { stop: 4, question: 'Last stop: the vending machine?' },
+  { stop: 3, question: 'Walk to the glass doors. Which part of the cell lives there?' },
+  { stop: 1, question: 'Now the chess set. What’s there?' },
+  { stop: 4, question: 'Last stop: the gator statue?' },
 ];
 
 function RouteMap({ active = -1, showTerms = false }) {
@@ -217,8 +217,8 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the <strong>Bill of Rights</strong> (the first 5 amendments). NeverForgator cuts your notes into
-          small ideas, each the size of one picture, and gives every idea its own stop: amendment 1 at stop 1, and so on.</p>
+        <p>Let’s learn the <strong>parts of a cell</strong>. NeverForgator cuts your notes into small ideas, each the
+          size of one picture, and gives every idea its own stop, in order.</p>
         <p>Too many ideas for your route? It tells you to add a room instead of cramming. Crammed stops blur together.</p>
       </>
     ),
@@ -226,7 +226,7 @@ const STEPS = [
       <div className="guide-art split-art">
         <div className="notes-card">
           <span className="sticky-label">your notes</span>
-          <p>1st: speech, religion, press… 2nd: bear arms… 3rd: no soldiers in your home… 4th: warrants… 5th: stay silent…</p>
+          <p>Nucleus: control center, holds DNA… Ribosomes build proteins… Rough ER carries them… Membrane controls what gets in… Plants have a cell wall…</p>
         </div>
         <span className="split-arrow">→</span>
         <ol className="idea-stack">
@@ -240,9 +240,8 @@ const STEPS = [
     body: (
       <>
         <p>Your brain ignores the normal and remembers the bizarre. Each scene happens <strong>at the object</strong>, moves,
-          makes noise, and turns hard words into pictures (<strong>bear arms</strong> → a bear with arms).</p>
-        <p>Numbers become rhymes memory champions use: <strong>1 bun, 2 shoe, 3 tree, 4 door, 5 hive</strong>. So the 4th
-          Amendment has a door in it.</p>
+          makes noise, and turns hard words into pictures (<strong>membrane</strong> → “members only”).</p>
+        <p>The best stops already do the job: glass doors decide who gets in, just like the cell membrane.</p>
         <p>Read each scene once and picture it. Really picture it.</p>
       </>
     ),
@@ -326,7 +325,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
                 <button className="btn accent big" disabled={busy} onClick={() => go(onStart)}>
                   <Sparkle size={20} /> {busy ? 'Setting up…' : 'Start memorizing in the Reitz'}
                 </button>
-                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the full Bill of Rights in 3D</button>}
+                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the whole cell in 3D</button>}
               </>
             ) : (
               <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Make my free account</button>
