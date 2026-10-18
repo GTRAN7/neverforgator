@@ -4,8 +4,8 @@
 1. "Reitz Union" (built in): three panoramas (game room, atrium, barbershop hallway) with their stops,
    no facts. "Start memorizing" gives each user their own copy, so they can paste notes right away
    without taking any photos.
-2. "Sample: the Bill of Rights": the same route already filled with a real study example, amendment N
-   at stop N (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
+2. "Sample: parts of a cell": the same route already filled with a real study example, each organelle
+   at an object that does the same job (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
 
 They belong to the "system" user, so nobody can change or delete them. The backend creates them on
 startup if they're missing or the files here changed; to rebuild them by hand, from backend/:
@@ -58,8 +58,12 @@ def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **
     for i, stop in enumerate(stops):
         if stop.get("crop"):
             link_or_copy(DATA / stop["crop"], folder / stop["crop"])
-        if stop.get("image") and not (CACHE_DIR / stop["image"]).exists():
-            link_or_copy(DATA / stop["image"], CACHE_DIR / stop["image"])  # pictures are served from the cache
+        image = stop.get("image")
+        cached = CACHE_DIR / image if image else None
+        # Pictures are served from the cache; refresh it when the repo's drawing changed.
+        if image and (not cached.exists() or cached.read_bytes() != (DATA / image).read_bytes()):
+            cached.unlink(missing_ok=True)
+            link_or_copy(DATA / image, cached)
         db.add(PalaceStop(
             palace_id=palace.id, room_id=room_ids[stop["room"]], stop_order=i + 1,
             direction=stop["direction"], label=stop.get("label"), crop=stop.get("crop"),

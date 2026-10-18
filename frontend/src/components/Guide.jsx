@@ -7,7 +7,7 @@ import { useAccount } from '../lib/account.js';
 import Creature, { Sparkle } from './Creature.jsx';
 
 // The onboarding tour: what a memory palace is and why it works, taught by actually using one.
-// The example is real study material (the Bill of Rights, amendments 1-5) stored along 5 stops in the Reitz,
+// The example is real study material (parts of a cell) stored along 5 stops in the Reitz,
 // and step 5 makes you recall it, so by the end you've felt the method work.
 export const TOUR_DONE_KEY = 'neverforgator-tour-done';
 
@@ -21,44 +21,44 @@ const HOME_STOPS = [
 
 const STOPS = [
   {
-    place: 'front doors',
-    icon: '🚪',
-    term: '1st Amendment',
-    fact: 'Freedom of speech, religion and the press.',
-    hook: '1 → BUN · speech, religion, press → megaphone, choir, newspaper',
-    scene: 'A giant hamburger BUN bursts through the doors yelling into a megaphone, a choir behind it, newspapers flying.',
-  },
-  {
-    place: 'giant chess board',
+    place: 'chess set',
     icon: '♟️',
-    term: '2nd Amendment',
-    fact: 'The right to bear arms.',
-    hook: '2 → SHOE · bear arms → a BEAR with big ARMS',
-    scene: 'A giant SHOE stomps onto the board, and a BEAR inside it flexes huge hairy ARMS at the chess pieces.',
-  },
-  {
-    place: 'foosball table',
-    icon: '⚽',
-    term: '3rd Amendment',
-    fact: 'Soldiers can’t be housed in your home.',
-    hook: 'foosball players → little SOLDIERS · 3 knocks → 3rd Amendment',
-    scene: 'The little foosball players are SOLDIERS who want to move into your HOUSE. You KNOCK on the table 3 times (no soldiers in my home!) and they stay stuck on their bars.',
+    term: 'Ribosomes',
+    fact: 'They build proteins.',
+    hook: 'ribosomes → builders in RIBBONS · proteins → a PROTEIN bar',
+    scene: 'Tiny builders in RIBBONS snap the chess pieces into one long chain, then hand you a PROTEIN bar made of it.',
   },
   {
     place: 'TV screen',
     icon: '📺',
-    term: '4th Amendment',
-    fact: 'No searches without a warrant.',
-    hook: '4 → DOOR · warrant → a WARRANT paper',
-    scene: 'A DOOR opens in the TV; a cop reaches in to SEARCH and a giant WARRANT slaps him: “Show me the paper!”',
+    term: 'Nucleus',
+    fact: 'The control center of the cell. It holds the DNA.',
+    hook: 'nucleus → “NEW CLUES!” on the news · DNA → the twisted-ladder script',
+    scene: 'BREAKING NEWS: “NEW CLUES!” The anchor reads orders off a twisting DNA ladder, and every game in the room obeys the TV.',
   },
   {
-    place: 'vending machine',
-    icon: '🥤',
-    term: '5th Amendment',
-    fact: 'You can stay silent instead of testifying against yourself.',
-    hook: '5 → HIVE · stay silent → zipped lips',
-    scene: 'A buzzing HIVE drops out of the machine and the bees ZIP your lips shut. You stay SILENT.',
+    place: 'recycling bins',
+    icon: '♻️',
+    term: 'Lysosomes',
+    fact: 'They break down waste and worn-out parts with digestive enzymes.',
+    hook: 'lysosomes → LYSOL bins · digestive enzymes → fizzing juice',
+    scene: 'The bins are full of LYSOL-like digestive juice: toss in old trash and broken parts, and they fizz away to nothing.',
+  },
+  {
+    place: 'pillar',
+    icon: '🏛️',
+    term: 'Cell wall',
+    fact: 'Plant cells have a stiff wall for support and protection.',
+    hook: 'cell wall → the stiff pillar · plant cells → a potted plant hugging it',
+    scene: 'A potted PLANT hugs the thick pillar, a stiff WALL of armor holding up the whole room. You knock: rock hard.',
+  },
+  {
+    place: 'theater doors',
+    icon: '🚪',
+    term: 'Cell membrane',
+    fact: 'It controls what enters and leaves the cell.',
+    hook: 'membrane → MEMBERS-ONLY doors',
+    scene: 'The doors are a MEMBERS-ONLY bouncer: they swing open for water and snacks, then slam shut on a giant pizza.',
   },
 ];
 
@@ -67,7 +67,7 @@ const MAP_POINTS = [[14, 72], [34, 34], [58, 62], [78, 24], [88, 70]];
 
 // Step 4 asks about the one scene step 3 showed.
 const QUIZ = [
-  { stop: 2, question: 'Walk to the foosball table. Which amendment lives there?' },
+  { stop: 4, question: 'Walk to the theater doors. Which part of the cell lives there?' },
 ];
 
 function RouteMap({ active = -1, showTerms = false }) {
@@ -109,8 +109,8 @@ function SceneCard({ stop, number }) {
   );
 }
 
-// Step 3 shows one example scene: the 3rd Amendment at the foosball table.
-const EXAMPLE = 2;
+// Step 3 shows one example scene: the cell membrane at the theater doors.
+const EXAMPLE = 4;
 function SceneStep() {
   return (
     <div className="guide-scenes">
@@ -130,7 +130,7 @@ function QuizStep() {
         <Creature number={3} state="happy" size="lg" />
         <h3 className="card-title big">{score} / {QUIZ.length} from memory</h3>
         <p>You saw the scene once, a minute ago, and you could still walk back and find it. That’s the whole trick.
-          Ask yourself tomorrow what happens at the foosball table.</p>
+          Ask yourself tomorrow what happens at the theater doors.</p>
       </div>
     );
   }
@@ -212,8 +212,8 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the first few amendments of the <strong>Bill of Rights</strong>. NeverForgator breaks it into
-          small ideas, each the size of one picture, and gives every idea its own stop: the 1st Amendment at stop 1, and so on.</p>
+        <p>Let’s learn the <strong>parts of a cell</strong>. NeverForgator breaks your notes into small ideas, each the
+          size of one picture, and gives every idea its own stop, in order.</p>
         <p>Too many ideas for your route? We'll add a room instead of cramming it all together. (Crammed ideas make locations blur together!)</p>
       </>
     ),
@@ -221,7 +221,7 @@ const STEPS = [
       <div className="guide-art split-art">
         <div className="notes-card">
           <span className="sticky-label">your notes</span>
-          <p>1st: free speech, religion, press - 2nd: bear arms - 3rd: no soldiers in your home - 4th: warrants - 5th: stay silent</p>
+          <p>Ribosomes build proteins - Nucleus: control center, holds DNA - Lysosomes digest waste - Plants have a cell wall - Membrane controls what gets in</p>
         </div>
         <span className="split-arrow">→</span>
         <ol className="idea-stack">
@@ -235,9 +235,8 @@ const STEPS = [
     body: (
       <>
         <p>Your brain ignores the normal and remembers the bizarre. Each scene happens <strong>at the object</strong>, moves,
-          makes noise, and turns words into pictures (3rd Amendment → no soldiers in your house → the foosball players are little soldiers, and 3 knocks keep them out).</p>
-        {/* <p>Numbers become rhymes memory champions use: <strong>1 bun, 2 shoe, 3 tree, 4 door, 5 hive</strong>. So the 4th
-          Amendment has a door in it.</p> */}
+          makes noise, and turns words into pictures (cell membrane → “members only”). The best stops already do the
+          job: doors decide who gets in, just like the membrane.</p>
         <p>Read the scene once and picture it. Really picture it.</p>
       </>
     ),

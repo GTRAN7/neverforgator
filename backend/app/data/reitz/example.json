@@ -1,30 +1,92 @@
 {
- "name": "Sample: the Bill of Rights",
+ "name": "Sample: parts of a cell",
  "style": "sticker",
  "flavor": "silly",
- "notes": "The Bill of Rights:\n1st Amendment: freedom of speech, religion and the press.\n2nd Amendment: the right to bear arms.\n3rd Amendment: soldiers can't be housed in your home.\n4th Amendment: no searches without a warrant.\n5th Amendment: you can stay silent instead of testifying against yourself.\n6th Amendment: a speedy trial with a lawyer.\n7th Amendment: a jury trial in civil lawsuits.\n8th Amendment: no cruel or unusual punishment.\n9th Amendment: rights not listed still belong to the people.\n10th Amendment: powers not given to the federal government belong to the states.",
+ "notes": "Parts of a cell\nMitochondria turn food into energy (ATP): they're the powerhouse of the cell.\nThe Golgi apparatus packages proteins and ships them where they're needed.\nChloroplasts use sunlight to make food for plant cells (photosynthesis).\nThe vacuole stores water and nutrients; plant cells have one big one.\nRibosomes build proteins.\nThe nucleus is the control center of the cell: it holds the DNA.\nLysosomes break down waste and worn-out parts with digestive enzymes.\nPlant cells have a stiff cell wall for support and protection.\nThe cell membrane controls what enters and leaves the cell.\nThe smooth ER makes lipids (fats) and breaks down toxins.",
  "stops": [
   {
    "room": 0,
    "direction": [
-    -0.9892940367131077,
-    0.14473937901039766,
-    0.018649962133171053
+    0.9298438185361052,
+    -0.22742084372356366,
+    0.28925807330177883
    ],
-   "label": "tv screen",
+   "label": "foosball table",
    "crop": null,
-   "fact": "The 1st Amendment protects freedom of speech, religion and the press.",
-   "kind": "definition",
+   "fact": "Mitochondria turn food into energy (ATP): they're the powerhouse of the cell.",
    "keyTerms": [
-    "1st Amendment",
-    "speech",
-    "religion",
-    "press"
+    "mitochondria",
+    "energy",
+    "ATP"
    ],
-   "scene": "A giant hamburger BUN reads the news on the TV: it SPEAKS into a mic, a choir PRAYS behind it, and newspapers PRINT out of the screen.",
-   "hook": "1 → bun · speech, religion, press → a mic, a choir, a printing press",
-   "imagePrompt": "A cheerful hamburger bun news anchor on a TV screen holding a microphone, a small choir singing behind it, newspapers flying out of the screen",
-   "image": "69f9c51f3f80b8e29c3cfbec.svg"
+   "kind": "definition",
+   "scene": "MIGHTY foosball players munch sandwiches and spin so hard the table becomes a POWERHOUSE, popping out glowing ATP batteries.",
+   "hook": "mitochondria → mighty foosball players · food into energy → sandwiches in, batteries out",
+   "imagePrompt": "Muscular little foosball players eating sandwiches and spinning on their rods, glowing batteries popping out of the foosball table",
+   "image": "cell-01.svg"
+  },
+  {
+   "room": 0,
+   "direction": [
+    0.455741783860296,
+    -0.32414961272180376,
+    0.828991227345706
+   ],
+   "label": "putting green",
+   "crop": null,
+   "fact": "The Golgi apparatus packages proteins and ships them where they're needed.",
+   "keyTerms": [
+    "Golgi apparatus",
+    "packages",
+    "proteins"
+   ],
+   "kind": "definition",
+   "scene": "On the putting green, a GOLFer gift-wraps protein bars and putts each box into the right hole to ship it.",
+   "hook": "Golgi apparatus → the golfer · packages and ships proteins → wrapped boxes putted into holes",
+   "imagePrompt": "A cheerful golfer on a putting green gift-wrapping boxes and putting them toward flagged holes",
+   "image": "cell-02.svg"
+  },
+  {
+   "room": 0,
+   "direction": [
+    0.12362984224450566,
+    0.16430789841457616,
+    0.9786309706039269
+   ],
+   "label": "big windows",
+   "crop": null,
+   "fact": "Chloroplasts use sunlight to make food for plant cells (photosynthesis).",
+   "keyTerms": [
+    "chloroplasts",
+    "sunlight",
+    "photosynthesis"
+   ],
+   "kind": "definition",
+   "scene": "Green leaves in sunglasses lounge by the big windows like it's a CHLORINE pool, soaking up sunlight and cooking sugar snacks.",
+   "hook": "chloroplasts → chlorine-pool loungers · photosynthesis → leaves turning sunlight into food",
+   "imagePrompt": "Green leaf characters in sunglasses lounging in chairs beside a pool, sunbeams shining on them as they cook sugar cubes",
+   "image": "cell-03.svg"
+  },
+  {
+   "room": 0,
+   "direction": [
+    -0.3079652498693191,
+    -0.08243451646197379,
+    0.9478195795448671
+   ],
+   "label": "rental locker",
+   "crop": null,
+   "fact": "The vacuole stores water and nutrients; plant cells have one big one.",
+   "keyTerms": [
+    "vacuole",
+    "water",
+    "nutrients"
+   ],
+   "kind": "definition",
+   "scene": "The rent-anything locker is a giant VACUUM-sealed tank of water and snacks. In a plant it's so big it fills the whole wall.",
+   "hook": "vacuole → vacuum-sealed locker · stores water and nutrients → water and snacks · one big one in plants",
+   "imagePrompt": "A tall locker kiosk bulging open with a giant sealed water tank full of snacks, a small plant sitting on top",
+   "image": "cell-04.svg"
   },
   {
    "room": 0,
@@ -35,183 +97,121 @@
    ],
    "label": "chess set",
    "crop": null,
-   "fact": "The 2nd Amendment grants the right to bear arms.",
-   "kind": "definition",
+   "fact": "Ribosomes build proteins.",
    "keyTerms": [
-    "2nd Amendment",
-    "bear arms"
+    "ribosomes",
+    "proteins"
    ],
-   "scene": "A grizzly BEAR in giant SHOES sits at the chess set, flexing two huge hairy ARMS, and sweeps every chess piece off the board.",
-   "hook": "2 → shoe · bear arms → a BEAR with huge ARMS",
-   "imagePrompt": "A grizzly bear wearing giant sneakers sitting at a giant chess board, flexing huge muscular arms, chess pieces flying off the board",
-   "image": "527b75bddee2d335e908f7fc.svg"
+   "kind": "definition",
+   "scene": "Tiny builders in RIBBONS snap the chess pieces together into one long chain, then hand you a PROTEIN bar made of it.",
+   "hook": "ribosomes → builders in ribbons · build proteins → a chain of pieces becomes a protein bar",
+   "imagePrompt": "Tiny builders wearing ribbon bows snapping giant chess pieces into a long chain on a chessboard",
+   "image": "cell-05.svg"
   },
   {
    "room": 0,
    "direction": [
-    0.9298438185361052,
-    -0.22742084372356366,
-    0.28925807330177883
+    -0.9892940367131077,
+    0.14473937901039766,
+    0.018649962133171053
    ],
-   "label": "foosball table",
+   "label": "tv screen",
    "crop": null,
-   "fact": "The 3rd Amendment prohibits soldiers from being housed in private homes.",
-   "kind": "definition",
+   "fact": "The nucleus is the control center of the cell: it holds the DNA.",
    "keyTerms": [
-    "3rd Amendment",
-    "soldiers",
-    "homes"
+    "nucleus",
+    "control center",
+    "DNA"
    ],
-   "scene": "The foosball players are tiny SOLDIERS trying to move into your HOUSE. A TREE grows through the table and flicks them out, one by one: not in my home!",
-   "hook": "3 → tree · foosball men → soldiers",
-   "imagePrompt": "A foosball table whose little players are toy soldiers carrying suitcases toward a tiny house, a tree growing through the table flicking them away",
-   "image": "d2f16cbc2d7c6e26e83af49b.svg"
+   "kind": "definition",
+   "scene": "BREAKING NEWS on the TV: \"NEW CLUES!\" The anchor reads orders off a twisting DNA ladder, and every game in the room obeys.",
+   "hook": "nucleus → \"new clues\" news · DNA → the twisted-ladder script · control center → everyone obeys the TV",
+   "imagePrompt": "A TV showing a news anchor pointing at a twisting DNA ladder, little characters in front of it saluting",
+   "image": "cell-06.svg"
   },
   {
-   "room": 1,
+   "room": 0,
    "direction": [
-    0.99556196460308,
-    6.123233995736766e-17,
-    0.09410831331851431
+    -0.9538911595734496,
+    -0.11528254154533284,
+    -0.2771310002552373
    ],
-   "label": "glass doors",
+   "label": "recycling bins",
    "crop": null,
-   "fact": "The 4th Amendment protects against searches without a warrant.",
-   "kind": "definition",
+   "fact": "Lysosomes break down waste and worn-out parts with digestive enzymes.",
    "keyTerms": [
-    "4th Amendment",
-    "searches",
-    "warrant"
+    "lysosomes",
+    "waste",
+    "digestive enzymes"
    ],
-   "scene": "Police knock on the glass DOORS to SEARCH the Reitz. You hold the door shut until they press a WARRANT to the glass: no warrant, no search.",
-   "hook": "4 → door · search → police at the door · warrant → the paper on the glass",
-   "imagePrompt": "Two police officers at tall glass doors holding magnifying glasses, a person inside holding the door shut, a big paper warrant pressed against the glass",
-   "image": "846d61bcdc9a446e33054fd8.svg"
+   "kind": "definition",
+   "scene": "The recycling bins are full of LYSOL-like digestive juice: toss in old trash and broken parts, and they fizz away to nothing.",
+   "hook": "lysosomes → Lysol bins · digestive enzymes → the fizzing juice · waste and worn-out parts → old trash",
+   "imagePrompt": "Two blue recycling bins full of bubbling green liquid, a banana peel and a broken gear dissolving as they fall in",
+   "image": "cell-07.svg"
   },
   {
-   "room": 1,
+   "room": 0,
    "direction": [
-    -0.9053299132647713,
-    -0.10231357595590654,
-    -0.4122010193135341
+    -0.7874657065834906,
+    0.08243451646197392,
+    -0.6108210142510198
    ],
-   "label": "gator statue",
+   "label": "pillar",
    "crop": null,
-   "fact": "The 5th Amendment allows individuals to remain silent instead of testifying against themselves.",
-   "kind": "definition",
+   "fact": "Plant cells have a stiff cell wall for support and protection.",
    "keyTerms": [
-    "5th Amendment",
-    "silent",
-    "testifying"
+    "cell wall",
+    "plant cells",
+    "support"
    ],
-   "scene": "A HIVE of bees buzzes around the gator statue asking questions, but the gator SNAPS its jaws shut and won't say a word. It pleads the Fifth.",
-   "hook": "5 → hive · stay silent → the gator's jaws snapped shut",
-   "imagePrompt": "A bronze alligator statue with its jaws clamped shut and a zipper over its mouth, a buzzing beehive with bees holding tiny microphones around it",
-   "image": "3484da27aa8eb40fe6a3ee2a.svg"
+   "kind": "definition",
+   "scene": "A potted PLANT hugs the thick pillar, which is a stiff WALL of armor holding up the whole room. You knock: rock hard.",
+   "hook": "cell wall → the stiff pillar · plant cells → the potted plant hugging it · support → holding up the room",
+   "imagePrompt": "A potted plant hugging a thick armored pillar that holds up the ceiling, a fist knocking on the pillar",
+   "image": "cell-08.svg"
   },
   {
-   "room": 1,
+   "room": 0,
    "direction": [
-    0.5560690592052944,
-    0.14589586456296422,
-    -0.8182307731306395
+    -0.5073088847831484,
+    0.08243451646197392,
+    -0.8578124771275822
    ],
-   "label": "staircase",
+   "label": "theater doors",
    "crop": null,
-   "fact": "The 6th Amendment guarantees a speedy trial with a lawyer.",
-   "kind": "definition",
+   "fact": "The cell membrane controls what enters and leaves the cell.",
    "keyTerms": [
-    "6th Amendment",
-    "speedy trial",
-    "lawyer"
+    "cell membrane",
+    "enters",
+    "leaves"
    ],
-   "scene": "A LAWYER in a suit sprints up the staircase on six wooden STICKS for stilts, waving a stopwatch and yelling 'SPEEDY TRIAL!'",
-   "hook": "6 → sticks · speedy trial → a lawyer racing a stopwatch",
-   "imagePrompt": "A lawyer in a suit with a briefcase sprinting up a staircase on stilts made of wooden sticks, holding a stopwatch, speed lines",
-   "image": "9de9ae94653fad0123360b27.svg"
+   "kind": "definition",
+   "scene": "The theater doors are a MEMBERS-ONLY bouncer: they swing open for water and snacks, then slam shut on a pizza that's way too big.",
+   "hook": "cell membrane → members-only doors · controls what enters and leaves → the bouncer",
+   "imagePrompt": "Glass doors with a grumpy bouncer face and a velvet rope, letting a water bottle in while blocking a giant pizza",
+   "image": "cell-09.svg"
   },
   {
-   "room": 1,
+   "room": 0,
    "direction": [
-    -0.9528661800538767,
-    -0.12413465805535565,
-    0.276833216177201
+    0.8871364679386119,
+    -0.19677507973118924,
+    -0.417454734372708
    ],
-   "label": "orange chairs",
+   "label": "lounge chairs",
    "crop": null,
-   "fact": "The 7th Amendment guarantees a jury trial in civil lawsuits.",
-   "kind": "definition",
+   "fact": "The smooth ER makes lipids (fats) and breaks down toxins.",
    "keyTerms": [
-    "7th Amendment",
-    "jury trial",
-    "civil lawsuits"
+    "smooth ER",
+    "lipids",
+    "toxins"
    ],
-   "scene": "Twelve ANGELS float down into the rows of orange chairs: they're the JURY. On the big screen, two neighbors sue each other over a lawnmower: a CIVIL lawsuit.",
-   "hook": "7 → heaven (angels) · jury → angels in the jury chairs · civil → neighbors suing",
-   "imagePrompt": "Angels with halos sitting in rows of orange armchairs like a jury box, watching a big screen showing two neighbors arguing over a lawnmower",
-   "image": "0e2e6c1e56b062fdbbb528cd.svg"
-  },
-  {
-   "room": 2,
-   "direction": [
-    -0.3081883946610741,
-    0.07318210209940289,
-    -0.948506348596857
-   ],
-   "label": "barbershop",
-   "crop": null,
-   "fact": "The 8th Amendment prohibits cruel or unusual punishment.",
    "kind": "definition",
-   "keyTerms": [
-    "8th Amendment",
-    "cruel or unusual punishment"
-   ],
-   "scene": "In the barbershop, a barber gives a CRUEL and UNUSUAL haircut: half mohawk, half bowl cut. A GATE slams down over the door: that punishment is banned!",
-   "hook": "8 → gate · cruel and unusual punishment → a cruel, unusual haircut",
-   "imagePrompt": "A barbershop with a barber giving a customer a ridiculous half-mohawk half-bowl-cut haircut, a metal gate slamming down in front of the shop",
-   "image": "b0aa136a49254b0619a2949e.svg"
-  },
-  {
-   "room": 2,
-   "direction": [
-    0.9044387133941867,
-    0.02929484135074659,
-    0.4255965530688691
-   ],
-   "label": "vending machine",
-   "crop": null,
-   "fact": "The 9th Amendment states that rights not listed still belong to the people.",
-   "kind": "definition",
-   "keyTerms": [
-    "9th Amendment",
-    "rights",
-    "people"
-   ],
-   "scene": "The vending machine sells WINE that isn't on its menu. The label says 'not listed', but the PEOPLE in line take it anyway: it still belongs to them.",
-   "hook": "9 → wine · rights not listed → things not on the menu",
-   "imagePrompt": "A snack vending machine with bottles of wine in a slot labeled 'not listed', a happy line of people taking them",
-   "image": "05ed83e101b6457b8ad883a0.svg"
-  },
-  {
-   "room": 2,
-   "direction": [
-    0.9038629987141252,
-    0.11692803619631204,
-    -0.41153312613540993
-   ],
-   "label": "elevator",
-   "crop": null,
-   "fact": "The 10th Amendment states that powers not given to the federal government belong to the states.",
-   "kind": "definition",
-   "keyTerms": [
-    "10th Amendment",
-    "federal government",
-    "states"
-   ],
-   "scene": "A superHERO eating a BUN rides the elevator. It skips the 'FEDERAL' floor and opens on 'THE STATES', where he hands out glowing POWER buttons.",
-   "hook": "10 → bun + hero · powers → the elevator's buttons, given to the states",
-   "imagePrompt": "A superhero eating a hamburger bun inside an elevator, the button for a 'Federal' floor crossed out, handing glowing power buttons to people waving state flags",
-   "image": "a88d3d9e189b3a5b6513230a.svg"
+   "scene": "The lounge chairs are SMOOTH and slick with BUTTER. You slide right off the end, and a mop scrubs away a puddle of green poison.",
+   "hook": "smooth ER → the buttery smooth chairs · lipids → butter (fats) · breaks down toxins → mopping up poison",
+   "imagePrompt": "A kid sliding off a shiny buttered lounge chair, a mop scrubbing away a bubbling green poison puddle",
+   "image": "cell-10.svg"
   }
  ]
 }

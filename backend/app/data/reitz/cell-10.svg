@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 468" stroke="#3B2A1E" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+<rect x="0" y="0" width="768" height="360" fill="#FDEBD0" stroke="none"/>
+<rect x="0" y="360" width="768" height="108" fill="#EBCDA6" stroke="none"/>
+<line x1="0" y1="360" x2="768" y2="360"/>
+
+<rect x="90" y="250" width="300" height="70" rx="20" fill="#8A97B0"/>
+<rect x="90" y="150" width="60" height="170" rx="20" fill="#8A97B0"/><rect x="330" y="200" width="60" height="120" rx="16" fill="#E6C27A"/>
+<rect x="100" y="320" width="20" height="40" fill="#3B2A1E"/><rect x="360" y="320" width="20" height="40" fill="#3B2A1E"/>
+<path d="M150 252 Q240 236 330 252" fill="none" stroke="#FFF2A8" stroke-width="10"/>
+<path d="M180 245 L190 235 M260 240 L270 230" stroke="#FFFFFF" stroke-width="5"/>
+<rect x="200" y="200" width="44" height="24" rx="4" fill="#FFF2A8" stroke-width="4"/>
+<g transform="rotate(-20 450 260)"><circle cx="450" cy="220" r="32" fill="#F6C9A0"/><circle cx="441.0" cy="221.0" r="3.0" fill="#3B2A1E" stroke="none"/><circle cx="459.0" cy="221.0" r="3.0" fill="#3B2A1E" stroke="none"/><ellipse cx="450" cy="233.0" rx="4.5" ry="6.0" fill="#3B2A1E" stroke="none"/><circle cx="433.5" cy="230.0" r="3.75" fill="#F4A3A3" stroke="none" opacity="0.8"/><circle cx="466.5" cy="230.0" r="3.75" fill="#F4A3A3" stroke="none" opacity="0.8"/>
+<path d="M425 254 Q450 246 478 256 L490 290 L430 288 Z" fill="#E8553E"/><path d="M425 200 L400 170 M476 198 L500 168" stroke-width="7"/></g>
+<path d="M395 270 L415 262 M392 292 L414 290" stroke-width="4"/>
+<ellipse cx="600" cy="395" rx="120" ry="28" fill="#8FE07A"/>
+<circle cx="560" cy="385" r="10" fill="#D9F7C9" stroke-width="3"/><circle cx="640" cy="390" r="14" fill="#D9F7C9" stroke-width="3"/><circle cx="600" cy="365" r="8" fill="#D9F7C9" stroke-width="3"/>
+<line x1="700" y1="180" x2="630" y2="370" stroke="#A86B45" stroke-width="10"/>
+<path d="M600 360 L670 380 L660 410 L590 390 Z" fill="#FFFFFF"/>
+<path d="M700 350 L720 330 M710 380 L740 372" stroke-width="4"/>
+
+</svg>
