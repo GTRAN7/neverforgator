@@ -31,7 +31,7 @@ Gemini for them.
 - **Two modes for now:** the 3D studio (default) and **campus mode** (Natasha's UF campus walk, the
   "Campus mode" button on the home screen, `src/palace/`). They share the login; we'll merge them later.
 
-Auth0 only allows **http://localhost:5173**, so demo with `npm run dev`.
+Auth0 allows **https://neverforgator.study** (the live site) and **http://localhost:5173** (`npm run dev`).
 
 ## The steps
 

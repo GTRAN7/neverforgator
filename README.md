@@ -1,133 +1,268 @@
-# NeverForgator—Loci mind palace tool
-Make memorization easier with an AI-assisted memory palace maker centered around UF campus. Upload notes, a list, a goal, or a topic, and AI (using Gemini API) pulls out the key concepts. Each concept is placed at a real campus location on an interactive map (or upload your own 3D scan!). A guided walkthrough helps you memorize the route, and a quiz helps the material stick. You can save your palaces and come back to them from a user-friendly dashboard. 
+# NeverForgator: a method-of-loci memory palace maker
 
-### Team:
+**Live at https://neverforgator.study**
+
+Make memorization easier with an AI-assisted memory palace built in real places you know. Paste notes
+(or snap a photo, PDF or voice memo of them) and Gemini cuts them into ideas, gives each one a stop in a
+room, and writes a vivid scene that ties the idea to that spot. Start from the built-in Reitz Union
+panoramas or upload your own room photos and 3D scans, walk through the palace, and quiz yourself until it
+sticks. Palaces are saved to your account, with spaced review reminders.
+
+Built at SwampHacks XII.
+
+### Team
+
 * Kira Luna Nichtawitz: user authentication, UX, team management
 * Eric Tran: Gemini API integration & middleware
 * Natasha Antoniuk: React frontend and UI design
 * Thomas McLaughlin: Backend & database
 
-## How it works
+## What it does
 
-1. **Sign in.** Accounts are handled by Auth0.
-2. **Add material.** Paste notes, upload a file or a list, or just type a topic.
-3. **Generate concepts.** Gemini pulls out the main concepts, puts them in order, and writes a vivid image that links each concept to its location.
-4. **Build the palace.** Each concept goes to a stop on a fixed walking route around UF campus (Library West, then Smathers Library, then the Plaza of the Americas, and so on). The stops are shown on an interactive 2D map.
-5. **Walkthrough.** A guided tour visits the stops in order and shows each concept and its image.
-6. **Quiz.** Questions go both ways: "What's at Century Tower?" and "Where did you put photosynthesis?"
-7. **Dashboard.** Saved palaces can be reopened, reviewed or quizzed again.
+The app has two modes that share one Auth0 login.
 
-### Two modes (for now)
+- **3D studio** (the default; `frontend/src/`, `backend/app/studio/`): palaces inside real places. The
+  built-in Reitz Union route (three panoramas), or your own panoramas, photos and 3D scans. Gemini cuts
+  your notes into ideas, finds a stop for each in the photos, and writes a scene, a sound-alike "hook" and
+  a doodle per stop. Also: walk-through, a two-round quiz, spaced review, reusable places, note import from
+  photos, PDFs and voice, and a 1-minute onboarding tour. Palaces are saved in the backend.
+  Details: [docs/how-it-works.md](docs/how-it-works.md).
+- **Campus mode** (`frontend/src/palace/`, the "Campus mode" button, or `?mode=campus`): a walk around
+  UF campus with photo signs, pins, a dashboard, night mode and accessibility settings. Palaces are saved
+  **in the browser** (`localStorage` + IndexedDB), with JSON export/import.
 
-The app currently has two modes that share the Auth0 login. We'll merge them into one later.
-
-- **3D studio** (default, `frontend/src/`, `backend/app/studio/`): palaces inside real places. The
-  built-in Reitz Union panoramas, or your own room / 3D scan.
-  Gemini cuts your notes into ideas, finds a stop for each in the photos, and writes a vivid scene per
-  stop. Also: walk-through, two-round quiz, reusable places, note import from photos, PDFs and voice, and a
-  1-minute onboarding tour. Details: [docs/how-it-works.md](docs/how-it-works.md).
-- **Campus mode** (`frontend/src/palace/`, the "Campus mode" button): the UF campus walk with photo
-  signs, pins, dashboard, night mode and accessibility settings. Palaces are saved in the browser for now.
-
-### MVP vs. stretch goals
-
-| MVP (hackathon demo) | Stretch goals |
-| --- | --- |
-| Text / topic input | File uploads (PDF, images) |
-| Concept extraction + placement on a fixed route | Choosing or customizing the route |
-| 2D interactive campus map | 3D campus rendering |
-| Step-by-step walkthrough | Narration / audio walkthrough |
-| Quiz generated with the palace | Spaced-repetition review reminders |
-| Save + reopen from dashboard | Sharing palaces with other users |
-
-## Integrations & tech stack
+## Tech stack
 
 | Area | Tool | Purpose |
 | --- | --- | --- |
-| Frontend | React + Vite | App UI, map, walkthrough, quiz, dashboard |
-| Backend | Python + FastAPI | API, Gemini calls, auth checks, database access |
+| Frontend | React 19 + Vite, three.js (react-three-fiber, Spark for 3D scans) | App UI, room viewer, walkthrough, quiz |
+| Backend | Python + FastAPI | API, Gemini calls, auth checks, database access, serves the built site |
 | Authentication | Auth0 | Sign up, log in, access tokens for the API |
-| AI | Google Gemini API (Google Cloud) | Concept extraction, associations, quiz generation |
-| Map | Custom SVG campus map | 2D interactive campus map |
-| Database | PostgreSQL | Users, campus route, palaces, stops, quiz questions, quiz scores |
+| AI | Google Gemini API | Note splitting, scenes, stop labels, doodles, note import (OCR / speech) |
+| Database | PostgreSQL (SQLite locally) | Users, palaces, rooms, stops, quiz scores, daily usage |
 | Database access | SQLAlchemy + Alembic | Tables as Python classes; migrations that build and change the tables |
-| Tests | pytest | Backend tests (with a throwaway database) |
-| Domain | GoDaddy | https://neverforgator.study |
-| Hosting | DigitalOcean Droplets | Host backend + frontend |
+| Tests | pytest | Backend tests (throwaway database, mock AI) |
+| Hosting | DigitalOcean Droplet + Caddy | One droplet runs everything; Caddy handles HTTPS |
+| Domain | GoDaddy | https://neverforgator.study (`www.` redirects to it) |
 
-### Architecture
+### Architecture (production)
 
 ```
-React app ──(Auth0 access token)──▶ FastAPI ──▶ PostgreSQL / SQLite locally
-    │                                   │
-    └──── Auth0 login ◀─────────────────┤ verifies tokens
-                                        └──▶ Gemini API (server-side only)
+Browser ──HTTPS──▶ Caddy (:443, TLS; :80 and www. redirect)
+                     │
+                     ▼
+               uvicorn / FastAPI (localhost only, not reachable from outside)
+                 ├── /api/...          studio API (Auth0 token required, except /api/status, /api/describe)
+                 ├── /me, /palaces, /locations   campus-route API
+                 ├── /files/, /cache/  room photos, scans, crops, generated pictures (public, random names)
+                 └── /                 the built frontend (frontend/dist)
+                     │
+                     ├──▶ PostgreSQL
+                     ├──▶ backend/data/   uploaded rooms + Gemini cache (on the droplet's disk)
+                     ├──▶ Gemini API      (key only on the server)
+                     └──▶ Auth0           (public keys, to verify tokens)
 ```
 
-- The Gemini API key lives only on the backend and is never sent to the browser. The Gemini code goes inside the FastAPI backend (Python).
-- The backend checks each request's Auth0 token (`backend/app/auth.py`) and links data to the user's Auth0 `sub` (their unique user ID). The first request from a new user creates their `users` row.
-- For local testing, `DEV_AUTH=true` in `backend/.env` skips Auth0 and trusts an `X-Dev-User` header instead. **Never deploy with `DEV_AUTH=true`.**
+- FastAPI serves the built site from `frontend/dist` when that folder exists (`backend/app/main.py`), so
+  the app and the API are the **same origin**. The frontend calls relative URLs (`/api/...`); in
+  development Vite's proxy forwards them to port 8000.
+- The Gemini API key lives only on the backend and never reaches the browser.
+- The backend checks each request's Auth0 token (`backend/app/auth.py`) and links data to the user's
+  Auth0 `sub`. The first request from a new user creates their `users` row.
+- `DEV_AUTH=true` skips Auth0 and trusts an `X-Dev-User` header instead. It's for local testing only.
+  **Production runs with `DEV_AUTH=false`**; `GET https://neverforgator.study/me` without a token must
+  return 401.
 
-### Data model
+## Running it locally
 
-The tables are defined in `backend/app/models.py`. That file is the source of truth. Summary:
+**Requirements:**
+- [Node.js](https://nodejs.org/) 20.19+ or 22.12+ (we use Node 22) and npm
+- [Python](https://www.python.org/) 3.10+
 
-- `users`: one row per Auth0 account: `id`, `auth0_sub`, `email`, `name`, `created_at`
-- `locations`: hand-picked campus landmarks (the fixed walking route): `id`, `name`, `lat`, `lng`, `route_order`, `description`
-- `palaces`: `id`, `user_id`, `title`, `source_text`, `created_at`
-- `palace_stops`: one concept at one location: `id`, `palace_id`, `location_id`, `stop_order`, `concept`, `association`
-  - It's called `stop_order`, not `order`, because `ORDER` is a reserved word in SQL. Two stops in the same palace can't have the same `stop_order`.
-- `quiz_questions`: attached to a stop: `id`, `stop_id`, `question`, `answer`, `type` (`short_answer` or `multiple_choice`), `choices` (list of options, multiple choice only)
-- `quiz_attempts`: `id`, `palace_id`, `user_id`, `score`, `total`, `taken_at`
+```bash
+git clone https://github.com/GTRAN7/neverforgator.git
+cd neverforgator
+npm run setup                          # frontend packages, backend/.venv, tables, campus locations
+cp backend/.env.example backend/.env   # then fill it in (see below). Never commit .env
+cp frontend/.env.local.example frontend/.env.local   # then fill it in (see below)
+npm run dev                            # FastAPI on :8000, app on http://localhost:5173
+npm test                               # backend tests
+```
 
-Deleting a palace also deletes its stops, questions and scores.
+The built-in Reitz route and the cell example are created on startup from `backend/app/data/reitz/`, so
+nobody needs Gemini for them. Without `GEMINI_API_KEY` the studio runs in **mock AI** mode (placeholder
+facts and scenes).
 
-### Campus route
+### `frontend/.env.local`
 
-The route has 9 stops, in walking order:
+Gitignored, so each device needs its own copy:
 
-1. Library West
-2. Smathers Library
-3. Plaza of the Americas
-4. Turlington Hall
-5. University Auditorium
-6. Century Tower
-7. Marston Science Library
-8. Reitz Union
-9. Lake Alice
+```
+VITE_AUTH0_DOMAIN=dev-sknccm5343cwp4hh.us.auth0.com
+VITE_AUTH0_CLIENT_ID=LIZYqIyjABCSklIoqaGpdMTtvTEIV7O1
+VITE_AUTH0_AUDIENCE=https://loci-api
+```
 
-It lives in `backend/app/data/locations.json`, with coordinates and descriptions. To change it, edit the file, then run `python -m app.seed` from `backend/`.
+None of these are secrets: a browser app ships them to every visitor anyway. Everything starting with
+`VITE_` ends up in the public JavaScript, so **never put a secret here**. They're also in the Auth0
+dashboard under **Applications → SwampHacks Project → Settings**. Without `VITE_AUTH0_DOMAIN` the app runs
+with no login (the backend then needs `DEV_AUTH=true`).
 
-## Roles
+### `backend/.env`
 
-| Role | Owner | Responsibilities |
+| Variable | Local | Production |
 | --- | --- | --- |
-| **Frontend** | Natasha | React pages and routing, interactive campus map, dashboard, connecting the UI to the API with Auth0 access tokens |
-| **Design / UX** | Kira | Wireframes, visual style, walkthrough and quiz screens, campus route (`locations.json`), demo flow, Auth0 tenant |
-| **Backend & database** | Thomas | FastAPI app, SQLAlchemy models and Alembic migrations, palace/quiz endpoints, database, hosting and deployment |
-| **API integration** | Eric | Gemini prompts and structured JSON output (in Python, in the backend), turning Gemini output into the `POST /palaces` format and saving it with `create_palace_for_user`, input validation, rate limiting, error handling |
+| `DATABASE_URL` | Empty = local SQLite file (`backend/loci.db`) | The Postgres connection string (the code switches it to the `pg8000` driver and turns on SSL unless `sslmode=disable`) |
+| `AUTH0_DOMAIN` | `dev-sknccm5343cwp4hh.us.auth0.com` | same |
+| `AUTH0_AUDIENCE` | `https://loci-api` | same |
+| `DEV_AUTH` | `true` (skip Auth0) or `false` | **`false`** |
+| `CORS_ORIGINS` | `http://localhost:5173` | `https://neverforgator.study` |
+| `GEMINI_API_KEY` | Optional (empty = mock AI) | Set |
+| `GEMINI_TEXT_MODEL` | Optional; default picks the newest flash-lite | `gemini-3.1-flash-lite` |
+| `PICTURES` | `doodle`, `gemini` (real images, needs billing) or `placeholder` | `doodle` |
+| `DATA_DIR` | Optional; default `backend/data/` | Where uploads and the Gemini cache live |
+
+### Manual backend setup (instead of `npm run setup`)
+
+On Mac / Linux, from the repo root:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head            # builds the tables
+python -m app.seed              # loads the campus locations
+fastapi dev main.py             # starts the server with auto-reload
+```
+
+On Windows (PowerShell), use `python -m venv .venv`, `.venv\Scripts\Activate.ps1` and
+`copy .env.example .env`; the other commands are the same. If PowerShell blocks `Activate.ps1`, run
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+
+Then open **http://localhost:8000/docs** to try every endpoint. With `DEV_AUTH=true`, type any name in
+the `x-dev-user` box to act as that user.
+
+## Production
+
+The site runs on one DigitalOcean droplet from the `main` branch. Caddy terminates HTTPS and proxies to
+uvicorn, which listens on localhost only. FastAPI serves the API, the uploaded files and the built
+frontend.
+
+<!-- TODO: fill in from the droplet: where the repo is checked out, the Caddyfile path, and the
+     service that runs uvicorn (e.g. a systemd unit name). Better: commit them under deploy/. -->
+
+### Deploying an update
+
+After a PR is merged into `main`, on the droplet:
+
+```bash
+git pull                                   # in the repo checkout
+npm --prefix frontend ci && npm run build  # rebuilds frontend/dist (needs frontend/.env.local with the VITE_ values)
+cd backend
+.venv/bin/pip install -r requirements.txt  # if requirements.txt changed
+.venv/bin/alembic upgrade head             # if there are new migrations
+.venv/bin/python -m app.seed               # if app/data/locations.json changed
+# then restart the backend service
+```
+
+The shared Reitz palaces rebuild themselves on startup whenever a file in `backend/app/data/reitz/`
+changed. After deploying, check:
+
+- `curl https://neverforgator.study/health` → `{"status":"ok"}`
+- `curl -i https://neverforgator.study/me` → **401** (proves `DEV_AUTH` is off)
+- `curl https://neverforgator.study/api/status` → `"mock": false`
+
+### What to back up
+
+Two things hold user data: the **database**, and **`backend/data/`** (or `DATA_DIR`) on the droplet's
+disk, which has every uploaded room photo / 3D scan, stop crop and generated picture. Losing either one
+breaks people's palaces.
+
+## Auth0
+
+- The frontend uses the [Auth0 React SDK](https://github.com/auth0/auth0-react). `src/main.jsx` wraps the
+  app in `<Auth0Provider>` with the domain, client ID and audience from `.env.local`.
+- **Log in** and **Sign up** redirect to Auth0's hosted login page. The Auth0 application is a **Single
+  Page Application**, so it has no client secret.
+- To call the backend, the frontend gets an **access token** for the Auth0 API (**Applications → APIs →
+  Loci API**, identifier `https://loci-api`, RS256) and sends it as `Authorization: Bearer <token>`. The
+  backend downloads Auth0's public keys and checks each token's signature, issuer, audience and expiry.
+  The identifier is just a name; it's never visited, and changing it means creating a new API, so it
+  keeps the `loci` name.
+- **Allowed URLs:** the app's URL must be listed in **Applications → SwampHacks Project → Settings** under
+  **Allowed Callback URLs**, **Allowed Logout URLs** and **Allowed Web Origins**. That's
+  `https://neverforgator.study` and `http://localhost:5173`. `npm run dev` is pinned to port 5173 with
+  `--strictPort`, so if the port is taken Vite fails instead of moving to a port Auth0 doesn't know.
+- Users show up in the Auth0 dashboard under **User Management → Users**.
+- The Auth0 tenant (`dev-sknccm5343cwp4hh`) belongs to Kira's account. Ask to be invited if you need to
+  change settings or view users.
+- To test the API in `/docs` with a real token: Auth0 → APIs → Loci API → **Test** tab gives a token.
+  Click **Authorize** in `/docs` and paste it.
+
+### Auth0 MCP server (optional)
+
+`.mcp.json` sets up the [Auth0 MCP server](https://github.com/auth0/auth0-mcp-server) so Claude Code can
+manage the Auth0 tenant (apps, URLs, logs). Each device has to authorize it once:
+
+```bash
+npx @auth0/auth0-mcp-server init
+```
 
 ## API
 
-The backend runs at http://localhost:8000 locally. Open **http://localhost:8000/docs** to see every endpoint and try them in the browser.
+Open `/docs` on a running backend for every endpoint with its request and response shapes. Someone
+else's palace always returns **404**, so the API never confirms it exists.
+
+### Studio API (`backend/app/studio/router.py`)
+
+What the 3D studio uses. Every route needs a login except `/api/status` and `/api/describe` (which is
+rate-limited per IP address). All studio routes share a burst limit of 120 calls a minute per user.
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/api/status` | Mock mode, models, size caps |
+| GET | `/api/usage` | Today's fair-use quota |
+| POST | `/api/import` | Photo / PDF / recording of notes → text |
+| POST | `/api/describe` | Campus mode's AI buttons: 2-3 sentences about a subject or term |
+| GET / POST | `/api/palaces` | My palaces plus the shared ones / create a palace |
+| GET / PATCH / DELETE | `/api/palaces/{id}` | Open / rename / delete |
+| POST | `/api/palaces/{id}/copy` | Start my own copy of a shared palace (e.g. the Reitz route) |
+| POST | `/api/palaces/{id}/rooms` | Upload panoramas, photos or 3D scans |
+| PATCH / DELETE | `/api/palaces/{id}/rooms/{roomId}` | Rename or flip / delete a room |
+| PUT | `/api/palaces/{id}/rooms/order` | Reorder rooms |
+| POST | `/api/palaces/{id}/spots` | Add a stop |
+| PATCH / DELETE | `/api/palaces/{id}/spots/{spotId}` | Rename or move / delete a stop |
+| PUT | `/api/palaces/{id}/spots/order` | Reorder the walk |
+| POST | `/api/palaces/{id}/spots/{spotId}/label` | Gemini names what was clicked |
+| PUT | `/api/palaces/{id}/spots/{spotId}/idea` | Edit a stop's idea (scene is rewritten) |
+| POST | `/api/palaces/{id}/fill` | Notes → the whole palace |
+| POST | `/api/palaces/{id}/pictures`, `.../spots/{spotId}/image` | Draw pictures |
+| POST | `/api/palaces/{id}/spots/{spotId}/result` | Record a quiz answer |
+| POST | `/api/palaces/{id}/reviews` | Finished quiz → next review date |
+| POST | `/api/palaces/{id}/weirder`, `.../spots/{spotId}/weirder` | Weirder scenes for missed stops |
+
+Daily quotas per user (fills, imports, scenes, labels, pictures) and size caps are in
+`backend/app/studio/limits.py` and listed in [docs/how-it-works.md](docs/how-it-works.md).
+
+### Campus-route API (`backend/app/routers/`)
+
+The original API for palaces on the fixed campus route. Campus mode doesn't call it right now (see
+[Known issues](#known-issues)), but it's live and tested.
 
 | Method | Path | Login? | What it does |
 | --- | --- | --- | --- |
 | GET | `/health` | no | Is the server up? |
-| GET | `/locations` | no | Campus stops in walking order (for the map) |
+| GET | `/locations` | no | Campus stops in walking order |
 | GET | `/me` | yes | My profile (first call creates my account row) |
 | POST | `/palaces` | yes | Save a palace with its stops and questions |
-| GET | `/palaces` | yes | Dashboard list: my palaces, newest first, with stop counts |
-| GET | `/palaces/{id}` | yes | Open one palace: stops in order, each with location and questions |
+| GET | `/palaces` | yes | My palaces, newest first, with stop counts |
+| GET | `/palaces/{id}` | yes | One palace: stops in order, each with location and questions |
 | DELETE | `/palaces/{id}` | yes | Delete a palace (stops, questions, scores go with it) |
 | POST | `/palaces/{id}/attempts` | yes | Save a quiz score `{"score": 7, "total": 9}` |
 | GET | `/palaces/{id}/attempts` | yes | Score history, oldest first |
 
-Someone else's palace always returns **404**, so the API never confirms it exists.
-
-### Saving a palace (the contract between frontend, Gemini and backend)
-
-`POST /palaces` body. Gemini's output should also be turned into this format:
+`POST /palaces` body:
 
 ```json
 {
@@ -151,237 +286,34 @@ Someone else's palace always returns **404**, so the API never confirms it exist
 }
 ```
 
-- Stops are placed on the route **in the order you send them**: concept 1 goes to route stop 1, and so on.
-  To pick a place yourself, add `"location_id"` (from `GET /locations`) to a stop.
-- `type` defaults to `short_answer`. For `multiple_choice`, `answer` must be one of `choices`.
-- The whole palace saves in one transaction: if anything is invalid, nothing is saved.
-- For the Gemini endpoint: call `create_palace_for_user(db, user, PalaceCreate(...))` from
-  `backend/app/routers/palaces.py` to save the AI output with the same checks.
+Stops are placed on the route in the order you send them, unless a stop has a `location_id` (from
+`GET /locations`). `type` defaults to `short_answer`; for `multiple_choice`, `answer` must be one of
+`choices`. The whole palace saves in one transaction.
 
-## Roadmap
+## Data model
 
-1. **Setup:** repo, React app, Auth0 login ✅
-2. **Design:** wireframes, campus route (9 stops, see above), choose the map approach
-3. **Backend skeleton:** FastAPI server, database schema, Auth0 token checks, `/me` endpoint ✅
-4. **Connect frontend to API:** Auth0 audience in the frontend, call the API with access tokens
-5. **AI pipeline:** Gemini prompt → structured JSON (concepts, associations, quiz) → saved as a palace
-6. **Map + walkthrough:** show the palace's stops on the map and step through them in order
-7. **Quiz:** questions in both directions, with scoring (saving scores is already in the API)
-8. **Dashboard:** list, open and delete saved palaces (endpoints done, UI to do)
-9. **Deploy:** pick a host for the frontend and backend, move to DigitalOcean Droplets, point the GoDaddy domain at them, add the production URL in Auth0
-10. **Polish + demo:** sample palaces, error and loading states, pitch
+The tables are defined in `backend/app/models.py`. That file is the source of truth. Summary:
 
-## Progress
+- `users`: one row per Auth0 account (`auth0_sub`, `email`, `name`). A `system` user owns the shared palaces.
+- `palaces`: `user_id`, `title`, `source_text` (the notes), plus studio fields: `place`, `style`,
+  `flavor`, `template` (shared with everyone), `built_in`, `sample`, `copied_from`, `fill_report`,
+  `next_review_at`.
+- `rooms`: a palace's panoramas, photos and 3D scans, in walking order (`file` is in `backend/data/palaces/<id>/`).
+- `palace_stops`: one idea at one stop, in walking order (`stop_order`; not `order`, a reserved word in
+  SQL). A stop is either at a campus `location_id` or at a spot in a `room_id` (a `direction`, or a 3D
+  `point` + `view_from`), with its `concept`, scene (`association`), `hook`, `label`, `crop`, `image`,
+  `weirdness` and `misses`.
+- `quiz_questions`: questions attached to a stop (campus-route API).
+- `quiz_attempts`: quiz scores (`score`, `total`, `taken_at`).
+- `locations`: the 9 hand-picked campus landmarks of the campus route, from
+  `backend/app/data/locations.json` (edit it, then run `python -m app.seed`).
+- `usage_counts`: how many AI actions each user used per day (fair-use limits).
 
-- [x] React frontend scaffolded with Vite (`frontend/`)
-- [x] Auth0 sign-in, sign-up and log-out working locally
-- [x] Project idea / description
-- [x] Backend: FastAPI app, database tables, palace and quiz endpoints, tests
-- [x] Campus route (first version, 9 stops)
-- [x] Auth0 API created (`Loci API`, identifier `https://loci-api`) and set in `backend/.env`
-- [x] Frontend sends Auth0 access tokens to the API (`VITE_AUTH0_AUDIENCE`, `main.jsx`, `frontend/src/palace/api.js`)
-- [x] Frontend bridge: save palaces to the account, open them from the dashboard, quiz scores saved (see "Frontend ↔ backend" below)
-- [ ] Host on DigitalOcean Droplets
-- [ ] Wireframes
-- [x] Gemini integration (`backend/app/studio/`: notes -> ideas -> stops -> scenes, imports, pictures, limits)
-- [ ] Map, walkthrough, quiz, dashboard
-- [ ] Hosting decision, deployment + domain
-
-## Project structure
-
-```
-swamphacks/
-├── .mcp.json                   # Auth0 MCP server config for Claude Code (optional)
-├── frontend/                   # React + Vite app
-│   ├── .env.local              # Auth0 + API settings (not committed, see setup below)
-│   └── src/
-│       ├── main.jsx            # Wraps the app in Auth0Provider
-│       └── App.jsx             # Sign-in page / signed-in view
-└── backend/                    # FastAPI app
-    ├── .env.example            # Copy to .env (not committed) and fill in
-    ├── requirements.txt        # Python packages
-    ├── main.py                 # Entry point for `fastapi dev main.py`
-    ├── alembic/versions/       # Migrations: step-by-step instructions that build the tables
-    ├── tests/                  # Automated tests (pytest)
-    └── app/
-        ├── main.py             # Creates the app, CORS, plugs in the routes
-        ├── config.py           # Reads settings from .env
-        ├── db.py               # Database connection; one session per request
-        ├── models.py           # The tables, as Python classes
-        ├── schemas.py          # What requests and responses must look like (validation)
-        ├── auth.py             # Checks Auth0 tokens, finds or creates the user
-        ├── routers/            # The endpoints: users.py, locations.py, palaces.py
-        ├── data/locations.json # The campus route
-        ├── seed.py             # Loads locations.json into the database
-        └── studio/             # 3D studio API (/api/...): Gemini, fill, rooms, limits, shared palaces
-```
-
-## Setting up on a new device
-
-**Requirements:**
-- [Node.js](https://nodejs.org/) 20.19+ or 22.12+ (we use Node 22) and npm, for the frontend
-- [Python](https://www.python.org/) 3, for the backend
-
-Clone the repo first:
-
-```bash
-git clone <repo-url>
-cd swamphacks
-```
-
-### Frontend
-
-1. Install dependencies:
-
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. Create `frontend/.env.local`. This file is gitignored, so each device needs its own copy:
-
-   ```
-   VITE_AUTH0_DOMAIN=dev-sknccm5343cwp4hh.us.auth0.com
-   VITE_AUTH0_CLIENT_ID=LIZYqIyjABCSklIoqaGpdMTtvTEIV7O1
-   VITE_AUTH0_AUDIENCE=https://loci-api
-   VITE_API_URL=http://localhost:8000
-   ```
-
-   The 3D studio calls the backend through Vite's proxy (`/api`, `/files` and `/cache` go to port 8000),
-   so it doesn't need `VITE_API_URL`. From the repo root, `npm run setup` then `npm run dev` starts both.
-
-   None of these are secrets. A browser app has to ship them to every visitor anyway. You can also find the Auth0 values in the Auth0 dashboard under **Applications → SwampHacks Project → Settings**.
-
-3. Start the dev server:
-
-   ```bash
-   npm run dev
-   ```
-
-   Then open http://localhost:5173.
-
-### Backend
-
-From the repo root, on Mac:
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env            # then open .env and check the values
-alembic upgrade head            # builds the tables
-python -m app.seed              # loads the campus locations
-fastapi dev main.py             # starts the server with auto-reload
-```
-
-For the 3D studio, also put `GEMINI_API_KEY` in `backend/.env` (without it the studio runs in "mock AI"
-mode). The built-in Reitz route and the mitosis example are created automatically on startup, from
-`backend/app/data/reitz/` (see [docs/how-it-works.md](docs/how-it-works.md)).
-
-On Windows (PowerShell):
-
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-copy .env.example .env          # then open .env and check the values
-alembic upgrade head
-python -m app.seed
-fastapi dev main.py
-```
-
-> If PowerShell blocks `Activate.ps1`, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
-
-Then open **http://localhost:8000/docs**. With `DEV_AUTH=true`, type any name in the `x-dev-user` box to act as that user.
-
-`backend/.env` settings (see `.env.example`):
-
-| Variable | What it is |
-| --- | --- |
-| `DATABASE_URL` | Leave empty to use a local SQLite file (`loci.db`). Paste the database connection string to use Postgres |
-| `AUTH0_DOMAIN` | `dev-sknccm5343cwp4hh.us.auth0.com` (same as the frontend) |
-| `AUTH0_AUDIENCE` | `https://loci-api` (the Auth0 API identifier) |
-| `DEV_AUTH` | `true` skips Auth0 for local testing. Must be `false` when deployed |
-| `CORS_ORIGINS` | Websites allowed to call the API, comma-separated. `http://localhost:5173` locally |
-
-Run the tests (they use a throwaway database):
-
-```bash
-pytest
-```
-
-## Auth0 integration
-
-### How it works
-
-- The app uses the official [Auth0 React SDK](https://github.com/auth0/auth0-react) (`@auth0/auth0-react`).
-- `src/main.jsx` wraps the app in `<Auth0Provider>`, which reads the domain and client ID from `.env.local`. Vite only exposes variables that start with `VITE_` to the browser.
-- Components call the `useAuth0()` hook to get `isAuthenticated`, `user`, `isLoading`, `loginWithRedirect()` and `logout()`. See `src/App.jsx` for an example.
-- **Log in** and **Sign up** redirect to Auth0's hosted login page. Sign up passes `screen_hint: 'signup'` so the page opens on the sign-up form. After you sign in, Auth0 redirects back to the app and the SDK keeps the session.
-- The Auth0 application is a **Single Page Application**, so it doesn't use a client secret.
-- To call the backend, the frontend gets an **access token** for the Auth0 API and sends it as `Authorization: Bearer <token>`. The backend downloads Auth0's public keys and checks each token's signature, issuer (our tenant), audience (`https://loci-api`) and expiry. The user's Auth0 ID (`sub`) links them to their data. The backend never sees passwords.
-
-### Auth0 API (access tokens for the backend)
-
-The Auth0 API is already created in the tenant: **Applications → APIs → Loci API**, identifier `https://loci-api`, RS256. The identifier is just a name. It's never visited, and changing it means creating a new API, so it keeps the `loci` name.
-
-Done in the frontend:
-
-- `src/main.jsx` passes `VITE_AUTH0_AUDIENCE` to the Auth0 provider. Users need to log out and back in once after the audience is added.
-- `src/palace/api.js` (`useApi`) calls `VITE_API_URL` with `Authorization: Bearer <token>`. In dev it also sends `X-Dev-User: <the user's Auth0 sub>`, so with `DEV_AUTH=true` each signed-in user still gets their own data.
-- On sign-in the app calls `/me` once, which creates the user's row.
-
-To test real tokens: set `DEV_AUTH=false` in `backend/.env`, restart the backend and sign in again.
-To test in `/docs` instead: Auth0 → APIs → Loci API → **Test** tab gives a token. Click
-**Authorize** in `/docs` and paste it.
-
-### Frontend ↔ backend (the bridge)
-
-Palaces are still edited and autosaved in the browser (`localStorage` + IndexedDB for photos), because the API can't update a saved palace yet. Signed-in users can keep **copies** in their account:
-
-- **☰ menu → Save to account** uploads the palace (`POST /palaces`). After that the button says **Update account copy**: it uploads a new copy and deletes the old one, since there's no update endpoint (that copy's score history is lost).
-- **Dashboard → In your account** lists account palaces that aren't in this browser (`GET /palaces`), with **Open** (downloads it into this browser) and **Delete** (`DELETE /palaces/{id}`). Local palaces with a copy say "in your account".
-- Finishing a quiz on a palace with an account copy saves the score (`POST /palaces/{id}/attempts`).
-
-How a palace is converted (`src/palace/account.js`):
-
-- Each stop becomes a backend stop. A stop whose name matches a route location (e.g. Smathers Library, Century Tower) keeps that location; the others take the unused route locations in order. So the account can hold **at most 9 stops** per palace (the route's length).
-- `concept` / `association` fall back to the subject, description or place name when empty (the API requires both). Cards with a question and an answer become `short_answer` questions.
-- The whole frontend palace (places, pins, stars, hidden pins, appearance) is also saved as JSON in `source_text` (`{"app": "never-forgator", ...}`), so **Open** restores it exactly. Photos someone uploaded stay in the browser that added them; built-in campus photos work everywhere.
-- A palace made elsewhere (e.g. by the Gemini endpoint) has no such JSON: it opens with the route locations as stops and its questions as cards laid out in a grid (campus photos are matched by location name).
-
-When the backend gets a `PUT /palaces/{id}` and fields for pins, photos and custom places, `account.js` is the one file to change.
-
-### Using it in development
-
-- The app has to run on **http://localhost:5173**. That's the only URL registered in Auth0 for sign-in, log-out and allowed origins. `npm run dev` is pinned to that port with `--strictPort`. If the port is already taken, Vite fails instead of moving to another port, so stop whatever is using 5173.
-- To test, click **Sign up** and create a user with any email. Test users show up in the Auth0 dashboard under **User Management → Users**, and you can delete them there.
-- To use a different URL or port, or to deploy, add the new URL in the Auth0 dashboard under **Applications → SwampHacks Project → Settings**. It goes in **Allowed Callback URLs**, **Allowed Logout URLs** and **Allowed Web Origins**.
-- Dashboard access: the Auth0 tenant (`dev-sknccm5343cwp4hh`) belongs to Kira's account. Ask to be invited to the tenant if you need to change settings or view users.
-
-### Auth0 MCP server (optional)
-
-`.mcp.json` sets up the [Auth0 MCP server](https://github.com/auth0/auth0-mcp-server) so Claude Code can manage the Auth0 tenant (create apps, update URLs, read logs). Each device has to authorize it once:
-
-```bash
-npx @auth0/auth0-mcp-server init
-```
-
-## Database
-
-### Switching to PostgreSQL
-
-SQLite (`backend/loci.db`) is fine for local work. For the shared and deployed database:
-
-1. Create a free project on hosting platform and copy the connection string.
-2. Paste it as `DATABASE_URL` in `backend/.env` (the code switches it to the `pg8000` driver and turns on SSL for you).
-3. `alembic upgrade head` then `python -m app.seed`.
+Deleting a palace also deletes its rooms, stops, questions and scores.
 
 ### Changing the schema
 
-Never edit a migration that already ran on the shared database. Instead, from `backend/`:
+Never edit a migration that already ran on the production database. Instead, from `backend/`:
 
 ```bash
 # 1. edit app/models.py
@@ -390,14 +322,42 @@ alembic revision --autogenerate -m "add palace description"
 alembic upgrade head
 ```
 
-## Deploying
+## Project structure
 
-Hosting isn't decided yet. Whatever we choose:
+```
+neverforgator/
+├── package.json                # npm run setup / dev / test / build for the whole repo
+├── .mcp.json                   # Auth0 MCP server config for Claude Code (optional)
+├── docs/                       # how-it-works.md, demo.md
+├── design/                     # Kira's design mockups
+├── uf-mind-palace/             # the original campus-mode prototype (superseded by frontend/src/palace/)
+├── frontend/                   # React + Vite app
+│   ├── .env.local              # Auth0 settings (not committed)
+│   └── src/
+│       ├── main.jsx            # Auth0Provider; picks studio or campus mode
+│       ├── App.jsx, api.js     # 3D studio and its API client
+│       ├── components/, lib/   # studio UI and helpers
+│       └── palace/             # campus mode
+└── backend/                    # FastAPI app
+    ├── .env                    # settings and secrets (not committed)
+    ├── data/                   # uploaded rooms, crops, Gemini cache (not committed)
+    ├── alembic/versions/       # migrations
+    ├── tests/                  # pytest
+    └── app/
+        ├── main.py             # creates the app, CORS, security headers, serves files and the built site
+        ├── config.py           # reads settings from .env
+        ├── db.py, models.py, schemas.py
+        ├── auth.py             # checks Auth0 tokens, finds or creates the user
+        ├── routers/            # campus-route API: users.py, locations.py, palaces.py
+        ├── data/               # locations.json, the built-in Reitz route (reitz/)
+        └── studio/             # studio API: Gemini, fill, rooms, limits, shared palaces
+```
 
-- **Backend:** any Python host works. Build command `pip install -r requirements.txt`, start command
-  `alembic upgrade head && python -m app.seed && uvicorn main:app --host 0.0.0.0 --port $PORT` (run from `backend/`).
-  Set `DATABASE_URL`, `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `CORS_ORIGINS` (the real frontend URL) and
-  **`DEV_AUTH=false`**. Check it with `GET /me` and no token: it must return 401.
-- **Frontend:** set the same `VITE_` variables as `.env.local`, with `VITE_API_URL` pointing at the deployed backend.
-- **Auth0:** add the production frontend URL to **Allowed Callback URLs**, **Allowed Logout URLs** and **Allowed Web Origins**.
-- **Domain:** point the GoDaddy domain at the frontend host.
+## Known issues
+
+- **Campus mode doesn't save to the account.** `src/palace/account.js` (save, open, delete account copies)
+  and `src/palace/api.js` (`useApi`) are still in the repo, but nothing passes `account.api` to the
+  dashboard anymore, so campus palaces stay in the browser. To bring it back, pass `api: useApi()` in the
+  `account` object in `CampusApp.jsx`, and build with `VITE_API_URL=https://neverforgator.study` (when it's
+  empty, `useApi` falls back to `http://localhost:8000`).
+- Campus mode and the studio are still two separate apps sharing one login.
