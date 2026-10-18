@@ -2,46 +2,30 @@
  "name": "Reitz Union",
  "rooms": [
   {
-   "name": "Reitz lobby",
+   "name": "Game room",
    "type": "panorama",
    "file": "room-74b87794.jpg"
   },
   {
-   "name": "Reitz outdoors",
+   "name": "Atrium",
    "type": "panorama",
-   "file": "room-acfb93d8.jpg"
+   "file": "room-reitz-atrium.jpg"
+  },
+  {
+   "name": "Barbershop hallway",
+   "type": "panorama",
+   "file": "room-reitz-hallway.jpg"
   }
  ],
  "stops": [
   {
    "room": 0,
    "direction": [
-    0.9298438185361052,
-    -0.22742084372356366,
-    0.28925807330177883
+    -0.9892940367131077,
+    0.14473937901039766,
+    0.018649962133171053
    ],
-   "label": "foosball table",
-   "crop": null
-  },
-  {
-   "room": 0,
-   "direction": [
-    0.41184941050573753,
-    -0.33505783153562735,
-    0.8474174370360333
-   ],
-   "label": "putting green",
-   "crop": null
-  },
-  {
-   "room": 0,
-   "direction": [
-    -0.2945198992046343,
-    -0.1300253065579898,
-    0.9467583897843171
-   ],
-   "label": "equipment rental kiosk",
-   "crop": null
+   "label": "tv screen"
   },
   {
    "room": 0,
@@ -50,88 +34,79 @@
     -0.35210839193168497,
     0.41440365302513504
    ],
-   "label": "chess set",
-   "crop": null
+   "label": "chess set"
   },
   {
    "room": 0,
    "direction": [
-    -0.9099635088662971,
-    0.1300253065579899,
-    0.39377637332150495
+    0.9298438185361052,
+    -0.22742084372356366,
+    0.28925807330177883
    ],
-   "label": "wall art",
-   "crop": null
+   "label": "foosball table"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.9892940367131077,
-    0.14473937901039766,
-    0.018649962133171053
+    0.99556196460308,
+    6.123233995736766e-17,
+    0.09410831331851431
    ],
-   "label": "tv screen",
-   "crop": null
+   "label": "glass doors"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.947750778245027,
-    -0.12183821572323215,
-    -0.2948286138171206
+    -0.9053299132647713,
+    -0.10231357595590654,
+    -0.4122010193135341
    ],
-   "label": "recycling bins",
-   "crop": null
+   "label": "gator statue"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.5234579333905711,
-    0.08078945931039284,
-    -0.8482127417309921
+    0.5560690592052944,
+    0.14589586456296422,
+    -0.8182307731306395
    ],
-   "label": "constans theatre door",
-   "crop": null
+   "label": "staircase"
   },
   {
-   "room": 0,
+   "room": 1,
    "direction": [
-    -0.15630130153393215,
-    0.04125237396305191,
-    -0.9868475793055436
+    -0.9528661800538767,
+    -0.12413465805535565,
+    0.276833216177201
    ],
-   "label": "red armchair",
-   "crop": null
+   "label": "orange chairs"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    0.19963136586085448,
-    0.02805589464654429,
-    -0.9794693382337762
+    -0.3081883946610741,
+    0.07318210209940289,
+    -0.948506348596857
    ],
-   "label": "reception desk",
-   "crop": null
+   "label": "barbershop"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    0.5458369368224095,
-    0.14473937901039766,
-    -0.8252954322931961
+    0.9044387133941867,
+    0.02929484135074659,
+    0.4255965530688691
    ],
-   "label": "glass double doors",
-   "crop": null
+   "label": "vending machine"
   },
   {
-   "room": 0,
+   "room": 2,
    "direction": [
-    0.8830857420352298,
-    -0.24186103548816465,
-    -0.40207314225981367
+    0.9038629987141252,
+    0.11692803619631204,
+    -0.41153312613540993
    ],
-   "label": "seating area",
-   "crop": null
+   "label": "elevator"
   }
  ]
 }

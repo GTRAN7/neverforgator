@@ -107,7 +107,7 @@ function PalaceListContent() {
 
       <div className="home-hero">
         <h1 className="landing-title">What do you want to never forget?</h1>
-        <p className="scrawl tagline">pick a place, feed it your notes, walk it in your head</p>
+        <p className="scrawl tagline">pick a place, feed it your notes, make it your palace</p>
       </div>
 
       {mine.length > 0 ? (

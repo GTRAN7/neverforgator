@@ -24,7 +24,7 @@ const Gear = () => (
       d="M10.3 2h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9L2 13.7v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8z"
       fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"
     />
-    <circle cx="12" cy="12" r="3.4" fill="var(--accent)" stroke="currentColor" strokeWidth="1.5" />
+    <circle className="gear-hole" cx="12" cy="12" r="3.4" stroke="currentColor" strokeWidth="1.5" />
   </svg>
 );
 
@@ -113,6 +113,9 @@ export default function SettingsMenu() {
           <Switch label="Colorblind-friendly" hint="Blue / amber instead of green / purple, plus ✓ and ! marks"
             on={display.colorblind} onToggle={() => setDisplay({ colorblind: !display.colorblind })}
             knob={<span className="gear-knob-cb" aria-hidden="true" />} />
+          <Switch label="Reduce motion" hint="Friends stay still and the garland stops swaying"
+            on={display.calm} onToggle={() => setDisplay({ calm: !display.calm })}
+            knob={<span className="gear-knob-calm" aria-hidden="true">{display.calm ? '❚❚' : '〰'}</span>} />
           <Choices label="Font" value={display.font} options={FONTS.map(([id, name]) => [id, name])}
             onPick={(font) => setDisplay({ font })} />
           <Choices label="Text size" hint={TEXT_SIZES.find(([id]) => id === display.textSize)?.[1]} sizes

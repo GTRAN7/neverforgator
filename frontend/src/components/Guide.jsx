@@ -41,8 +41,8 @@ const STOPS = [
     icon: '⚽',
     term: '3rd Amendment',
     fact: 'Soldiers can’t be housed in your home.',
-    hook: '3 → TREE · soldiers → toy soldiers',
-    scene: 'A TREE grows out of the table and flicks the toy SOLDIERS out of their tiny HOUSE, one by one.',
+    hook: 'foosball players → little SOLDIERS · 3 knocks → 3rd Amendment',
+    scene: 'The little foosball players are SOLDIERS who want to move into your HOUSE. You KNOCK on the table 3 times (no soldiers in my home!) and they stay stuck on their bars.',
   },
   {
     place: 'TV screen',
@@ -65,10 +65,9 @@ const STOPS = [
 // Where each stop sits on the little map (percent of the map box).
 const MAP_POINTS = [[14, 72], [34, 34], [58, 62], [78, 24], [88, 70]];
 
+// Step 4 asks about the one scene step 3 showed.
 const QUIZ = [
-  { stop: 3, question: 'Walk to the TV screen. Which amendment lives there?' },
-  { stop: 1, question: 'Now the chess board. Which one is it?' },
-  { stop: 4, question: 'Last stop: the vending machine?' },
+  { stop: 2, question: 'Walk to the foosball table. Which amendment lives there?' },
 ];
 
 function RouteMap({ active = -1, showTerms = false }) {
@@ -110,16 +109,12 @@ function SceneCard({ stop, number }) {
   );
 }
 
+// Step 3 shows one example scene: the 3rd Amendment at the foosball table.
+const EXAMPLE = 2;
 function SceneStep() {
-  const [i, setI] = useState(0);
   return (
     <div className="guide-scenes">
-      <SceneCard stop={STOPS[i]} number={i + 1} />
-      <div className="btn-row">
-        <button className="btn ghost" disabled={i === 0} onClick={() => setI(i - 1)}>← Previous stop</button>
-        <button className="btn ink" disabled={i === STOPS.length - 1} onClick={() => setI(i + 1)}>Walk to the next stop →</button>
-      </div>
-      <div className="guide-dots small">{STOPS.map((s, k) => <span key={s.term} className={k === i ? 'on' : ''} />)}</div>
+      <SceneCard stop={STOPS[EXAMPLE]} number={EXAMPLE + 1} />
     </div>
   );
 }
@@ -134,8 +129,8 @@ function QuizStep() {
       <div className="guide-quiz">
         <Creature number={3} state="happy" size="lg" />
         <h3 className="card-title big">{score} / {QUIZ.length} from memory</h3>
-        <p>You saw each scene once, a minute ago, and you could still walk back and find it. That’s the whole trick.
-          Ask yourself tomorrow what happens at the TV screen.</p>
+        <p>You saw the scene once, a minute ago, and you could still walk back and find it. That’s the whole trick.
+          Ask yourself tomorrow what happens at the foosball table.</p>
       </div>
     );
   }
@@ -164,7 +159,7 @@ function QuizStep() {
           <p>{right.hook}: {right.scene}</p>
         </div>
       )}
-      {picked && <button className="btn ink" onClick={() => { setQ(q + 1); setPicked(null); }}>Next</button>}
+      {picked && <button className="btn ink" onClick={() => { setQ(q + 1); setPicked(null); }}>{q === QUIZ.length - 1 ? 'See how you did' : 'Next'}</button>}
     </div>
   );
 }
@@ -217,16 +212,16 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the first 5 amendments of the <strong>Bill of Rights</strong>. NeverForgator cuts your notes into
-          small ideas, each the size of one picture, and gives every idea its own stop: amendment 1 at stop 1, and so on.</p>
-        <p>Too many ideas for your route? It tells you to add a room instead of cramming, to avoid concepts blurring together.</p>
+        <p>Let’s learn the first few amendments of the <strong>Bill of Rights</strong>. NeverForgator breaks it into
+          small ideas, each the size of one picture, and gives every idea its own stop: the 1st Amendment at stop 1, and so on.</p>
+        <p>Too many ideas for your route? We'll add a room instead of cramming it all together. (Crammed ideas make locations blur together!)</p>
       </>
     ),
     art: () => (
       <div className="guide-art split-art">
         <div className="notes-card">
           <span className="sticky-label">your notes</span>
-          <p>1st: speech, religion, press… 2nd: bear arms… 3rd: no soldiers in your home… 4th: warrants… 5th: stay silent…</p>
+          <p>1st: free speech, religion, press - 2nd: bear arms - 3rd: no soldiers in your home - 4th: warrants - 5th: stay silent</p>
         </div>
         <span className="split-arrow">→</span>
         <ol className="idea-stack">
@@ -240,10 +235,10 @@ const STEPS = [
     body: (
       <>
         <p>Your brain ignores the normal and remembers the bizarre. Each scene happens <strong>at the object</strong>, moves,
-          makes noise, and turns hard words into pictures (<strong>bear arms</strong> → a bear with arms).</p>
-        <p>Numbers become rhymes memory champions use: <strong>1 bun, 2 shoe, 3 tree, 4 door, 5 hive</strong>. So the 4th
-          Amendment has a door in it.</p>
-        <p>Read each scene once and picture it. Really picture it.</p>
+          makes noise, and turns words into pictures (3rd Amendment → no soldiers in your house → the foosball players are little soldiers, and 3 knocks keep them out).</p>
+        {/* <p>Numbers become rhymes memory champions use: <strong>1 bun, 2 shoe, 3 tree, 4 door, 5 hive</strong>. So the 4th
+          Amendment has a door in it.</p> */}
+        <p>Read the scene once and picture it. Really picture it.</p>
       </>
     ),
     art: () => <SceneStep />,

@@ -10,20 +10,26 @@ export default function AboutDialog({ onClose }) {
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <section className="plaque dialog about" role="dialog" aria-label="About Never Forgator" onClick={e => e.stopPropagation()}>
+      <section className="plaque dialog about" role="dialog" aria-label="About NeverForgator (2D)" onClick={e => e.stopPropagation()}>
         <button className="icon-btn plaque-close" onClick={onClose} aria-label="Close">×</button>
         <p className="eyebrow">About</p>
         <h2 className="plaque-q">Welcome, ruler! 📏</h2>
+        <p className="about-version">
+          <b>NeverForgator (2D)</b> was our initial version, made for anyone who likes a more <b>flashcard-style</b> way
+          to study: pin question cards onto photos of places you know, walk the route, and quiz yourself.
+          Want your notes turned into a walk through a real room, with AI-made scenes and pictures? Try the
+          {' '}<b>3D studio</b> (the <b>← 3D studio</b> button at the top).
+        </p>
         <p>
-          Welcome to Never Forgator, built by students at the University of Florida. We built this to teach
-          students to use the <b>method of loci</b> (aka, your mind palace). It's a useful trick for memorization
-          or learning new concepts. As an effect, you can also just use this as a way to memorize terms that
-          relate to specific locations (e.g. learning parts of the body or architecture in a city)!
+          NeverForgator was built by students at the University of Florida to teach the <b>method of loci</b>
+          {' '}(aka, your mind palace). It's a useful trick for memorization or learning new concepts. As an effect,
+          you can also use it to memorize terms tied to specific places (e.g. learning parts of the body or
+          architecture in a city)!
         </p>
 
         <h3>How to use it</h3>
         <ol className="about-steps">
-          <li><b>Create a palace</b> from one of our default paths, our sample deck to see how to use the app, a custom route of your own photos, or a blank one.</li>
+          <li><b>Create a palace</b> from the UF campus route, a custom route of your own photos, or a blank one.</li>
           <li><b>Fill in each stop:</b> click the sign (or head to Notes) to set the subject, concept, memory image. Pin question cards to spots in the scene with <b>Edit</b>.</li>
           <li><b>Walk</b> the route to see each stop's concept and image in order (this is your memory palace).</li>
           <li><b>Quiz</b> yourself: answer questions on individual stops, the whole quiz, or your starred cards for extra review.</li>
@@ -31,7 +37,7 @@ export default function AboutDialog({ onClose }) {
 
         <h3>Make it yours</h3>
         <p>
-          ⚙ Settings has night mode, a dyslexia-friendly font, colorblind-friendly colors, and text size. Inside a
+          ⚙ Settings (top right, next to the 3D studio button) has night mode, a dyslexia-friendly font, colorblind-friendly colors, and text size. Inside a
           palace, <b>Advanced appearance</b> changes the sky, signs, pin colors and cursor. Upload your own
           background, cursor, sign, etc. to personalize (and enjoy!) your experience.
         </p>
