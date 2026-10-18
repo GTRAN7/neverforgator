@@ -67,12 +67,14 @@ def find_extra_stops(palace: Palace, kept: list[PalaceStop], needed: int) -> lis
     return found
 
 
-def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str = "silly") -> Palace:
+def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str = "silly", add: bool = False) -> Palace:
     if not palace.rooms:
         raise HTTPException(400, "Add a room first")
     ideas = gemini.split_notes(notes)
     if not ideas:
         raise HTTPException(400, "Couldn’t find anything to remember in those notes")
+    if add:
+        return add_to_palace(db, palace, notes, ideas, style, flavor)
 
     # Stops added by an earlier fill are rebuilt each time; stops the user placed are kept.
     studio_stops = [s for s in palace.stops if s.room_id is not None]
@@ -131,6 +133,75 @@ def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str
     palace.next_review_at = datetime.now(timezone.utc)
     for attempt in list(palace.attempts):
         db.delete(attempt)
+    db.commit()
+    db.refresh(palace)
+    return palace
+
+
+def add_to_palace(db: Session, palace: Palace, notes: str, ideas: list[dict], style: str, flavor: str) -> Palace:
+    """"Add them": keep every friend the palace already has (same stop, scene and picture) and give
+    the new ideas the empty eggs first, then stops Gemini finds in the room photos. New friends go
+    at the end of the walk, so the stops you've already memorized keep their numbers."""
+    studio_stops = sorted((s for s in palace.stops if s.room_id is not None), key=lambda s: s.stop_order)
+    friends = [s for s in studio_stops if s.concept]
+    # Notes that are already in the palace (e.g. pasting the same notes again) don't hatch twice.
+    known = {" ".join(s.concept.lower().split()) for s in friends}
+    ideas = [idea for idea in ideas if " ".join(idea["text"][:300].lower().split()) not in known]
+    if not ideas:
+        raise HTTPException(400, "Everything in those notes is already in this palace")
+
+    eggs = [s for s in studio_stops if not s.concept]
+    extra = find_extra_stops(palace, studio_stops, len(ideas) - len(eggs)) if len(eggs) < len(ideas) else []
+    room_index = {r.id: i for i, r in enumerate(palace.rooms)}
+    found = [PalaceStop(palace_id=palace.id, room_id=e["room_id"], direction=e["direction"], label=e["label"],
+                        auto=True, stop_order=-10_000 - i) for i, e in enumerate(extra)]
+    db.add_all(found)
+    targets = eggs + sorted(found, key=lambda s: room_index.get(s.room_id, -1))
+    stop_count = min(len(targets), len(ideas))
+    if not stop_count:
+        raise HTTPException(400, "No room for more friends. Plant a few eggs by clicking your room, or add a panorama.")
+
+    placed = ideas[:stop_count]
+    labels = [s.label or f"spot {len(friends) + i + 1}" for i, s in enumerate(targets[:stop_count])]
+    items = gemini.write_scenes(placed, labels, flavor)
+    by_location = {item["location"]: item for item in items}
+    hatched = []
+    for i, stop in enumerate(targets[:stop_count]):
+        item = by_location.get(i + 1)
+        if not item:
+            continue
+        idea = placed[i]
+        stop.concept = idea["text"][:300]
+        stop.kind = idea["kind"]
+        stop.key_terms = idea["keyTerms"]
+        stop.association = item["scene"]
+        stop.hook = item["hook"]
+        stop.image_prompt = item["imagePrompt"]
+        stop.image = None
+        stop.weirdness = 0
+        stop.misses = 0
+        hatched.append(stop)
+    # Found stops that ended up without an idea aren't kept; eggs stay eggs.
+    for stop in found:
+        if not stop.concept:
+            db.delete(stop)
+    db.flush()
+    hatched_ids = {s.id for s in hatched}
+    still_eggs = [s for s in eggs if s.id not in hatched_ids]
+    set_order(db, friends + hatched + still_eggs)
+
+    palace.source_text = f"{palace.source_text.rstrip()}\n\n{notes}" if palace.source_text else notes
+    palace.style = style
+    palace.flavor = flavor
+    your = sum(1 for s in hatched if not s.auto)
+    palace.fill_report = {
+        "ideas": len(ideas),
+        "yourStops": your,
+        "foundStops": len(hatched) - your,
+        "waiting": [idea["text"] for idea in ideas[stop_count:]],
+        "added": len(hatched),
+    }
+    palace.next_review_at = datetime.now(timezone.utc)  # new material: review it soon
     db.commit()
     db.refresh(palace)
     return palace
