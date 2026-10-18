@@ -746,12 +746,32 @@ button { font: inherit; color: inherit; }
   background: var(--room); border: 2px solid var(--line); border-radius: 28px;
 }
 .home-art { position: relative; flex-direction: column; }
-.home-route { display: flex; align-items: flex-end; justify-content: space-around; width: 100%; gap: 8px; padding-top: 70px; }
-.home-stop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.home-route { display: flex; align-items: flex-end; justify-content: space-around; width: 100%; gap: 8px; padding-top: 64px; }
+.home-stop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: default; outline: none; }
+/* Hover (or tap / focus) a room in step 1: the thing you just know lives there pops up above it */
+.home-find {
+  position: absolute; bottom: calc(100% - 6px); left: 50%; z-index: 2; display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 6px; border-radius: 16px; background: var(--card); border: 2px solid var(--ink); box-shadow: 0 3px 0 var(--edge);
+  white-space: nowrap; pointer-events: none; opacity: 0; transform: translate(-50%, 8px) scale(0.9);
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+.home-find .home-find-icon { flex: none; display: block; font-size: calc(30px * var(--ts)); line-height: 1; filter: drop-shadow(0 2px 0 rgba(59, 42, 30, 0.2)); }
+.home-find > span:last-child { display: grid; font: 600 calc(13px * var(--ts)) var(--display); color: var(--ink-2); line-height: 1.2; }
+.home-find b { font: 700 calc(16px * var(--ts)) var(--hand); color: var(--ink); }
+.home-stop:hover .home-find, .home-stop:focus-visible .home-find, .home-stop:focus .home-find { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.home-stop:hover .map-icon, .home-stop:focus .map-icon { transform: translateY(-3px); }
+.home-stop .map-icon { transition: transform 0.18s ease-out; }
+.home-stop:hover .tag, .home-stop:focus .tag { background: var(--sticky); }
+/* the outer rooms' pop-ups stay inside the picture */
+.home-stop:first-child .home-find { left: 0; transform: translate(0, 8px) scale(0.9); }
+.home-stop:first-child:hover .home-find, .home-stop:first-child:focus .home-find { transform: translate(0, 0) scale(1); }
+.home-stop:last-child .home-find { left: auto; right: 0; transform: translate(0, 8px) scale(0.9); }
+.home-stop:last-child:hover .home-find, .home-stop:last-child:focus .home-find { transform: translate(0, 0) scale(1); }
 .home-stop .tag {
   font: 600 calc(13px * var(--ts)) var(--display); background: var(--card); border: 1.5px solid var(--ink); padding: 1px 10px; border-radius: 999px;
 }
-.home-art .scrawl { font-size: calc(22px * var(--ts)); color: var(--muted); margin-top: 18px; }
+.home-art .scrawl { font-size: calc(22px * var(--ts)); color: var(--muted); margin: 18px 0 0; text-align: center; }
+.home-art .scrawl.home-art-why { margin-top: 4px; font-size: calc(19px * var(--ts)); }
 .map-icon { font-size: calc(22px * var(--ts)); line-height: 1; filter: drop-shadow(0 2px 0 rgba(59, 42, 30, 0.2)); }
 .map-icon.big { font-size: calc(52px * var(--ts)); }
 .thought {

@@ -35,8 +35,8 @@ const STUDYING = {
   },
   flavor: {
     label: 'How weird should scenes get?',
-    hint: 'Just silly is the default. Wild can get gross (weirder sticks better); classroom-safe keeps it PG.',
-    options: [['silly', 'Just silly'], ['wild', 'Wild'], ['clean', 'Classroom-safe']],
+    hint: 'Weirder sticks better. Professional keeps it ready for class review sessions.',
+    options: [['wild', 'Wild'], ['silly', 'Just silly'], ['clean', 'Professional']],
   },
   quiz: {
     label: 'Quiz me by…',
