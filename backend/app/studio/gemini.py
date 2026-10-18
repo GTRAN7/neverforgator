@@ -160,7 +160,8 @@ NUMBER_RHYMES = ", ".join(f"{d} = {peg}" for d, peg in enumerate(PEGS))
 def number_pegs(text: str) -> str:
     """The digit images for the numbers in an idea, worked out here so the model only has to use
     them: "Hans Krebs found it in 1937" -> '1937 = bun, wine, tree, heaven (an angel)'."""
-    numbers = list(dict.fromkeys(re.findall(r"\b\d{1,4}\b", text)))
+    # Plain numbers and ordinals ("4th Amendment" -> 4 = door).
+    numbers = list(dict.fromkeys(re.findall(r"\b(\d{1,4})(?:st|nd|rd|th)?\b", text)))
     return "; ".join(f"{n} = {', '.join(PEGS[int(d)] for d in n)}" for n in numbers)
 
 
@@ -171,7 +172,7 @@ TECHNIQUES = {
     "number": f"Turn each digit into its number-rhyme image, exactly this table: {NUMBER_RHYMES}.\n"
               "Show those images in order in the scene (e.g. 23 → a SHOE kicking a TREE).",
     "date": f"Encode the digits of the year/day with exactly this number-rhyme table: {NUMBER_RHYMES}, in order, acting with the event.",
-    "name": "Replace the person or place name with a sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed.",
+    "name": "Replace the person or place name with a concrete sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed; the sound-alike is the star of the scene, not the person.",
     "vocabulary": "Keyword method: a sound-alike of the word (in your language) interacting with an image of its meaning.",
     "list": "Each item becomes its own character, all crowded into one scene in the right order (left to right).",
     "sequence": "Show the steps as a chain reaction in order: the first step causes the second, and so on.",
@@ -188,13 +189,15 @@ FLAVORS = {
 }
 
 
-def scene_rules(flavor: str = "wild") -> str:
+def scene_rules(flavor: str = "silly") -> str:
     return f"""A great memory scene:
 - happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
-- is {FLAVORS.get(flavor, FLAVORS['wild'])}, with motion and sound, and YOU are in it,
+- is {FLAVORS.get(flavor, FLAVORS['silly'])}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
+- number images come ON TOP of the key terms, never instead of them: the main subject (the planet, the
+  person, the amendment's right) must still be clearly in the scene,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
 imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image."""
@@ -218,26 +221,29 @@ Cut the notes into ideas. Each idea is ONE short, self-contained sentence a teac
 small enough to picture as a single scene: a term and its meaning, a cause and its effect, a name and
 what they did, a number and what it counts.
 - Split long lists (more than 4 items) and multi-part definitions into separate ideas, in order.
+- A numbered or bulleted line in the notes ("4th Amendment: ...", "3. ...") stays ONE idea, keeping
+  its number, unless it lists more than 4 things: the student's numbering should match the stops.
 - Keep exact numbers, dates, names, units and formulas. Never invent facts that aren't in the notes.
 - Skip headings, filler and repeats. Keep the order of the notes.
 - Use as many ideas as the notes really need (a few lines: a few ideas; a chapter: many), at most {MAX_IDEAS}.
   If there is more than that, keep the {MAX_IDEAS} most important.
 For each idea also give:
-- kind: {", ".join(IDEA_KINDS)}
+- kind: {", ".join(IDEA_KINDS)}. Use "name" whenever the thing to remember is mainly a person's or
+  place's name (even in an ordered list: "the 3rd president was Thomas Jefferson" is a name).
 - keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).''',
             _obj(ideas={"type": "array", "items": _obj(
                 text=STRING, kind={"type": "string", "enum": IDEA_KINDS},
                 keyTerms={"type": "array", "items": STRING})}),
         )
         return result["ideas"][:MAX_IDEAS]
-    return cached_json(["split-v3", models["text"], notes], produce)
+    return cached_json(["split-v5", models["text"], notes], produce)
 
 
 SCENE_BATCH = 5  # scenes are written in parallel batches: much faster than one long answer
 _pool = ThreadPoolExecutor(max_workers=8)
 
 
-def write_scenes(ideas: list[dict], locations: list[str], flavor: str = "wild") -> list[dict]:
+def write_scenes(ideas: list[dict], locations: list[str], flavor: str = "silly") -> list[dict]:
     """One scene per idea, idea i at location i. Each batch is cached on its own, so adding stops
     at the end of the path and filling again only writes the new ones."""
     starts = range(0, len(ideas), SCENE_BATCH)
@@ -257,6 +263,9 @@ def _write_scene_batch(ideas, locations, flavor):
         for i, idea in enumerate(ideas):
             pegs = number_pegs(idea["text"])
             extra = f"; number images to use, in order: {pegs}" if pegs else ""
+            if idea["kind"] == "name":
+                # Names need their own picture too, or the number image takes over the scene.
+                extra += "; ALSO turn the name into a concrete sound-alike object (Washington -> a washing machine)"
             lines.append(f'{i + 1}. At "{locations[i]}" ({idea["kind"]}; key terms: {", ".join(idea["keyTerms"])}{extra}): {idea["text"]}')
         kinds = list(dict.fromkeys(idea["kind"] for idea in ideas))
         techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
@@ -275,7 +284,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v6", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v9", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
@@ -340,7 +349,7 @@ def describe(kind: str, text: str, subject: str = "", place: str = "") -> str:
 
 # ---- 3. A missed spot gets a weirder scene ----
 
-def weirder_scene(fact: str, label: str, scene: str, level: int, kind: str = "fact", flavor: str = "wild") -> dict:
+def weirder_scene(fact: str, label: str, scene: str, level: int, kind: str = "fact", flavor: str = "silly") -> dict:
     def produce():
         if MOCK:
             return {
@@ -364,7 +373,7 @@ key words impossible to miss. Technique for this kind of idea ({kind}): {TECHNIQ
     return cached_json(["weirder-v5", models["text"], fact, kind, label, scene, level, flavor], produce)
 
 
-def weirder_scenes(stops: list[dict], flavor: str = "wild") -> list[dict]:
+def weirder_scenes(stops: list[dict], flavor: str = "silly") -> list[dict]:
     """Weirder scenes for several missed stops in one call (end of a quiz). Each stop:
     {fact, label, scene, level, kind}. Results already cached are reused."""
     keys = [["weirder-v5", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
