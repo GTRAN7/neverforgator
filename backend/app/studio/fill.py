@@ -16,6 +16,7 @@ from app.studio.files import palace_dir
 from app.studio.panorama import angle_between, image_size, photo_point_to_direction
 
 MIME = {".png": "image/png", ".webp": "image/webp"}
+MAX_PER_ROOM = 12  # friends per room before it starts looking crowded (stops you place yourself are always used)
 
 
 def set_order(db: Session, stops: list[PalaceStop]) -> None:
@@ -27,6 +28,22 @@ def set_order(db: Session, stops: list[PalaceStop]) -> None:
     for i, stop in enumerate(stops):
         stop.stop_order = i + 1
     db.flush()
+
+
+def first_eggs(eggs: list[PalaceStop], wanted: int, in_room: dict | None = None) -> list[PalaceStop]:
+    """The eggs that hatch: the earliest planted first (lowest numbers), at most `wanted` of them,
+    and never past MAX_PER_ROOM friends in a room (`in_room` counts friends already there).
+    Eggs past that just stay eggs."""
+    in_room = dict(in_room or {})
+    picked = []
+    for egg in sorted(eggs, key=lambda s: s.stop_order):
+        if len(picked) >= wanted:
+            break
+        if in_room.get(egg.room_id, 0) >= MAX_PER_ROOM:
+            continue
+        in_room[egg.room_id] = in_room.get(egg.room_id, 0) + 1
+        picked.append(egg)
+    return picked
 
 
 def find_extra_stops(palace: Palace, kept: list[PalaceStop], needed: int) -> list[dict]:
@@ -51,16 +68,23 @@ def find_extra_stops(palace: Palace, kept: list[PalaceStop], needed: int) -> lis
 
     # Skip stops too close to another one, or named like another one (two "foosball table" stops
     # in overlapping photos): stops you can't tell apart in your head mix up their facts.
+    # A room also stops getting found stops at MAX_PER_ROOM friends; past that it looks crowded.
     found = []
     names = {(s.label or "").lower() for s in kept}
     taken = [(s.room_id, s.direction) for s in kept if s.direction]
+    in_room = {}
+    for s in kept:
+        in_room[s.room_id] = in_room.get(s.room_id, 0) + 1
     for stop in (s for room in per_room for s in room):
         if len(found) >= needed:
             break
+        if in_room.get(stop["room_id"], 0) >= MAX_PER_ROOM:
+            continue
         too_close = any(room_id == stop["room_id"] and angle_between(d, stop["direction"]) < 0.25
                         for room_id, d in taken)
         if too_close or stop["label"].lower() in names:
             continue
+        in_room[stop["room_id"]] = in_room.get(stop["room_id"], 0) + 1
         names.add(stop["label"].lower())
         taken.append((stop["room_id"], stop["direction"]))
         found.append(stop)
@@ -82,16 +106,20 @@ def fill_palace(db: Session, palace: Palace, notes: str, style: str, flavor: str
         if stop.auto:
             db.delete(stop)
     db.flush()
-    kept = [s for s in studio_stops if not s.auto]
-    extra = find_extra_stops(palace, kept, len(ideas) - len(kept)) if len(kept) < len(ideas) else []
+    kept = sorted((s for s in studio_stops if not s.auto), key=lambda s: s.stop_order)
+    # Your eggs hatch first, earliest planted first, up to MAX_PER_ROOM a room; found stops fill in after.
+    hatching = first_eggs(kept, len(ideas))
+    extra = find_extra_stops(palace, kept, len(ideas) - len(hatching)) if len(hatching) < len(ideas) else []
 
     # The path walks room by room (in the order of the room strip), like a real walk.
     room_index = {r.id: i for i, r in enumerate(palace.rooms)}
     new_stops = [PalaceStop(palace_id=palace.id, room_id=e["room_id"], direction=e["direction"], label=e["label"],
                             auto=True, stop_order=-10_000 - i) for i, e in enumerate(extra)]
     db.add_all(new_stops)
-    walk = sorted(kept + new_stops, key=lambda s: room_index.get(s.room_id, -1))
-    stop_count = min(len(walk), len(ideas))
+    # Eggs that don't hatch (no idea left, or their room is full) wait at the end of the walk.
+    resting = [s for s in kept if s not in hatching]
+    walk = sorted(hatching + new_stops, key=lambda s: room_index.get(s.room_id, -1)) + resting
+    stop_count = len(hatching) + len(new_stops)
     if not stop_count:
         raise HTTPException(400, "No stops yet. Plant a few eggs by clicking your room, or add a panorama.")
 
@@ -151,12 +179,17 @@ def add_to_palace(db: Session, palace: Palace, notes: str, ideas: list[dict], st
         raise HTTPException(400, "Everything in those notes is already in this palace")
 
     eggs = [s for s in studio_stops if not s.concept]
-    extra = find_extra_stops(palace, studio_stops, len(ideas) - len(eggs)) if len(eggs) < len(ideas) else []
+    # Empty eggs hatch first, earliest planted first, but no room goes past MAX_PER_ROOM friends.
+    in_room = {}
+    for s in friends:
+        in_room[s.room_id] = in_room.get(s.room_id, 0) + 1
+    hatching = first_eggs(eggs, len(ideas), in_room)
+    extra = find_extra_stops(palace, studio_stops, len(ideas) - len(hatching)) if len(hatching) < len(ideas) else []
     room_index = {r.id: i for i, r in enumerate(palace.rooms)}
     found = [PalaceStop(palace_id=palace.id, room_id=e["room_id"], direction=e["direction"], label=e["label"],
                         auto=True, stop_order=-10_000 - i) for i, e in enumerate(extra)]
     db.add_all(found)
-    targets = eggs + sorted(found, key=lambda s: room_index.get(s.room_id, -1))
+    targets = hatching + sorted(found, key=lambda s: room_index.get(s.room_id, -1))
     stop_count = min(len(targets), len(ideas))
     if not stop_count:
         raise HTTPException(400, "No room for more friends. Plant a few eggs by clicking your room, or add a panorama.")

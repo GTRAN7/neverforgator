@@ -194,6 +194,10 @@ def scene_rules(flavor: str = "silly") -> str:
 - happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
 - is {FLAVORS.get(flavor, FLAVORS['silly'])}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
+- STAYS ON TOPIC: build images from the idea's own subject first (mitochondria → a tiny power plant,
+  ATP → glowing batteries, a court case → a judge's gavel) or things that naturally belong with it.
+  Use a sound-alike only for a word with no natural picture, and choose one that still fits the topic or
+  the place. Don't fill the scene with random objects that have nothing to do with the idea,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
 - number images come ON TOP of the key terms, never instead of them: the main subject (the planet, the
@@ -284,7 +288,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v9", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v10", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
@@ -370,13 +374,13 @@ key words impossible to miss. Technique for this kind of idea ({kind}): {TECHNIQ
 {scene_rules(flavor)}""",
             _obj(scene=STRING, hook=STRING, imagePrompt=STRING),
         )
-    return cached_json(["weirder-v5", models["text"], fact, kind, label, scene, level, flavor], produce)
+    return cached_json(["weirder-v6", models["text"], fact, kind, label, scene, level, flavor], produce)
 
 
 def weirder_scenes(stops: list[dict], flavor: str = "silly") -> list[dict]:
     """Weirder scenes for several missed stops in one call (end of a quiz). Each stop:
     {fact, label, scene, level, kind}. Results already cached are reused."""
-    keys = [["weirder-v5", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
+    keys = [["weirder-v6", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
     results = [None] * len(stops)
     todo = []
     for i, key in enumerate(keys):

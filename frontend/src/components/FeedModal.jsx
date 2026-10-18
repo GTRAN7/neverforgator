@@ -59,11 +59,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
   const finished = fed && !writing;
   const hasScans = palace.rooms.some((r) => r.type === 'splat');
 
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // It only closes with the × or Done: a click outside or Escape could throw away notes you're writing.
 
   // add: keep the current friends and hatch the notes as new ones next to them.
   async function hatch({ replace = false, add = false } = {}) {
@@ -97,7 +93,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop">
       {CONFETTI.map(([x, y], i) => (
         <span key={i} className={`confetti ${i % 2 ? 'strip' : 'dot'}`}
           style={{ left: `${x}%`, top: `${y}%`, background: CONFETTI_COLORS[i % 5], transform: `rotate(${i * 37}deg)` }} />
@@ -116,7 +112,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
           </div>
 
           {writing ? <Hatching /> : finished ? (
-            <Ready palace={palace} report={report} onWander={onDone} onQuiz={onQuiz} onAgain={() => setFed(false)} />
+            <Ready palace={palace} report={report} onWander={onDone} onQuiz={onQuiz} onAgain={() => setFed(false)} onClose={onClose} />
           ) : (
             <>
             <div className="field-label-row">
@@ -251,7 +247,7 @@ function Hatching() {
 }
 
 // Done: impossible to miss, with the next step right there.
-function Ready({ palace, report, onWander, onQuiz, onAgain }) {
+function Ready({ palace, report, onWander, onQuiz, onAgain, onClose }) {
   const friends = palace.spots.filter((s) => s.fact).length;
   const rooms = new Set(palace.spots.filter((s) => s.fact).map((s) => s.roomId)).size;
   return (
@@ -269,6 +265,7 @@ function Ready({ palace, report, onWander, onQuiz, onAgain }) {
         <button className="btn ghost" onClick={onQuiz}>Quiz me right away</button>
         <button className="btn ghost" onClick={onAgain}>Change the notes</button>
       </div>
+      <button className="btn ink" onClick={onClose}>Done</button>
     </div>
   );
 }
