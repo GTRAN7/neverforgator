@@ -645,7 +645,22 @@ input, textarea {
 
 /* ---------- sign-in landing (src/App.jsx) ---------- */
 .landing { position: fixed; inset: 0; overflow: auto; }
-.landing-loading { position: relative; margin: 40vh auto 0; text-align: center; font-weight: 800; font-size: calc(20px * var(--text-scale)); }
+.landing-loading { position: relative; margin: 40vh auto 0; text-align: center; font-weight: 800; font-size: calc(24px * var(--text-scale)); }
+.loading-state { display: flex; justify-content: center; align-items: baseline; gap: 8px; }
+.loading-dots { display: inline-flex; gap: 5px; align-items: end; height: 1em; }
+.loading-dots i {
+  display: block; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+  animation: loading-dot-bounce 0.9s ease-in-out infinite;
+}
+.loading-dots i:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes loading-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-7px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i { animation: none; }
+}
 .landing-content {
   position: relative;
   min-height: 100%;

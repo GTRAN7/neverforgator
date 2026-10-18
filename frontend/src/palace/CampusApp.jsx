@@ -50,7 +50,14 @@ function App() {
     return (
       <main className="landing">
         <Sky night={night} />
-        <p className="landing-loading">Loading…</p>
+        <p className="landing-loading loading-state">
+          <span>Loading</span>
+          <span className="loading-dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        </p>
       </main>
     )
   }
