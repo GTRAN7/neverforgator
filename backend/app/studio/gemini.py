@@ -206,9 +206,28 @@ imagePrompt: the same scene described visually in one paragraph (subject, action
 def split_notes(notes: str) -> list[dict]:
     """How many stops do these notes need? One per idea, where an idea is what fits in one
     picture. Returns [{text, kind, keyTerms}]."""
+    return _split(notes)["ideas"]
+
+
+def notes_topic(notes: str) -> str:
+    """A short title for the notes ("The Bill of Rights"), from the same Gemini call as the split."""
+    return _split(notes)["title"]
+
+
+def _first_line_title(notes: str) -> str:
+    line = next((l.strip() for l in notes.splitlines() if l.strip()), "My notes")
+    return re.sub(r"[:.\s]+$", "", line)[:60] or "My notes"
+
+
+def _split(notes: str) -> dict:
+    # Notes split before titles existed: reuse that split (no new Gemini call), title from line 1.
+    older = lookup_json(["split-v5", models["text"], notes])
+    if older is not None:
+        return {"title": _first_line_title(notes), "ideas": older}
+
     def produce():
         if MOCK:
-            return _mock_split(notes)
+            return {"title": _first_line_title(notes), "ideas": _mock_split(notes)}
         result = _generate_json(
             f'''You coach memory athletes. A student will store these notes in a memory palace, one idea per stop.
 
@@ -230,13 +249,15 @@ what they did, a number and what it counts.
 For each idea also give:
 - kind: {", ".join(IDEA_KINDS)}. Use "name" whenever the thing to remember is mainly a person's or
   place's name (even in an ordered list: "the 3rd president was Thomas Jefferson" is a name).
-- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).''',
-            _obj(ideas={"type": "array", "items": _obj(
+- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).
+Also give the notes a title: the topic in 2-6 words, like a chapter title ("The Bill of Rights",
+"Cell organelles").''',
+            _obj(title=STRING, ideas={"type": "array", "items": _obj(
                 text=STRING, kind={"type": "string", "enum": IDEA_KINDS},
                 keyTerms={"type": "array", "items": STRING})}),
         )
-        return result["ideas"][:MAX_IDEAS]
-    return cached_json(["split-v5", models["text"], notes], produce)
+        return {"title": result["title"].strip()[:60] or _first_line_title(notes), "ideas": result["ideas"][:MAX_IDEAS]}
+    return cached_json(["split-v6", models["text"], notes], produce)
 
 
 SCENE_BATCH = 5  # scenes are written in parallel batches: much faster than one long answer

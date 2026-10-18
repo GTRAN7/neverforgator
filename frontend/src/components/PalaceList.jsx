@@ -38,6 +38,9 @@ function PalaceListContent() {
   const sample = palaces?.find((p) => p.sample);
   const routes = palaces?.filter((p) => p.template && !p.sample && p !== builtIn) ?? [];
   const mine = palaces?.filter((p) => p.mine && !p.template) ?? [];
+  // Your places: each place you've set up (photos + stops), once, from its newest palace. A new
+  // topic there reuses everything, so you don't name it or upload the photos again.
+  const places = [...new Map(mine.filter((p) => p.roomCount > 0).map((p) => [p.place, p])).values()];
 
   async function run(what, action) {
     setBusy(what);
@@ -48,6 +51,10 @@ function PalaceListContent() {
       setError(e.message);
       setBusy(null);
     }
+  }
+
+  function newTopicIn(palace) {
+    run(`place-${palace.id}`, async () => openPalace((await api.copyPalace(palace.id)).id, 'feed'));
   }
 
   function handleCreate(event) {
@@ -139,8 +146,27 @@ function PalaceListContent() {
       )}
 
       <form className="create-card" onSubmit={handleCreate}>
+        {places.length > 0 && (
+          <>
+            <span className="field-label">Or use one of your places</span>
+            <ul className="place-list">
+              {places.map((p) => (
+                <li key={p.place} className="place-card">
+                  <div className="place-photo" style={p.cover ? { backgroundImage: `url(${fileUrl(p.id, p.cover)})` } : undefined} />
+                  <div className="place-text">
+                    <strong>{p.place}</strong>
+                    <span>{p.roomCount} room{p.roomCount === 1 ? '' : 's'} · {p.spotCount} stop{p.spotCount === 1 ? '' : 's'}</span>
+                  </div>
+                  <button type="button" className="btn accent small" disabled={Boolean(busy)} onClick={() => newTopicIn(p)}>
+                    {busy === `place-${p.id}` ? 'Setting up…' : 'New topic here'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
         <label htmlFor="palace-name" className="field-label">
-          {builtIn ? 'Or use a place you know by heart (your room, your apartment…)' : 'Start a new palace in a place you know'}
+          {places.length ? 'Or add a new place' : builtIn ? 'Or use a place you know by heart (your room, your apartment…)' : 'Start a new palace in a place you know'}
         </label>
         <div className="create-row">
           <input id="palace-name" className="pill-input" value={name} maxLength={80} onChange={(e) => setName(e.target.value)}
@@ -177,9 +203,11 @@ function PalaceListContent() {
                   <>
                     <a href={`#/palace/${p.id}`}>
                       <Creature number={p.id} />
-                      <strong>{p.name}</strong>
-                      <span>{p.roomCount} room{p.roomCount === 1 ? '' : 's'} · {p.friendCount} friend{p.friendCount === 1 ? '' : 's'}</span>
-                      {p.friendCount > 0 && p.nextReviewAt && <ReviewChip at={p.nextReviewAt} />}
+                      <span className="palace-title">
+                        <strong>{p.name}</strong>
+                        {p.place && p.place !== p.name && <small>in {p.place}</small>}
+                      </span>
+                      <span>{p.friendCount} friend{p.friendCount === 1 ? '' : 's'}</span>
                     </a>
                     <details className="more-menu">
                       <summary aria-label={`More for ${p.name}`}>⋯</summary>
@@ -200,13 +228,6 @@ function PalaceListContent() {
       )}
     </div>
   );
-}
-
-// Spaced review: is it time to walk this palace again?
-function ReviewChip({ at }) {
-  const days = (new Date(at) - Date.now()) / 86400000;
-  if (days <= 0) return <span className="chip yellow tiny">review due</span>;
-  return <span className="chip tiny">review in {days < 1 ? `${Math.max(1, Math.round(days * 24))}h` : `${Math.round(days)}d`}</span>;
 }
 
 // The page sits in front of campus mode's sky (with the castle: your memory palace).

@@ -37,7 +37,7 @@ def system_user(db) -> User:
 
 
 def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **fields) -> Palace:
-    palace = Palace(user_id=owner.id, title=title, template=True, **fields)
+    palace = Palace(user_id=owner.id, title=title, place="Reitz Union", template=True, **fields)
     db.add(palace)
     db.flush()
     folder = palace_dir(palace.id)

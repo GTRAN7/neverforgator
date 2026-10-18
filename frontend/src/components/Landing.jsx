@@ -14,7 +14,7 @@ const STEPS = [
   },
   {
     title: 'Wander, then quiz',
-    text: 'Walk the route and meet each friend, then quiz yourself. Forgotten friends dream up weirder scenes, and it tells you when to walk it again.',
+    text: 'Walk the route and meet each friend, then quiz yourself. Forgotten friends dream up weirder scenes, so next time they stick.',
   },
 ];
 

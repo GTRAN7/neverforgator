@@ -1038,3 +1038,17 @@ button { font: inherit; color: inherit; }
 .spot-image-wrap { position: relative; display: block; overflow: hidden; border-radius: 3px; }
 .spot-image-wrap .spot-image { height: 100%; }
 .spot-image-wrap .redraw { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); white-space: nowrap; }
+
+/* ---- Home: your places ("New topic here") ---- */
+.place-list { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 8px; }
+.place-card {
+  display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px;
+  border: 2px solid var(--line); background: var(--paper);
+}
+.place-photo { flex: none; width: 76px; height: 48px; border-radius: 10px; background: var(--room) center / cover no-repeat; }
+.place-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.place-text strong { font: 600 calc(16px * var(--ts)) var(--display); }
+.place-text span { font-size: calc(13px * var(--ts)); color: var(--muted); }
+.palace-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.palace-title small { font-size: calc(12px * var(--ts)); color: var(--muted); }
+.palace-title { color: var(--ink); }
