@@ -23,16 +23,18 @@ export default function SpotCard({ palace, spot, number, moving, onRename, onMov
           <button className="round-btn small" aria-label="More actions" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>⋯</button>
         )}
         <button className="round-btn small" aria-label="Close" onClick={onClose}>×</button>
-        {menu && (
-          <div className="card-menu" role="menu">
-            <button role="menuitem" onClick={pick(onMoveStart)}>Move to another object</button>
-            {spot.fact && <button role="menuitem" onClick={pick(() => setEditing(true))}>Edit the idea</button>}
-            <button role="menuitem" disabled={number === 1} onClick={pick(() => onShift(-1))}>Earlier in the path</button>
-            <button role="menuitem" disabled={last} onClick={pick(() => onShift(1))}>Later in the path</button>
-            <button role="menuitem" className="danger" onClick={pick(onRemove)}>Delete this stop</button>
-          </div>
-        )}
       </div>
+
+      {/* The menu opens inside the card (a dropdown got cut off by the card's edge). */}
+      {menu && (
+        <div className="card-menu inline" role="menu">
+          <button role="menuitem" onClick={pick(onMoveStart)}>Move to another object</button>
+          {spot.fact && <button role="menuitem" onClick={pick(() => setEditing(true))}>Edit the idea</button>}
+          <button role="menuitem" disabled={number === 1} onClick={pick(() => onShift(-1))}>Earlier in the path</button>
+          <button role="menuitem" disabled={last} onClick={pick(() => onShift(1))}>Later in the path</button>
+          <button role="menuitem" className="danger" onClick={pick(onRemove)}>Delete this stop</button>
+        </div>
+      )}
 
       <div className="spot-card-place">
         {spot.crop && <img className="spot-crop" src={fileUrl(palace.id, spot.crop)} alt="" />}

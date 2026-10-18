@@ -16,7 +16,7 @@ export async function startInBuiltIn(palaces) {
   openPalace((await api.copyPalace(builtIn.id)).id, 'feed');
 }
 
-// The finished mitosis example, opened in Wander.
+// The finished example (the Bill of Rights), opened in Wander.
 export async function openSample(palaces) {
   const list = palaces ?? await api.listPalaces();
   const sample = list.find((p) => p.sample);

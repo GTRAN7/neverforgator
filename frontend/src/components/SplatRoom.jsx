@@ -38,6 +38,7 @@ export default function SplatRoom({ url, flipped, onPlace, onStatus }) {
   useEffect(() => {
     let cancelled = false;
     const mesh = new SplatMesh({ url });
+    mesh.userData.room = true; // friends dragged in Build land on it (Viewer.jsx)
     mesh.rotation.x = flipped ? Math.PI : 0;
     setSplat(mesh);
     onStatus('Loading 3D scan…');
@@ -65,7 +66,7 @@ export default function SplatRoom({ url, flipped, onPlace, onStatus }) {
     if (loaded.current) moveToCenter(splat);
   }, [flipped, splat]);
 
-  const handleClick = usePlaceHandler(onPlace, (e) => ({
+  const placeHandlers = usePlaceHandler(onPlace, (e) => ({
     point: e.point.toArray(),
     viewFrom: camera.position.toArray(),
   }));
@@ -75,7 +76,7 @@ export default function SplatRoom({ url, flipped, onPlace, onStatus }) {
     <>
       <primitive object={spark} />
       {/* Many exports are upside down; the room's "flip" setting turns it over (see the effect above). */}
-      <primitive object={splat} onClick={handleClick} />
+      <primitive object={splat} {...placeHandlers} />
     </>
   );
 }

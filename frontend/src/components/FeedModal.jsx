@@ -30,7 +30,9 @@ const CONFETTI_COLORS = ['#F08A6C', '#7FA98B', '#FFD86B', '#8CCBFF', '#FF9EC4'];
 // "Feed your palace": paste notes → Gemini cuts them into ideas (one picture each), gives each
 // idea its own stop and writes a scene for it. Pictures are drawn later, when you first wander
 // past a friend, so you only pay for the ones you actually study.
-export default function FeedModal({ palace, setPalace, onClose, onDone }) {
+// onDone: go wander. onQuiz: go to the quiz. onReady(palace): the fill finished (the editor tells
+// you even if you closed this window while it was working).
+export default function FeedModal({ palace, setPalace, images, onClose, onDone, onQuiz, onReady }) {
   const [notes, setNotes] = useState(palace.notes ?? '');
   const [style, setStyle] = useState(() => palace.style ?? readPrefs().style);
   const [writing, setWriting] = useState(false); // waiting for Gemini to write the scenes
@@ -65,8 +67,12 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
     setError('');
     setWriting(true);
     try {
-      setPalace(await api.fill(palace.id, notes, style, readPrefs().flavor));
+      const updated = await api.fill(palace.id, notes, style, readPrefs().flavor);
+      setPalace(updated);
       setFed(true);
+      onReady?.(updated);
+      // Start drawing the first friends' pictures now, so they're ready when you start walking.
+      images?.enqueue(updated.spots.filter((s) => s.imagePrompt && !s.image).slice(0, 4).map((s) => s.id));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -101,40 +107,42 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
             </button>
           </div>
 
-          <div className="field-label-row">
-            <label htmlFor="notes" className="field-label">Paste what you need to remember</label>
-            <button className="link" onClick={() => setNotes(SAMPLE_NOTES)}>try sample notes</button>
-          </div>
-          <textarea id="notes" className="notes" value={notes} maxLength={NOTES_CAP} onChange={(e) => setNotes(e.target.value)}
-            placeholder="Paste your study notes here, or use one of the buttons below to snap or talk them in…" />
-          <NotesImport onText={addText} scansLeft={left('import')} onUsed={refreshUsage}
-            counter={
-              <span className={`char-count ${notes.length > NOTES_CAP * 0.9 ? 'near' : ''}`}>
-                {notes.length.toLocaleString()} / {NOTES_CAP.toLocaleString()}
-              </span>
-            } />
-
-          <div className="style-line" role="radiogroup" aria-label="Picture style">
-            <span className="field-label">Pictures</span>
-            {STYLES.map((s) => (
-              <button key={s.id} role="radio" aria-checked={style === s.id}
-                className={`style-btn small ${style === s.id ? 'on' : ''}`} onClick={() => setStyle(s.id)}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-
-          {error && <p className="error-text">{error}</p>}
-
-          {finished ? (
-            <button className="btn accent big" onClick={onDone}>Go wander →</button>
+          {writing ? <Hatching /> : finished ? (
+            <Ready palace={palace} report={report} onWander={onDone} onQuiz={onQuiz} onAgain={() => setFed(false)} />
           ) : (
-            <button className="btn accent big" disabled={!notes.trim() || writing || !palace.rooms.length || left('fill') === 0} onClick={hatch}>
-              <Sparkle size={20} /> {writing ? 'Hatching… (finding stops and writing scenes)' : 'Hatch my palace'}
+            <>
+            <div className="field-label-row">
+              <label htmlFor="notes" className="field-label">Paste what you need to remember</label>
+              <button className="link" onClick={() => setNotes(SAMPLE_NOTES)}>try sample notes</button>
+            </div>
+            <textarea id="notes" className="notes" value={notes} maxLength={NOTES_CAP} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Paste your study notes here, or use one of the buttons below to snap or talk them in…" />
+            <NotesImport onText={addText} scansLeft={left('import')} onUsed={refreshUsage}
+              counter={
+                <span className={`char-count ${notes.length > NOTES_CAP * 0.9 ? 'near' : ''}`}>
+                  {notes.length.toLocaleString()} / {NOTES_CAP.toLocaleString()}
+                </span>
+              } />
+
+            <div className="style-line" role="radiogroup" aria-label="Picture style">
+              <span className="field-label">Pictures</span>
+              {STYLES.map((s) => (
+                <button key={s.id} role="radio" aria-checked={style === s.id}
+                  className={`style-btn small ${style === s.id ? 'on' : ''}`} onClick={() => setStyle(s.id)}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {error && <p className="error-text">{error}</p>}
+
+            <button className="btn accent big" disabled={!notes.trim() || !palace.rooms.length || left('fill') === 0} onClick={hatch}>
+              <Sparkle size={20} /> Hatch my palace
             </button>
-          )}
-          {left('fill') !== null && !finished && (
-            <span className="hint-text center-text">{left('fill')} of {usage.fill.limit} fills left today · takes about half a minute</span>
+            {left('fill') !== null && (
+              <span className="hint-text center-text">{left('fill')} of {usage.fill.limit} fills left today · takes about half a minute</span>
+            )}
+            </>
           )}
         </div>
 
@@ -164,9 +172,6 @@ export default function FeedModal({ palace, setPalace, onClose, onDone }) {
               );
             })}
           </ol>
-          {writing && (
-            <p className="scrawl">reading your notes, finding stops in your rooms, writing a scene for each…</p>
-          )}
           {finished && report && <FillReport report={report} hasScans={hasScans} />}
         </div>
       </div>
@@ -197,6 +202,49 @@ function FillReport({ report, hasScans }) {
           </ul>
         </>
       )}
+    </div>
+  );
+}
+
+// While Gemini works: what's happening, and how long it's been (it can take half a minute).
+const STAGES = ['Reading your notes…', 'Cutting them into ideas…', 'Finding stops in your rooms…', 'Writing a weird scene for each stop…', 'Almost there…'];
+
+function Hatching() {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const stage = STAGES[Math.min(STAGES.length - 1, Math.floor(seconds / 6))];
+  return (
+    <div className="hatching-panel" role="status" aria-live="polite">
+      <div className="hatching-eggs" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((n) => <Creature key={n} number={n} state="hatching" size="md" />)}
+      </div>
+      <h3 className="card-title big">Hatching your palace</h3>
+      <p className="hatching-stage">{stage}</p>
+      <p className="hint-text">{seconds}s · a whole chapter takes about half a minute. You can keep this open or close it; we’ll tell you when it’s ready.</p>
+    </div>
+  );
+}
+
+// Done: impossible to miss, with the next step right there.
+function Ready({ palace, report, onWander, onQuiz, onAgain }) {
+  const friends = palace.spots.filter((s) => s.fact).length;
+  const rooms = new Set(palace.spots.filter((s) => s.fact).map((s) => s.roomId)).size;
+  return (
+    <div className="ready-panel" role="status" aria-live="polite">
+      <div className="hatching-eggs" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((n) => <Creature key={n} number={n} state="happy" size="md" />)}
+      </div>
+      <h3 className="card-title huge">Your palace is ready!</h3>
+      <p>{friends} friend{friends === 1 ? '' : 's'} hatched across {rooms} room{rooms === 1 ? '' : 's'}.
+        {report?.waiting?.length ? ` ${report.waiting.length} more idea${report.waiting.length === 1 ? '' : 's'} need a stop (see the right).` : ''}</p>
+      <button className="btn accent big" autoFocus onClick={onWander}>Go wander and meet them →</button>
+      <div className="btn-row">
+        <button className="btn ghost" onClick={onQuiz}>Quiz me right away</button>
+        <button className="btn ghost" onClick={onAgain}>Change the notes</button>
+      </div>
     </div>
   );
 }

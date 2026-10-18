@@ -12,6 +12,7 @@ import SpotCard from './SpotCard.jsx';
 import Creature, { Sparkle } from './Creature.jsx';
 import Logo from './Logo.jsx';
 import AccountMenu from './AccountMenu.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import { useAccount } from '../lib/account.js';
 
 const MODES = [
@@ -30,7 +31,8 @@ export default function PalaceEditor({ palaceId, startAction }) {
   const [focusId, setFocusId] = useState(null); // the spot the camera turns to
   const [selectedId, setSelectedId] = useState(null); // the highlighted spot
   const [inspecting, setInspecting] = useState(false); // Build: the selected spot's card is open
-  const [movingId, setMovingId] = useState(null); // Build: the next click in the room moves this spot
+  const [movingId, setMovingId] = useState(null);
+  const [wanderClosed, setWanderClosed] = useState(false); // Wander: the friend's card was closed // Build: the next click in the room moves this spot
   const [feeding, setFeeding] = useState(false); // "Fill from notes" modal open
   const [quizResults, setQuizResults] = useState(null); // { spotId: true/false } once a quiz starts
   const [friendPicker, setFriendPicker] = useState(null); // set while the quiz asks "where did you put X?"
@@ -40,6 +42,19 @@ export default function PalaceEditor({ palaceId, startAction }) {
   const account = useAccount();
   const [roomBanner, setRoomBanner] = useState(null); // "walking into Room 2" for a moment after changing rooms
   const lastRoom = useRef(null);
+  const sceneRef = useRef(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // The room view can fill the screen (its cards and hints go with it). Esc also leaves.
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === sceneRef.current && !!sceneRef.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else sceneRef.current?.requestFullscreen().catch((e) => setError(`Couldn't go full screen: ${e.message}`));
+  };
 
   // Changing rooms: show where you're walking to, so the route feels like one walk.
   useEffect(() => {
@@ -79,6 +94,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
 
   // Walk to a spot, switching rooms if it's in another one.
   const goToSpot = useCallback((spot) => {
+    setWanderClosed(false); // going to a friend shows its card again
     setRoomId(spot.roomId);
     setFocusId(spot.id);
     setSelectedId(spot.id);
@@ -92,6 +108,21 @@ export default function PalaceEditor({ palaceId, startAction }) {
   }, []);
 
   const closeFeed = useCallback(() => setFeeding(false), []);
+
+  // A fill finished. If its window was closed meanwhile, say so in the room; if the tab is in the
+  // background, say so in the tab title until you come back.
+  const [readyBanner, setReadyBanner] = useState(false);
+  const feedingNow = useRef(feeding);
+  feedingNow.current = feeding;
+  const palaceReady = useCallback(() => {
+    if (!feedingNow.current) setReadyBanner(true);
+    if (document.hidden) {
+      const title = document.title;
+      document.title = '✓ Your palace is ready · NeverForgator';
+      const restore = () => { document.title = title; document.removeEventListener('visibilitychange', restore); };
+      document.addEventListener('visibilitychange', restore);
+    }
+  }, []);
 
   if (!palace) return <div className="center">{error || 'Loading…'}</div>;
 
@@ -143,10 +174,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
     if (movingId) {
       const id = movingId;
       setMovingId(null);
-      run('Moving…', async () => {
-        updateSpot(await api.moveSpot(palace.id, id, { ...placement }));
-        api.labelSpot(palace.id, id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
-      });
+      moveTo(id, placement);
       return;
     }
     if (inspecting) {
@@ -160,6 +188,22 @@ export default function PalaceEditor({ palaceId, startAction }) {
       // Gemini names it in the background; if that fails, the user can type a name.
       api.labelSpot(palace.id, spot.id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
     });
+  }
+
+  // Move a spot ("Move it", or dragging it in the room). It's on a new object now, so Gemini renames it.
+  function moveTo(id, placement) {
+    run('Moving…', async () => {
+      updateSpot(await api.moveSpot(palace.id, id, { ...placement }));
+      api.labelSpot(palace.id, id).then(updateSpot).catch((e) => console.error('Naming failed:', e));
+    });
+  }
+
+  // A friend dropped somewhere new: show it there right away, then save.
+  function dropSpot(spot, placement) {
+    const { crop: _crop, ...where } = placement;
+    updateSpot({ ...spot, direction: null, point: null, viewFrom: null, ...where });
+    setMovingId(null);
+    moveTo(spot.id, placement);
   }
 
   function moveSpot(index, delta) {
@@ -208,7 +252,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
       <header className="topbar">
         <div className="brand">
           <Logo href="#/" />
-          <span className="scrawl palace-name">{palace.name}</span>
+          <span className="scrawl palace-name">{palace.name}{palace.place && palace.place !== palace.name ? ` · in ${palace.place}` : ''}</span>
           {mock && <span className="chip yellow tiny" title="Set GEMINI_API_KEY in .env for real AI">mock AI</span>}
         </div>
 
@@ -240,6 +284,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
               <Sparkle /> Fill from notes
             </button>
           )}
+          <SettingsMenu />
           <AccountMenu account={account} />
         </div>
       </header>
@@ -251,7 +296,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
         )}
 
         <main className="stage">
-          <div className="scene-frame">
+          <div className="scene-frame" ref={sceneRef}>
             {room ? (
               <Viewer
                 key={room.id}
@@ -261,7 +306,9 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 focusSpot={focusSpot}
                 visitedUpTo={visitedUpTo}
                 onPlace={mode === 'build' && !palace.readOnly ? handlePlace : undefined}
+                onRoomClick={mode === 'wander' ? () => setWanderClosed(true) : undefined}
                 onFriendClick={handleFriendClick}
+                onMoveFriend={mode === 'build' && !palace.readOnly ? dropSpot : undefined}
               />
             ) : (
               <div className="center empty-room">
@@ -269,6 +316,17 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 <p className="card-title">Start with a room you know by heart</p>
                 <p className="scrawl">a 360° photo, a phone panorama, or a 3D scan</p>
               </div>
+            )}
+
+            {room && document.fullscreenEnabled && (
+              <button className="fullscreen-btn" onClick={toggleFullscreen}
+                aria-label={fullscreen ? 'Exit full screen' : 'Full screen'} title={fullscreen ? 'Exit full screen (Esc)' : 'Full screen'}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  {fullscreen
+                    ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                    : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
+                </svg>
+              </button>
             )}
 
             <div className="bunting" aria-hidden="true">
@@ -280,7 +338,7 @@ export default function PalaceEditor({ palaceId, startAction }) {
             {mode === 'build' && room && (
               <>
                 <span className="scene-hint">
-                  {movingId ? 'Click where this stop should go' : inspected ? 'Click the room to close the card' : 'Click your room to plant an egg · click an egg to open it'}
+                  {movingId ? 'Click where this stop should go' : inspected ? 'Click the room to close the card' : 'Click your room to plant an egg · click an egg to open it · drag an egg to move it'}
                 </span>
                 {inspected && (
                   <SpotCard palace={palace} spot={inspected} number={numberOf(inspected)} moving={movingId === inspected.id}
@@ -295,8 +353,12 @@ export default function PalaceEditor({ palaceId, startAction }) {
                 )}
               </>
             )}
-            {mode === 'wander' && (
+            {mode === 'wander' && wanderClosed && (
+              <span className="scene-hint">Look around · click a friend to see its card again</span>
+            )}
+            {mode === 'wander' && !wanderClosed && (
               <WanderCard palace={palace} images={images} selectedId={selectedId} goToSpot={goToSpot}
+                onClose={() => setWanderClosed(true)}
                 onQuiz={() => switchMode('quiz')} onFeed={() => setFeeding(true)} />
             )}
             {mode === 'quiz' && (
@@ -315,7 +377,14 @@ export default function PalaceEditor({ palaceId, startAction }) {
             )}
 
             {roomBanner && room?.id === roomBanner && (
-              <div key={roomBanner} className="room-banner">walking into <strong>{room.name}</strong></div>
+              <div key={`banner-${roomBanner}`} className="room-banner">walking into <strong>{room.name}</strong></div>
+            )}
+            {readyBanner && (
+              <div className="ready-banner" role="status">
+                <span>🎉 Your palace is ready!</span>
+                <button className="btn accent small" onClick={() => { setReadyBanner(false); switchMode('wander'); }}>Go wander →</button>
+                <button className="round-btn small" aria-label="Dismiss" onClick={() => setReadyBanner(false)}>×</button>
+              </div>
             )}
             {(busy || error) && (
               <div className={`toast ${error ? 'error' : ''}`} onClick={() => setError('')}>{error || busy}</div>
@@ -323,14 +392,22 @@ export default function PalaceEditor({ palaceId, startAction }) {
           </div>
 
           {mode === 'build' && (
-            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run} />
+            // A shared palace (the built-in route, the sample) can't be changed: just switch rooms there.
+            <RoomStrip palace={palace} setPalace={setPalace} room={room} setRoomId={setRoomId} run={run}
+              browse={palace.readOnly} />
+          )}
+          {mode === 'wander' && palace.rooms.length > 1 && (
+            // Look around other rooms; the friend's card closes, since that friend isn't there.
+            <RoomStrip palace={palace} room={room} browse
+              setRoomId={(id) => { if (id !== room?.id) setWanderClosed(true); setRoomId(id); }} />
           )}
         </main>
       </div>
 
       {feeding && (
-        <FeedModal palace={palace} setPalace={setPalace} onClose={closeFeed}
-          onDone={() => { setFeeding(false); switchMode('wander'); }} />
+        <FeedModal palace={palace} setPalace={setPalace} images={images} onClose={closeFeed} onReady={palaceReady}
+          onDone={() => { setFeeding(false); switchMode('wander'); }}
+          onQuiz={() => { setFeeding(false); switchMode('quiz'); }} />
       )}
     </div>
   );

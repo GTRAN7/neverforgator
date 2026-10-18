@@ -1,8 +1,9 @@
 import { useFileDrop } from '../useFileDrop'
+import { Avatar } from './AccountMenu'
 
 // Full-screen route map, like Blueprint's hamburger menu.
 
-export default function MenuOverlay({ locations, index, account, title, onRename, onExit, onGo, onMove, onAdd, onAddPhotos, onExport, onImport, onReset, onClose }) {
+export default function MenuOverlay({ locations, index, account, title, onRename, onExit, onGo, onMove, onAdd, onAddPhotos, onExport, onImport, onReset, onSaveAccount, accountSavedAt, savingAccount, onReplayTour, onClose }) {
   const drop = useFileDrop(onAddPhotos, { multiple: true })
   return (
     <div className="menu" role="dialog" aria-label="Palace map">
@@ -17,8 +18,14 @@ export default function MenuOverlay({ locations, index, account, title, onRename
       <div className="account">
         {account.user ? (
           <>
-            {account.user.picture && <img className="avatar" src={account.user.picture} alt="" />}
+            <Avatar user={account.user} large />
             <span><b>{account.user.name}</b><br /><span className="muted">{account.user.email}</span></span>
+            {onSaveAccount && (
+              <button className="btn btn-small" disabled={savingAccount} onClick={onSaveAccount}
+                title={accountSavedAt ? `Last saved ${new Date(accountSavedAt).toLocaleString()}` : 'Keep a copy of this palace in your account'}>
+                {savingAccount ? 'Saving…' : accountSavedAt ? 'Update account copy' : 'Save to account'}
+              </button>
+            )}
             <button className="btn btn-small btn-ghost" onClick={account.logout}>Log out</button>
           </>
         ) : (
@@ -51,6 +58,7 @@ export default function MenuOverlay({ locations, index, account, title, onRename
         <button className="btn btn-ghost" onClick={onExport}>Export</button>
         <label className="btn btn-ghost">Import<input type="file" accept="application/json" hidden onChange={e => e.target.files[0] && onImport(e.target.files[0])} /></label>
         <button className="btn btn-ghost" onClick={onReset}>Reset palace</button>
+        {onReplayTour && <button className="btn btn-ghost" onClick={onReplayTour}>Replay tutorial tour</button>}
       </div>
     </div>
   )

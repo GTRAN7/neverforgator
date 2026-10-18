@@ -226,7 +226,7 @@ export default function AppearancePanel({ look, night, onChange, onPickSkyPhoto,
           Upload or drop a cursor image
           <input type="file" accept="image/*" hidden onChange={e => { if (e.target.files[0]) onPickCursor(e.target.files[0]); e.target.value = '' }} />
         </label>
-        <p className="hint">Hover the options to try them. Small PNGs with a transparent background work best.</p>
+        <p className="hint">Hover over the options to try them. Small PNGs with a transparent background work best.</p>
       </details>
 
       <footer className="drawer-save">

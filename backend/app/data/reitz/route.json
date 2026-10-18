@@ -2,17 +2,12 @@
  "name": "Reitz Union",
  "rooms": [
   {
-   "name": "Room 1",
+   "name": "Reitz lobby",
    "type": "panorama",
    "file": "room-74b87794.jpg"
   },
   {
-   "name": "Room 2",
-   "type": "panorama",
-   "file": "room-14ab69da.jpg"
-  },
-  {
-   "name": "Room 3",
+   "name": "Reitz outdoors",
    "type": "panorama",
    "file": "room-acfb93d8.jpg"
   }
@@ -137,16 +132,6 @@
    ],
    "label": "seating area",
    "crop": null
-  },
-  {
-   "room": 1,
-   "direction": [
-    0.8593552665488432,
-    -0.18125738545069,
-    -0.4781780903328245
-   ],
-   "label": "chess piece",
-   "crop": "crop-84147741.jpg"
   }
  ]
 }

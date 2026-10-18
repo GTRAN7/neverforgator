@@ -152,7 +152,9 @@ class NameIn(BaseModel):
 
 @router.post("/palaces", status_code=201)
 def create_palace(body: NameIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    palace = Palace(user_id=user.id, title=body.name.strip()[:80] or "My palace")
+    place = body.name.strip()[:80] or "My place"
+    # Named after its place until it's filled; then after its topic (see fill.py).
+    palace = Palace(user_id=user.id, title=place, place=place)
     db.add(palace)
     db.commit()
     return palace_json(load_palace(db, palace.id, user), user)
@@ -184,7 +186,8 @@ def delete_palace(palace_id: int, user: User = Depends(get_current_user), db: Se
 def copy_palace(db: Session, source: Palace, owner: User) -> Palace:
     """A copy with the same rooms and stops (positions and names), but no facts yet.
     Files are hard-linked, so a 95 MB scan isn't duplicated per user."""
-    copy = Palace(user_id=owner.id, title=source.title, copied_from=source.id)
+    place = source.place or source.title
+    copy = Palace(user_id=owner.id, title=place, place=place, copied_from=source.id)
     db.add(copy)
     db.flush()
     src_dir, dst_dir = palace_dir(source.id), palace_dir(copy.id)
@@ -262,6 +265,22 @@ def update_room(palace_id: int, room_id: int, body: RoomPatch,
         room.name = body.name.strip()[:40] or room.name
     if body.flipped is not None:
         room.flipped = body.flipped
+    return reload(db, palace, user)
+
+
+@router.put("/palaces/{palace_id}/rooms/order")
+def reorder_rooms(palace_id: int, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Reorder the rooms. Body: {ids: [roomId, ...]} in the new order. The walk goes room by room,
+    so the stops are renumbered to follow (keeping their order within each room)."""
+    palace = load_palace(db, palace_id, user, write=True)
+    by_id = {r.id: r for r in palace.rooms}
+    ids = body.get("ids") or []
+    if len(ids) != len(by_id) or set(ids) != set(by_id):
+        raise HTTPException(400, "Order must list every room exactly once")
+    for position, room_id in enumerate(ids):
+        by_id[room_id].position = position
+    place = {room_id: i for i, room_id in enumerate(ids)}
+    set_order(db, sorted(studio_stops(palace), key=lambda s: (place[s.room_id], s.stop_order)))
     return reload(db, palace, user)
 
 
@@ -366,7 +385,7 @@ def edit_idea(palace_id: int, spot_id: int, body: IdeaIn, user: User = Depends(g
     stop = load_stop(palace, spot_id)
     number = studio_stops(palace).index(stop) + 1
     idea = {"text": fact, "kind": stop.kind or "fact", "keyTerms": key_terms_of(fact)}
-    [item] = gemini.write_scenes([idea], [stop.label or f"spot {number}"], palace.flavor or "wild")
+    [item] = gemini.write_scenes([idea], [stop.label or f"spot {number}"], palace.flavor or "silly")
     stop.concept, stop.key_terms = fact, idea["keyTerms"]
     stop.association, stop.hook, stop.image_prompt = item["scene"], item["hook"], item["imagePrompt"]
     stop.image, stop.weirdness = None, 0
@@ -389,7 +408,7 @@ def delete_spot(palace_id: int, spot_id: int, user: User = Depends(get_current_u
 class FillIn(BaseModel):
     notes: str = ""
     style: str = "storybook"
-    flavor: str = "wild"
+    flavor: str = "silly"
 
 
 @router.post("/palaces/{palace_id}/fill", dependencies=[Depends(quota("fill"))])
@@ -401,30 +420,60 @@ def fill(palace_id: int, body: FillIn, user: User = Depends(get_current_user), d
     if len(notes) > CAPS["notesChars"]:
         raise HTTPException(400, f"Notes are capped at {CAPS['notesChars']:,} characters. Split them into two palaces.")
     style = body.style if body.style in gemini.PICTURE_STYLES else "storybook"
-    flavor = body.flavor if body.flavor in gemini.FLAVORS else "wild"
+    flavor = body.flavor if body.flavor in gemini.FLAVORS else "silly"
     palace = load_palace(db, palace_id, user, write=True)
     fill_palace(db, palace, notes, style, flavor)
     return reload(db, palace, user)
 
 
+def _draw(db: Session, palace: Palace, stops: list[PalaceStop]) -> list[dict]:
+    """Draw pictures for these stops (doodles: a few per Gemini call). A stand-in sketch (Gemini was
+    busy) is shown but not saved, so the real picture is tried again next time. Only call this for
+    palaces the user may change (shared palaces come with their pictures)."""
+    stops = [s for s in stops if s.image_prompt and not s.image]
+    style = palace.style or "storybook"
+    if gemini.PICTURES == "doodle":
+        names = gemini.generate_doodles([s.image_prompt for s in stops], style)
+        drawn = [(s, n, True) if n else (s, gemini._placeholder(s.image_prompt, style), False) for s, n in zip(stops, names)]
+    else:
+        drawn = []
+        for s in stops:
+            crop_path = palace_dir(palace.id) / s.crop if s.crop else None
+            crop = crop_path.read_bytes() if crop_path and crop_path.exists() else None
+            drawn.append((s, *gemini.generate_image(s.image_prompt, crop, style)))
+    out = []
+    for stop, name, final in drawn:
+        if final:
+            stop.image = name
+        out.append({**spot_json(stop), "image": name, "imageFinal": final})
+    db.commit()
+    return out
+
+
+class PicturesIn(BaseModel):
+    ids: list[int] = Field(max_length=8)
+
+
+@router.post("/palaces/{palace_id}/pictures", dependencies=[Depends(quota("picture"))])
+def draw_pictures(palace_id: int, body: PicturesIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Pictures for a few stops at once (the next friends on your walk). One request, few Gemini calls."""
+    palace = load_palace(db, palace_id, user)
+    stops = [load_stop(palace, i) for i in body.ids]
+    if not can_write(palace, user):
+        return [spot_json(s) for s in stops]
+    return _draw(db, palace, stops)
+
+
 @router.post("/palaces/{palace_id}/spots/{spot_id}/image", dependencies=[Depends(quota("picture"))])
 def draw_picture(palace_id: int, spot_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Draw (or fetch from the cache) one stop's picture. The client asks a few at a time."""
+    """One stop's picture (same as /pictures with one id)."""
     palace = load_palace(db, palace_id, user)
     stop = load_stop(palace, spot_id)
     if not stop.image_prompt:
         raise HTTPException(400, "This spot has no scene yet")
     if not can_write(palace, user):
-        return spot_json(stop)  # shared palaces come with their pictures already drawn
-    crop_path = palace_dir(palace.id) / stop.crop if stop.crop else None
-    crop = crop_path.read_bytes() if crop_path and crop_path.exists() else None
-    prompt = stop.image_prompt
-    image = gemini.generate_image(prompt, crop, palace.style or "storybook")
-    db.refresh(stop)
-    if stop.image_prompt == prompt:  # only if the scene didn't change while we were drawing
-        stop.image = image
-        db.commit()
-    return spot_json(stop)
+        return spot_json(stop)
+    return _draw(db, palace, [stop])[0] if not stop.image else spot_json(stop)
 
 
 class ResultIn(BaseModel):
@@ -468,6 +517,26 @@ def add_review(palace_id: int, body: ReviewIn, user: User = Depends(get_current_
             "reviews": [{"at": a.taken_at and a.taken_at.isoformat(), "score": a.score, "total": a.total} for a in palace.attempts]}
 
 
+class WeirderIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=40)
+
+
+@router.post("/palaces/{palace_id}/weirder", dependencies=[Depends(quota("scene"))])
+def weirder_many(palace_id: int, body: WeirderIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """End of a quiz: every missed stop gets a new, weirder scene, all in one Gemini call."""
+    palace = load_palace(db, palace_id, user, write=True)
+    path = studio_stops(palace)
+    stops = [s for s in (load_stop(palace, i) for i in body.ids) if s.concept]
+    asks = [{"fact": s.concept, "label": s.label or f"spot {path.index(s) + 1}", "scene": s.association or "",
+             "level": min(5, s.weirdness + 1), "kind": s.kind or "fact"} for s in stops]
+    for stop, ask, result in zip(stops, asks, gemini.weirder_scenes(asks, palace.flavor or "silly")):
+        if result:
+            stop.association, stop.hook, stop.image_prompt = result["scene"], result["hook"], result["imagePrompt"]
+            stop.image, stop.weirdness = None, ask["level"]
+    db.commit()
+    return [spot_json(s) for s in stops]
+
+
 @router.post("/palaces/{palace_id}/spots/{spot_id}/weirder", dependencies=[Depends(quota("scene"))])
 def weirder(palace_id: int, spot_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """A missed spot gets a new, weirder scene. Its picture is redrawn when you wander past."""
@@ -478,7 +547,7 @@ def weirder(palace_id: int, spot_id: int, user: User = Depends(get_current_user)
     level = min(5, stop.weirdness + 1)
     number = studio_stops(palace).index(stop) + 1
     result = gemini.weirder_scene(stop.concept, stop.label or f"spot {number}", stop.association or "", level,
-                                  stop.kind or "fact", palace.flavor or "wild")
+                                  stop.kind or "fact", palace.flavor or "silly")
     stop.association, stop.hook, stop.image_prompt = result["scene"], result["hook"], result["imagePrompt"]
     stop.image, stop.weirdness = None, level
     db.commit()

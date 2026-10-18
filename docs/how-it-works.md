@@ -18,7 +18,8 @@ npm test                               # backend tests (mock AI, throwaway datab
 ```
 
 The built-in Reitz route and the mitosis example are created on startup from `backend/app/data/reitz/`
-(three panoramas, the stops, and the finished example with its doodles), so nobody needs Gemini for them.
+(three panoramas, two 3D scans, the stops, and the finished example with its doodles), so nobody needs
+Gemini for them.
 
 - No `GEMINI_API_KEY`: **Mock AI** mode (placeholder facts and scenes), shown as a "mock AI" chip.
 - `DEV_AUTH=true` in `backend/.env` skips Auth0 (local testing only); run the frontend without
@@ -42,14 +43,13 @@ and falls asleep when you don't.
 |---|---|---|
 | Sign in | Auth0 login; palaces belong to the user. The landing page links to the tour | `frontend/src/App.jsx`, `backend/app/auth.py` |
 | Tour | First visit: a 1-minute visual walkthrough that teaches the phases of mitosis on 5 Reitz stops, quizzes you on them, then starts you in the Reitz | `Guide.jsx` (`#/guide`) |
-| Pick a place | **Built in: the Reitz Union** ("Start memorizing here" copies it and opens the notes box), a finished example to explore, or your own room | `PalaceList.jsx`, `lib/start.js`, `POST /api/palaces/{id}/copy` |
-| Build | Upload panoramas, regular photos (shown as a window in front of you) or 3D scans; click to plant eggs (stops). Gemini names each stop. Click an egg to open its card: rename, move, reorder, delete | `RoomStrip.jsx`, `Viewer.jsx`, `SpotCard.jsx`, `lib/placing.js` |
+| Pick a place | **Built in: the Reitz Union** ("Start memorizing here" copies it and opens the notes box), a finished example to explore, or your own place. **Your places** come back on the home screen: "New topic here" reuses a place's photos and stops for another topic, and each palace is named after its topic ("The Bill of Rights · in Reitz Union") | `PalaceList.jsx`, `lib/start.js`, `POST /api/palaces/{id}/copy` |
+| Build | Upload panoramas, regular photos (shown as a window in front of you) or 3D scans; click to plant eggs (stops). Gemini names each stop. Click an egg to open its card (rename, move, reorder, delete); drag an egg to move it. Full-screen button on the room | `RoomStrip.jsx`, `Viewer.jsx`, `SpotCard.jsx`, `lib/placing.js` |
 | Notes in | Paste, **snap a photo or PDF** of your notes (Gemini reads it), **upload a recording**, or **talk** (live speech-to-text in the browser) | `NotesImport.jsx`, `POST /api/import` |
 | Fill from notes | Builds the whole palace. Gemini cuts the notes into ideas (one picture each, as many as the notes need), gives each its own stop (your eggs first, then objects it finds in your panoramas, room by room), and writes a scene + sound-alike "hook" per stop, using the classic technique for each kind of idea (number pegs for numbers and dates, sound-alikes for names and vocabulary, a chain reaction for processes...). If the rooms run out of stops it says how many more you need instead of cramming | `FeedModal.jsx`, `POST /api/palaces/{id}/fill`, `app/studio/fill.py`, `app/studio/gemini.py` |
 | Wander | The camera walks to each friend, across rooms ("walking into Room 2"); its picture appears right at its stop, and a polaroid shows picture, scene, hook and fact. Pictures are drawn here, a few stops ahead, so you only pay for the ones you visit | `WanderCard.jsx`, `CameraRig` in `Viewer.jsx` |
-| Quiz | Alternates **"What lives at your desk?"** (typed) and **"Where did you put X?"** (tap the friend in 3D or pick a place). Checked instantly in the browser; unclear answers show the fact and you say if you had it. Misses get a weirder scene | `QuizCard.jsx`, `lib/grade.js`, `.../result`, `.../weirder` |
+| Quiz | **Round 1 · Walk the path**: "Who lives at your desk?" in path order (typed, checked instantly in the browser against the key terms; partly right = you decide). **Round 2 · Find it**: a few facts shuffled, "Where did you put X?" (tap the friend or pick a place). A friend bounces if all its answers were right; misses get a weirder scene. Settings can pick one round | `QuizCard.jsx`, `lib/grade.js`, `.../result`, `.../weirder` |
 | Preferences | The avatar menu: default picture style, how weird scenes get (wild / silly / classroom-safe, sent to the prompt), quiz style (both ways / typing / finding). Kept in the browser | `AccountMenu.jsx`, `lib/prefs.js` |
-| Review | Each quiz schedules the next walk: 1, 3, 7, 21, 60 days while you score 80%+, otherwise again in 10 minutes. "review due" shows on the home screen | `POST /api/palaces/{id}/reviews` (saved as quiz attempts), `PalaceList.jsx` |
 
 ## Fair-use limits (`backend/app/studio/limits.py`)
 
@@ -74,7 +74,7 @@ How memory athletes build a palace, and where the app does it:
 2. **Chunk first:** one idea per stop, about what fits in one picture. Overloaded stops blur. → `split_notes` decides how many stops the notes need.
 3. **Make it vivid and tie it to the object:** absurd, moving, loud, touching the stop; abstract words become sound-alikes ("allele → bowling alley"). → `scene_rules()`, `TECHNIQUES` and the hook (number pegs are worked out in code).
 4. **Mark every 5th stop** so you can jump in the middle and keep count. → gold tags.
-5. **Recall right away, in order, then spaced out**, and fix the images that didn't stick. → Quiz in path order, review schedule, weirder scenes for misses.
+5. **Recall right away, in order**, and fix the images that didn't stick. → Quiz in path order, weirder scenes for misses.
 
 ## Shared palaces (templates)
 
@@ -88,8 +88,10 @@ cd backend
 .venv/bin/python -m app.studio.make_template <palaceId> [off]  # share (or unshare) any palace
 ```
 
-The built-ins come from `backend/app/data/reitz/` and belong to the `system` user. The 3D scans of the
-Reitz aren't in git (180 MB); add them to your own copy with "+ Add a room".
+The built-ins come from `backend/app/data/reitz/` and belong to the `system` user: three panoramas and
+two 3D scans. The scans are compressed from the raw ~90 MB `.ply` exports (in the gitignored `maps/`) to
+~22 MB each with `npx @playcanvas/splat-transform in.ply out.compressed.ply`. Don't use its `.spz`
+output: it writes a newer SPZ version than our Spark (2.3) can read.
 
 ## How it fits together
 
@@ -109,6 +111,12 @@ frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI
   the idea is `concept`, the scene is `association`. New: `rooms`, `usage_counts` (migration `0002`).
 - **Never pay twice** (`app/studio/cache.py`): every Gemini result is saved in `data/cache/` under a hash of
   its inputs.
+- **Fewer Gemini calls:** pictures are drawn 4 per call (`generate_doodles`), a few stops ahead of where
+  you're walking, and the first batch starts right after a fill. Missed quiz scenes are rewritten in one
+  call at the end of the quiz. At most 3 Gemini calls run at once, server-wide.
+- **Busy Gemini:** "high demand" 503s are common. When the main text model is busy, calls switch to a
+  backup flash-lite model for a minute (`models["backup"]`). A picture that still fails shows a stand-in
+  sketch that isn't saved, so it's drawn for real next time ("draw it again" button).
 - **The Gemini key** is only read in `app/studio/gemini.py`. On startup the server picks the newest
   `gemini-X-flash` text model (override with `GEMINI_TEXT_MODEL` / `GEMINI_IMAGE_MODEL`).
 - **Stops** are a *direction* from the camera in panoramas and photos, or a *3D point* plus camera

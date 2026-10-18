@@ -24,7 +24,7 @@ The app currently has two modes that share the Auth0 login. We'll merge them int
 - **3D studio** (default, `frontend/src/`, `backend/app/studio/`): palaces inside real places. The
   built-in Reitz Union panoramas, or your own room / 3D scan.
   Gemini cuts your notes into ideas, finds a stop for each in the photos, and writes a vivid scene per
-  stop. Also: walk-through, two-way quiz, spaced review, note import from photos, PDFs and voice, and a
+  stop. Also: walk-through, two-round quiz, reusable places, note import from photos, PDFs and voice, and a
   1-minute onboarding tour. Details: [docs/how-it-works.md](docs/how-it-works.md).
 - **Campus mode** (`frontend/src/palace/`, the "Campus mode" button): the UF campus walk with photo
   signs, pins, dashboard, night mode and accessibility settings. Palaces are saved in the browser for now.
@@ -179,7 +179,8 @@ Someone else's palace always returns **404**, so the API never confirms it exist
 - [x] Backend: FastAPI app, database tables, palace and quiz endpoints, tests
 - [x] Campus route (first version, 9 stops)
 - [x] Auth0 API created (`Loci API`, identifier `https://loci-api`) and set in `backend/.env`
-- [x] Frontend sends Auth0 access tokens to the API (`VITE_AUTH0_AUDIENCE`, `main.jsx`)
+- [x] Frontend sends Auth0 access tokens to the API (`VITE_AUTH0_AUDIENCE`, `main.jsx`, `frontend/src/palace/api.js`)
+- [x] Frontend bridge: save palaces to the account, open them from the dashboard, quiz scores saved (see "Frontend ↔ backend" below)
 - [ ] Shared Neon database
 - [ ] Wireframes
 - [x] Gemini integration (`backend/app/studio/`: notes -> ideas -> stops -> scenes, imports, pictures, limits)
@@ -326,44 +327,32 @@ pytest
 
 The Auth0 API is already created in the tenant: **Applications → APIs → Loci API**, identifier `https://loci-api`, RS256. The identifier is just a name. It's never visited, and changing it means creating a new API, so it keeps the `loci` name.
 
-Still to do in the frontend:
+Done in the frontend:
 
-1. Add `VITE_AUTH0_AUDIENCE` and `VITE_API_URL` to `frontend/.env.local` (see setup above).
-2. Pass the audience to the provider in `src/main.jsx`:
+- `src/main.jsx` passes `VITE_AUTH0_AUDIENCE` to the Auth0 provider. Users need to log out and back in once after the audience is added.
+- `src/palace/api.js` (`useApi`) calls `VITE_API_URL` with `Authorization: Bearer <token>`. In dev it also sends `X-Dev-User: <the user's Auth0 sub>`, so with `DEV_AUTH=true` each signed-in user still gets their own data.
+- On sign-in the app calls `/me` once, which creates the user's row.
 
-   ```jsx
-   authorizationParams={{
-     redirect_uri: window.location.origin,
-     audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-   }}
-   ```
+To test real tokens: set `DEV_AUTH=false` in `backend/.env`, restart the backend and sign in again.
+To test in `/docs` instead: Auth0 → APIs → Loci API → **Test** tab gives a token. Click
+**Authorize** in `/docs` and paste it.
 
-3. Call the API with the token:
+### Frontend ↔ backend (the bridge)
 
-   ```js
-   const { getAccessTokenSilently } = useAuth0()
+Palaces are still edited and autosaved in the browser (`localStorage` + IndexedDB for photos), because the API can't update a saved palace yet. Signed-in users can keep **copies** in their account:
 
-   async function api(path, options = {}) {
-     const token = await getAccessTokenSilently()
-     const res = await fetch(`${import.meta.env.VITE_API_URL}${path}`, {
-       ...options,
-       headers: {
-         'Content-Type': 'application/json',
-         Authorization: `Bearer ${token}`,
-         ...options.headers,
-       },
-     })
-     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`)
-     return res.status === 204 ? null : res.json()
-   }
+- **☰ menu → Save to account** uploads the palace (`POST /palaces`). After that the button says **Update account copy**: it uploads a new copy and deletes the old one, since there's no update endpoint (that copy's score history is lost).
+- **Dashboard → In your account** lists account palaces that aren't in this browser (`GET /palaces`), with **Open** (downloads it into this browser) and **Delete** (`DELETE /palaces/{id}`). Local palaces with a copy say "in your account".
+- Finishing a quiz on a palace with an account copy saves the score (`POST /palaces/{id}/attempts`).
 
-   // api('/me'), api('/palaces'), api('/palaces', { method: 'POST', body: JSON.stringify(palace) })
-   ```
+How a palace is converted (`src/palace/account.js`):
 
-   Users need to log out and back in once after the audience is added.
-4. Set `DEV_AUTH=false` in `backend/.env` and test `/me` from the React app.
-   To test in `/docs` instead: Auth0 → APIs → Loci API → **Test** tab gives a token. Click
-   **Authorize** in `/docs` and paste it.
+- Each stop becomes a backend stop. A stop whose name matches a route location (e.g. Smathers Library, Century Tower) keeps that location; the others take the unused route locations in order. So the account can hold **at most 9 stops** per palace (the route's length).
+- `concept` / `association` fall back to the subject, description or place name when empty (the API requires both). Cards with a question and an answer become `short_answer` questions.
+- The whole frontend palace (places, pins, stars, hidden pins, appearance) is also saved as JSON in `source_text` (`{"app": "never-forgator", ...}`), so **Open** restores it exactly. Photos someone uploaded stay in the browser that added them; built-in campus photos work everywhere.
+- A palace made elsewhere (e.g. by the Gemini endpoint) has no such JSON: it opens with the route locations as stops and its questions as cards laid out in a grid (campus photos are matched by location name).
+
+When the backend gets a `PUT /palaces/{id}` and fields for pins, photos and custom places, `account.js` is the one file to change.
 
 ### Using it in development
 

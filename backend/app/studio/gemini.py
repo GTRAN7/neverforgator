@@ -4,12 +4,14 @@ With no key set, MOCK mode returns simple placeholder results so the app still w
 Every result is cached (cache.py), so the same notes, photo or scene never cost twice."""
 import json
 import logging
+import random
 import re
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 from app import config
-from app.studio.cache import cached_image, cached_json
+from app.studio.cache import cached_image, cached_json, lookup_image, lookup_json, store_image, store_json
 from app.studio.placeholder import placeholder_image
 
 log = logging.getLogger("loci.gemini")
@@ -27,13 +29,17 @@ if not MOCK:
     _client = genai.Client(api_key=config.GEMINI_API_KEY, http_options=types.HttpOptions(timeout=TIMEOUT_MS))
 
 # ---- Model choice ----
-# Model names change often. Unless .env names one, ask Google which models this key can
-# use and pick the newest "flash" text model and "flash-image" model.
-models = {"text": config.GEMINI_TEXT_MODEL, "image": config.GEMINI_IMAGE_MODEL}
+# Model names change often. Unless .env names one, ask Google which models this key can use and
+# pick the newest "flash-lite" text model (it has by far the biggest free quota; the bigger "flash"
+# models allow only ~20 requests a day, which one palace fill can nearly use up) and the newest
+# "flash-image" model.
+models = {"text": config.GEMINI_TEXT_MODEL, "image": config.GEMINI_IMAGE_MODEL, "backup": None}
 
 
 def choose_models():
-    if MOCK or (models["text"] and models["image"]):
+    """Also picks a backup text model: when the main one is overloaded ("high demand" 503s, which
+    happen a lot), calls go to the backup instead of failing."""
+    if MOCK:
         return models
     try:
         names = [m.name.removeprefix("models/") for m in _client.models.list()]
@@ -46,8 +52,12 @@ def choose_models():
         key = lambda n: [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", n)]
         return max(found, key=key) if found else None
 
-    models["text"] = models["text"] or newest(r"gemini-[\d.]+-flash") or "gemini-2.5-flash"
+    models["text"] = (models["text"] or newest(r"gemini-[\d.]+-flash-lite") or newest(r"gemini-[\d.]+-flash")
+                      or "gemini-2.5-flash-lite")
     models["image"] = models["image"] or newest(r"gemini-[\d.]+-flash-image") or "gemini-2.5-flash-image"
+    lites = sorted((n for n in names if re.fullmatch(r"gemini-[\d.]+-flash-lite", n) and n != models["text"]),
+                   key=lambda n: [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", n)])
+    models["backup"] = lites[-1] if lites else None
     return models
 
 
@@ -63,18 +73,38 @@ def _readable(err) -> GeminiError:
     return GeminiError(f"Gemini: {message}")
 
 
-def _with_retry(call):
-    """Retry on rate limits / "high demand" / hung calls (after 2 s, then 5 s), because a single
-    503 shouldn't kill the demo."""
-    for wait in (2, 5, None):
+def _busy(err) -> bool:
+    """Gemini overloaded, rate-limited or too slow: worth retrying (or trying the backup model)."""
+    code = getattr(err, "code", None)
+    timed_out = "timeout" in type(err).__name__.lower() or "timed out" in str(err).lower() or "deadline" in str(err).lower()
+    return timed_out or code in (429, 500, 503, 504)
+
+
+# At most this many Gemini calls at once, from the whole server. Bursts (a fill plus a few pictures
+# plus someone's quiz) are what trigger "high demand" 503s and per-minute limits; queuing them a
+# little is much better than failing.
+_gate = threading.BoundedSemaphore(3)
+_busy_until: dict[str, float] = {}  # model -> when to try it again after it was overloaded
+
+
+def _with_retry(call, model: str | None = None, backup: str | None = None):
+    """call(model) -> response. When Gemini is busy, switches to the backup model (and stays on it for
+    a minute), retrying after ~2 s and ~5 s; the jitter keeps parallel retries from landing at once.
+    Without a backup it retries the same model. A "high demand" spell shouldn't stop the demo."""
+    attempts = [(model, 1), (backup, 2), (backup, 5), (model, None)] if backup else [(model, 2), (model, 5), (model, 10), (model, None)]
+    if backup and _busy_until.get(model, 0) > time.monotonic():
+        attempts = [(backup, 2), (backup, 5), (model, None)]  # it was just busy: go straight to the backup
+    for which, wait in attempts:
         try:
-            return call()
+            with _gate:
+                return call(which)
         except Exception as err:
-            code = getattr(err, "code", None)
-            timed_out = "timeout" in type(err).__name__.lower() or "timed out" in str(err).lower()
-            if wait is None or not (timed_out or code in (429, 500, 503, 504)):
+            if wait is None or not _busy(err):
                 raise _readable(err) from err
-            time.sleep(wait)
+            if backup and which == model:
+                _busy_until[model] = time.monotonic() + 60  # skip it for a minute
+                log.info("Gemini %s is busy (%s), using %s for a minute", model, getattr(err, "code", err), backup)
+            time.sleep(wait + random.random())
 
 
 def _image_part(data: bytes, mime_type: str = "image/jpeg"):
@@ -84,11 +114,11 @@ def _image_part(data: bytes, mime_type: str = "image/jpeg"):
 def _generate_json(prompt: str, schema: dict, image: bytes | None = None, mime_type: str = "image/jpeg"):
     """Ask for JSON that matches `schema`; Gemini guarantees the shape."""
     contents = [_image_part(image, mime_type), prompt] if image else prompt
-    res = _with_retry(lambda: _client.models.generate_content(
-        model=models["text"],
+    res = _with_retry(lambda model: _client.models.generate_content(
+        model=model,
         contents=contents,
         config=types.GenerateContentConfig(response_mime_type="application/json", response_json_schema=schema),
-    ))
+    ), models["text"], models["backup"])
     return json.loads(res.text)
 
 
@@ -130,7 +160,8 @@ NUMBER_RHYMES = ", ".join(f"{d} = {peg}" for d, peg in enumerate(PEGS))
 def number_pegs(text: str) -> str:
     """The digit images for the numbers in an idea, worked out here so the model only has to use
     them: "Hans Krebs found it in 1937" -> '1937 = bun, wine, tree, heaven (an angel)'."""
-    numbers = list(dict.fromkeys(re.findall(r"\b\d{1,4}\b", text)))
+    # Plain numbers and ordinals ("4th Amendment" -> 4 = door).
+    numbers = list(dict.fromkeys(re.findall(r"\b(\d{1,4})(?:st|nd|rd|th)?\b", text)))
     return "; ".join(f"{n} = {', '.join(PEGS[int(d)] for d in n)}" for n in numbers)
 
 
@@ -141,7 +172,7 @@ TECHNIQUES = {
     "number": f"Turn each digit into its number-rhyme image, exactly this table: {NUMBER_RHYMES}.\n"
               "Show those images in order in the scene (e.g. 23 → a SHOE kicking a TREE).",
     "date": f"Encode the digits of the year/day with exactly this number-rhyme table: {NUMBER_RHYMES}, in order, acting with the event.",
-    "name": "Replace the person or place name with a sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed.",
+    "name": "Replace the person or place name with a concrete sound-alike image (e.g. Darwin → a DART that keeps WINNING) doing their deed; the sound-alike is the star of the scene, not the person.",
     "vocabulary": "Keyword method: a sound-alike of the word (in your language) interacting with an image of its meaning.",
     "list": "Each item becomes its own character, all crowded into one scene in the right order (left to right).",
     "sequence": "Show the steps as a chain reaction in order: the first step causes the second, and so on.",
@@ -158,13 +189,15 @@ FLAVORS = {
 }
 
 
-def scene_rules(flavor: str = "wild") -> str:
+def scene_rules(flavor: str = "silly") -> str:
     return f"""A great memory scene:
 - happens AT that exact location and touches the object (sits on it, breaks it, crawls out of it),
-- is {FLAVORS.get(flavor, FLAVORS['wild'])}, with motion and sound, and YOU are in it,
+- is {FLAVORS.get(flavor, FLAVORS['silly'])}, with motion and sound, and YOU are in it,
 - makes every key term recoverable: abstract or unfamiliar words become concrete sound-alike images,
 - uses the technique for its kind of idea (given per stop),
 - shows every image named in the hook (the hook is the key to the scene, so it must be IN the scene),
+- number images come ON TOP of the key terms, never instead of them: the main subject (the planet, the
+  person, the amendment's right) must still be clearly in the scene,
 - is SHORT: 1-2 sentences, at most 30 words, present tense, second person ("you see..."). Every word must earn its place.
 hook: the sound-alike or symbol for the hardest word(s), as "word → image" (e.g. "allele → bowling alley"). Invent fresh images; don't reuse the examples.
 imagePrompt: the same scene described visually in one paragraph (subject, action, the object, lighting). No text in the image."""
@@ -173,9 +206,28 @@ imagePrompt: the same scene described visually in one paragraph (subject, action
 def split_notes(notes: str) -> list[dict]:
     """How many stops do these notes need? One per idea, where an idea is what fits in one
     picture. Returns [{text, kind, keyTerms}]."""
+    return _split(notes)["ideas"]
+
+
+def notes_topic(notes: str) -> str:
+    """A short title for the notes ("The Bill of Rights"), from the same Gemini call as the split."""
+    return _split(notes)["title"]
+
+
+def _first_line_title(notes: str) -> str:
+    line = next((l.strip() for l in notes.splitlines() if l.strip()), "My notes")
+    return re.sub(r"[:.\s]+$", "", line)[:60] or "My notes"
+
+
+def _split(notes: str) -> dict:
+    # Notes split before titles existed: reuse that split (no new Gemini call), title from line 1.
+    older = lookup_json(["split-v5", models["text"], notes])
+    if older is not None:
+        return {"title": _first_line_title(notes), "ideas": older}
+
     def produce():
         if MOCK:
-            return _mock_split(notes)
+            return {"title": _first_line_title(notes), "ideas": _mock_split(notes)}
         result = _generate_json(
             f'''You coach memory athletes. A student will store these notes in a memory palace, one idea per stop.
 
@@ -188,26 +240,31 @@ Cut the notes into ideas. Each idea is ONE short, self-contained sentence a teac
 small enough to picture as a single scene: a term and its meaning, a cause and its effect, a name and
 what they did, a number and what it counts.
 - Split long lists (more than 4 items) and multi-part definitions into separate ideas, in order.
+- A numbered or bulleted line in the notes ("4th Amendment: ...", "3. ...") stays ONE idea, keeping
+  its number, unless it lists more than 4 things: the student's numbering should match the stops.
 - Keep exact numbers, dates, names, units and formulas. Never invent facts that aren't in the notes.
 - Skip headings, filler and repeats. Keep the order of the notes.
 - Use as many ideas as the notes really need (a few lines: a few ideas; a chapter: many), at most {MAX_IDEAS}.
   If there is more than that, keep the {MAX_IDEAS} most important.
 For each idea also give:
-- kind: {", ".join(IDEA_KINDS)}
-- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).''',
-            _obj(ideas={"type": "array", "items": _obj(
+- kind: {", ".join(IDEA_KINDS)}. Use "name" whenever the thing to remember is mainly a person's or
+  place's name (even in an ordered list: "the 3rd president was Thomas Jefferson" is a name).
+- keyTerms: the 1-4 words or numbers a correct answer must contain (e.g. ["mitochondria", "ATP"]).
+Also give the notes a title: the topic in 2-6 words, like a chapter title ("The Bill of Rights",
+"Cell organelles").''',
+            _obj(title=STRING, ideas={"type": "array", "items": _obj(
                 text=STRING, kind={"type": "string", "enum": IDEA_KINDS},
                 keyTerms={"type": "array", "items": STRING})}),
         )
-        return result["ideas"][:MAX_IDEAS]
-    return cached_json(["split-v3", models["text"], notes], produce)
+        return {"title": result["title"].strip()[:60] or _first_line_title(notes), "ideas": result["ideas"][:MAX_IDEAS]}
+    return cached_json(["split-v6", models["text"], notes], produce)
 
 
 SCENE_BATCH = 5  # scenes are written in parallel batches: much faster than one long answer
 _pool = ThreadPoolExecutor(max_workers=8)
 
 
-def write_scenes(ideas: list[dict], locations: list[str], flavor: str = "wild") -> list[dict]:
+def write_scenes(ideas: list[dict], locations: list[str], flavor: str = "silly") -> list[dict]:
     """One scene per idea, idea i at location i. Each batch is cached on its own, so adding stops
     at the end of the path and filling again only writes the new ones."""
     starts = range(0, len(ideas), SCENE_BATCH)
@@ -227,6 +284,9 @@ def _write_scene_batch(ideas, locations, flavor):
         for i, idea in enumerate(ideas):
             pegs = number_pegs(idea["text"])
             extra = f"; number images to use, in order: {pegs}" if pegs else ""
+            if idea["kind"] == "name":
+                # Names need their own picture too, or the number image takes over the scene.
+                extra += "; ALSO turn the name into a concrete sound-alike object (Washington -> a washing machine)"
             lines.append(f'{i + 1}. At "{locations[i]}" ({idea["kind"]}; key terms: {", ".join(idea["keyTerms"])}{extra}): {idea["text"]}')
         kinds = list(dict.fromkeys(idea["kind"] for idea in ideas))
         techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
@@ -245,7 +305,7 @@ For each stop write a scene, a hook and an imagePrompt.
                 location={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
         )
         return result["items"]
-    return cached_json(["scenes-v6", models["text"], ideas, locations, flavor], produce)
+    return cached_json(["scenes-v9", models["text"], ideas, locations, flavor], produce)
 
 
 # ---- 2a. Notes from a photo, PDF or voice recording ----
@@ -310,7 +370,7 @@ def describe(kind: str, text: str, subject: str = "", place: str = "") -> str:
 
 # ---- 3. A missed spot gets a weirder scene ----
 
-def weirder_scene(fact: str, label: str, scene: str, level: int, kind: str = "fact", flavor: str = "wild") -> dict:
+def weirder_scene(fact: str, label: str, scene: str, level: int, kind: str = "fact", flavor: str = "silly") -> dict:
     def produce():
         if MOCK:
             return {
@@ -334,6 +394,50 @@ key words impossible to miss. Technique for this kind of idea ({kind}): {TECHNIQ
     return cached_json(["weirder-v5", models["text"], fact, kind, label, scene, level, flavor], produce)
 
 
+def weirder_scenes(stops: list[dict], flavor: str = "silly") -> list[dict]:
+    """Weirder scenes for several missed stops in one call (end of a quiz). Each stop:
+    {fact, label, scene, level, kind}. Results already cached are reused."""
+    keys = [["weirder-v5", models["text"], s["fact"], s["kind"], s["label"], s["scene"], s["level"], flavor] for s in stops]
+    results = [None] * len(stops)
+    todo = []
+    for i, key in enumerate(keys):
+        cached = lookup_json(key)
+        if cached:
+            results[i] = cached
+        else:
+            todo.append(i)
+    if todo and MOCK:
+        for i in todo:
+            results[i] = weirder_scene(stops[i]["fact"], stops[i]["label"], stops[i]["scene"], stops[i]["level"])
+        todo = []
+    if todo:
+        lines = "\n".join(
+            f'{n + 1}. Fact: {stops[i]["fact"]} | Location: {stops[i]["label"]} | Weirdness level {stops[i]["level"]} of 5 '
+            f'| Kind: {stops[i]["kind"]} | The scene that did not stick: {stops[i]["scene"]}' for n, i in enumerate(todo))
+        kinds = list(dict.fromkeys(stops[i]["kind"] for i in todo))
+        techniques = "\n".join(f"- {k}: {TECHNIQUES.get(k, TECHNIQUES['fact'])}" for k in kinds)
+        result = _generate_json(
+            f"""A student forgot these facts during a memory-palace quiz:
+{lines}
+
+For each, write a NEW scene at the same location that is far weirder and more vivid (at its weirdness level):
+more absurd, bigger, louder, more emotional, more personal. Use a DIFFERENT hook than before and make the
+key words impossible to miss.
+Techniques by kind of idea:
+{techniques}
+
+{scene_rules(flavor)}""",
+            _obj(items={"type": "array", "items": _obj(number={"type": "integer"}, scene=STRING, hook=STRING, imagePrompt=STRING)}),
+        )
+        by_number = {item["number"]: item for item in result["items"]}
+        for n, i in enumerate(todo):
+            item = by_number.get(n + 1)
+            if item:
+                results[i] = {"scene": item["scene"], "hook": item["hook"], "imagePrompt": item["imagePrompt"]}
+                store_json(keys[i], results[i])
+    return results
+
+
 # ---- 4. A picture per stop (cached) ----
 
 PICTURE_STYLES = {
@@ -351,19 +455,19 @@ DOODLE_LOOK = {
 }
 
 
-def generate_image(prompt: str, crop: bytes | None, style: str = "storybook") -> str:
-    def placeholder():
-        return cached_image(["placeholder-v2", style, prompt], lambda: placeholder_image(prompt, style))
+def _placeholder(prompt: str, style: str) -> str:
+    return cached_image(["placeholder-v2", style, prompt], lambda: placeholder_image(prompt, style))
+
+
+def generate_image(prompt: str, crop: bytes | None, style: str = "storybook"):
+    """(file name, final). final=False means Gemini was busy and this is a stand-in sketch: show it,
+    but don't save it on the stop, so the real picture is tried again next time."""
     if PICTURES == "placeholder":
-        return placeholder()
+        return _placeholder(prompt, style), True
     if PICTURES == "doodle":
-        # Doodles cost one cheap text call. If Gemini is busy or out of quota, use the sketch card.
-        try:
-            return _generate_doodle(prompt, style)
-        except Exception as err:
-            log.info("Doodle failed, using a sketch: %s", err)
-            return placeholder()
-    return _generate_real_image(prompt, crop, style)
+        [name] = generate_doodles([prompt], style)
+        return (name, True) if name else (_placeholder(prompt, style), False)
+    return _generate_real_image(prompt, crop, style), True
 
 
 def _generate_real_image(prompt, crop, style):
@@ -376,8 +480,8 @@ def _generate_real_image(prompt, crop, style):
         text = (f"This photo shows a spot in my room. Redraw it as {look}, with this scene happening right\n"
                 f"there and the room still recognizable. Vivid and funny, no text. Scene: {prompt}"
                 if crop else f"{look}, vivid and funny, no text. Scene: {prompt}")
-        res = _with_retry(lambda: _client.models.generate_content(
-            model=models["image"], contents=[_image_part(crop), text] if crop else text))
+        res = _with_retry(lambda model: _client.models.generate_content(
+            model=model, contents=[_image_part(crop), text] if crop else text), models["image"])
         parts = res.candidates[0].content.parts if res.candidates else []
         image = next((p.inline_data for p in parts if p.inline_data), None)
         if not image:
@@ -387,24 +491,46 @@ def _generate_real_image(prompt, crop, style):
     return cached_image(key, produce)
 
 
-def _generate_doodle(prompt, style):
-    def produce():
-        res = _with_retry(lambda: _client.models.generate_content(
-            model=models["text"],
-            contents=f"""Draw this scene as a playful cartoon doodle in SVG.
-Scene: {prompt}
+DOODLE_BATCH = 4  # doodles per Gemini call
 
-Rules: one <svg> element with xmlns="http://www.w3.org/2000/svg" and viewBox="0 0 768 468".
+
+def _doodle_key(prompt, style):
+    return ["doodle-v1", models["text"], style, prompt]
+
+
+def generate_doodles(prompts: list[str], style: str) -> list[str | None]:
+    """Little SVG drawings of these scenes: cached ones from disk, the rest drawn DOODLE_BATCH per
+    Gemini call (one request instead of one per picture). None where a drawing failed."""
+    names = [lookup_image(_doodle_key(p, style)) for p in prompts]
+    missing = [i for i, name in enumerate(names) if not name]
+    for start in range(0, len(missing), DOODLE_BATCH):
+        batch = missing[start:start + DOODLE_BATCH]
+        try:
+            drawings = _draw_doodles([prompts[i] for i in batch], style)
+        except Exception as err:
+            log.info("Doodles failed, showing sketches for now: %s", err)
+            continue
+        for j, i in enumerate(batch):
+            svg = clean_svg(drawings.get(j + 1, ""))
+            if svg:
+                names[i] = store_image(_doodle_key(prompts[i], style), svg.encode(), "svg")
+    return names
+
+
+def _draw_doodles(prompts, style) -> dict:
+    scenes = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(prompts))
+    result = _generate_json(
+        f"""Draw each of these scenes as a playful cartoon doodle in SVG.
+{scenes}
+
+Rules for every drawing: one <svg> element with xmlns="http://www.w3.org/2000/svg" and viewBox="0 0 768 468".
 A simple background (floor + wall or sky), then 2-4 big, recognizable characters or objects doing the action.
 Thick dark outlines (#3B2A1E, stroke-width 5), {DOODLE_LOOK.get(style, DOODLE_LOOK['storybook'])}, expressive faces.
-Only basic shapes and paths. No text, no <script>, no <image>, no external links, no animation. Under 8 KB.
-Answer with the SVG only.""",
-        ))
-        svg = clean_svg(res.text or "")
-        if not svg:
-            raise GeminiError("No drawing came back")
-        return svg.encode(), "svg"
-    return cached_image(["doodle-v1", models["text"], style, prompt], produce)
+Only basic shapes and paths. No text, no <script>, no <image>, no external links, no animation. Under 6 KB each.
+Return one drawing per scene, numbered like the scenes.""",
+        _obj(drawings={"type": "array", "items": _obj(scene={"type": "integer"}, svg=STRING)}),
+    )
+    return {d["scene"]: d["svg"] for d in result["drawings"]}
 
 
 def clean_svg(text: str):

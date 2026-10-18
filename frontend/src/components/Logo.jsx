@@ -18,8 +18,8 @@ export function Gator({ size = 40 }) {
   );
 }
 
-// Logo + name, used in every header.
-export default function Logo({ href, big = false }) {
+// Logo + name, used in every header. Clicking it goes to the home page (your palaces).
+export default function Logo({ href = '#/', big = false }) {
   const content = (
     <>
       <Gator size={big ? 72 : 40} />
@@ -27,6 +27,6 @@ export default function Logo({ href, big = false }) {
     </>
   );
   return href
-    ? <a href={href} className="brand-link" title="All palaces">{content}</a>
+    ? <a href={href} className="brand-link" title="Home" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>{content}</a>
     : <span className="brand-link">{content}</span>;
 }
