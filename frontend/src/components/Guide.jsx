@@ -11,6 +11,14 @@ import Creature, { Sparkle } from './Creature.jsx';
 // and step 5 makes you recall it, so by the end you've felt the method work.
 export const TOUR_DONE_KEY = 'neverforgator-tour-done';
 
+// Step 1's home: hovering a room shows the thing you know is there without ever studying it.
+const HOME_STOPS = [
+  { icon: '🚪', name: 'front door', find: '🔑', item: 'keys', where: 'on the hook by the door' },
+  { icon: '🗄️', name: 'office', find: '📎', item: 'paperclips', where: 'in the cabinet’s top drawer' },
+  { icon: '🍳', name: 'kitchen', find: '🍴', item: 'forks', where: 'top right drawer' },
+  { icon: '🛏️', name: 'bed', find: '🎧', item: 'headphones', where: 'on the nightstand' },
+];
+
 const STOPS = [
   {
     place: 'front doors',
@@ -175,17 +183,22 @@ const STEPS = [
     ),
     art: () => (
       <div className="guide-art home-art">
-        <span className="route-map-label">your home, from memory</span>
+        <span className="route-map-label">Your home, from memory...</span>
         <div className="home-route">
-          {[['🚪', 'front door'], ['🛋️', 'couch'], ['🍳', 'kitchen'], ['🛏️', 'bed']].map(([icon, name], i) => (
-            <div key={name} className="home-stop">
+          {HOME_STOPS.map(({ icon, name, find, item, where }) => (
+            // Hover (or tap) a room: the little thing you just know lives there.
+            <div key={name} className="home-stop" tabIndex={0} aria-label={`${name}: ${item}, ${where}`}>
+              <span className="home-find" aria-hidden="true">
+                <span className="home-find-icon">{find}</span>
+                <span><b>{item}</b>{where}</span>
+              </span>
               <span className="map-icon big" aria-hidden="true">{icon}</span>
               <span className="tag">{name}</span>
-              {i === 1 && <span className="thought">the keys! on the couch!</span>}
             </div>
           ))}
         </div>
-        <p className="scrawl">you never studied this map, yet you know it cold</p>
+        <p className="scrawl">You never tried to memorize where things are, yet you just know!</p>
+        <p className="scrawl home-art-why">(Hover over a room: you already know what's there!)</p>
       </div>
     ),
   },
