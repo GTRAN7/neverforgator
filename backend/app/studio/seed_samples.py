@@ -58,8 +58,12 @@ def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **
     for i, stop in enumerate(stops):
         if stop.get("crop"):
             link_or_copy(DATA / stop["crop"], folder / stop["crop"])
-        if stop.get("image") and not (CACHE_DIR / stop["image"]).exists():
-            link_or_copy(DATA / stop["image"], CACHE_DIR / stop["image"])  # pictures are served from the cache
+        image = stop.get("image")
+        cached = CACHE_DIR / image if image else None
+        # Pictures are served from the cache; refresh it when the repo's drawing changed.
+        if image and (not cached.exists() or cached.read_bytes() != (DATA / image).read_bytes()):
+            cached.unlink(missing_ok=True)
+            link_or_copy(DATA / image, cached)
         db.add(PalaceStop(
             palace_id=palace.id, room_id=room_ids[stop["room"]], stop_order=i + 1,
             direction=stop["direction"], label=stop.get("label"), crop=stop.get("crop"),

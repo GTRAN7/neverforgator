@@ -3,10 +3,10 @@
 ## Two examples
 
 **Built in (already filled, opens from "See a finished example" and the tour): parts of a cell.**
-10 organelles across the 3 Reitz rooms, each at an object that already does its job: the cell membrane
-at the glass doors ("members only"), lysosomes at the barbershop (lice, a tub of digestive juice),
-mitochondria at the vending machine (sandwich in, ATP batteries out), the Golgi at the elevator (a
-golfer delivering packages floor by floor). Great for quizzing a judge ("what does the Golgi do?").
+10 organelles in the game room, each at an object that already does its job: the cell membrane at the
+theater doors ("members only"), lysosomes in the recycling bins (Lysol-like juice), the nucleus on the
+TV ("NEW CLUES!"), the Golgi on the putting green (a golfer putting gift boxes into holes). The atrium
+and hallway stay empty to show a palace can grow. Great for quizzing a judge ("what does the Golgi do?").
 
 **Generated live in the demo: the first 8 U.S. presidents.** The walk keeps the order (stop 3 =
 3rd president, no number codes) and names become sound-alikes (Washington → a washing machine,

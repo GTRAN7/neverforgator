@@ -21,14 +21,6 @@ const HOME_STOPS = [
 
 const STOPS = [
   {
-    place: 'TV screen',
-    icon: '📺',
-    term: 'Nucleus',
-    fact: 'The control center of the cell. It holds the DNA.',
-    hook: 'nucleus → “NEW CLUES!” on the news · DNA → the twisted-ladder script',
-    scene: 'BREAKING NEWS: “NEW CLUES!” The anchor reads orders off a twisting DNA ladder, and every game in the room obeys the TV.',
-  },
-  {
     place: 'chess set',
     icon: '♟️',
     term: 'Ribosomes',
@@ -37,28 +29,36 @@ const STOPS = [
     scene: 'Tiny builders in RIBBONS snap the chess pieces into one long chain, then hand you a PROTEIN bar made of it.',
   },
   {
-    place: 'foosball table',
-    icon: '⚽',
-    term: 'Rough ER',
-    fact: 'Covered in ribosomes, it carries new proteins through the cell.',
-    hook: 'rough ER → a ROUGH, bumpy E.R. · ribosomes → builders on the rods',
-    scene: 'The table becomes a ROUGH, bumpy E.R.: ribbon-builders stud every rod and rush protein bars down the table on stretchers.',
+    place: 'TV screen',
+    icon: '📺',
+    term: 'Nucleus',
+    fact: 'The control center of the cell. It holds the DNA.',
+    hook: 'nucleus → “NEW CLUES!” on the news · DNA → the twisted-ladder script',
+    scene: 'BREAKING NEWS: “NEW CLUES!” The anchor reads orders off a twisting DNA ladder, and every game in the room obeys the TV.',
   },
   {
-    place: 'glass doors',
+    place: 'recycling bins',
+    icon: '♻️',
+    term: 'Lysosomes',
+    fact: 'They break down waste and worn-out parts with digestive enzymes.',
+    hook: 'lysosomes → LYSOL bins · digestive enzymes → fizzing juice',
+    scene: 'The bins are full of LYSOL-like digestive juice: toss in old trash and broken parts, and they fizz away to nothing.',
+  },
+  {
+    place: 'pillar',
+    icon: '🏛️',
+    term: 'Cell wall',
+    fact: 'Plant cells have a stiff wall for support and protection.',
+    hook: 'cell wall → the stiff pillar · plant cells → a potted plant hugging it',
+    scene: 'A potted PLANT hugs the thick pillar, a stiff WALL of armor holding up the whole room. You knock: rock hard.',
+  },
+  {
+    place: 'theater doors',
     icon: '🚪',
     term: 'Cell membrane',
     fact: 'It controls what enters and leaves the cell.',
     hook: 'membrane → MEMBERS-ONLY doors',
-    scene: 'The doors are a MEMBERS-ONLY bouncer: they slide open for water and snacks, then slam shut on a giant pizza.',
-  },
-  {
-    place: 'gator statue',
-    icon: '🐊',
-    term: 'Cell wall',
-    fact: 'Plant cells have a stiff wall for support and protection.',
-    hook: 'cell wall → the gator’s stiff armor · plant cells → a potted plant',
-    scene: 'A potted PLANT hides inside the gator’s stiff, armored scales. You knock: hard as a WALL.',
+    scene: 'The doors are a MEMBERS-ONLY bouncer: they swing open for water and snacks, then slam shut on a giant pizza.',
   },
 ];
 
@@ -66,9 +66,9 @@ const STOPS = [
 const MAP_POINTS = [[14, 72], [34, 34], [58, 62], [78, 24], [88, 70]];
 
 const QUIZ = [
-  { stop: 3, question: 'Walk to the glass doors. Which part of the cell lives there?' },
-  { stop: 1, question: 'Now the chess set. What’s there?' },
-  { stop: 4, question: 'Last stop: the gator statue?' },
+  { stop: 4, question: 'Walk to the theater doors. Which part of the cell lives there?' },
+  { stop: 1, question: 'Now the TV screen. What’s there?' },
+  { stop: 2, question: 'Last stop: the recycling bins?' },
 ];
 
 function RouteMap({ active = -1, showTerms = false }) {
@@ -135,7 +135,7 @@ function QuizStep() {
         <Creature number={3} state="happy" size="lg" />
         <h3 className="card-title big">{score} / {QUIZ.length} from memory</h3>
         <p>You saw each scene once, a minute ago, and you could still walk back and find it. That’s the whole trick.
-          Ask yourself tomorrow what happens at the TV screen.</p>
+          Ask yourself tomorrow what happens at the pillar.</p>
       </div>
     );
   }
@@ -226,7 +226,7 @@ const STEPS = [
       <div className="guide-art split-art">
         <div className="notes-card">
           <span className="sticky-label">your notes</span>
-          <p>Nucleus: control center, holds DNA… Ribosomes build proteins… Rough ER carries them… Membrane controls what gets in… Plants have a cell wall…</p>
+          <p>Ribosomes build proteins… Nucleus: control center, holds DNA… Lysosomes digest waste… Plants have a cell wall… Membrane controls what gets in…</p>
         </div>
         <span className="split-arrow">→</span>
         <ol className="idea-stack">
@@ -241,7 +241,7 @@ const STEPS = [
       <>
         <p>Your brain ignores the normal and remembers the bizarre. Each scene happens <strong>at the object</strong>, moves,
           makes noise, and turns hard words into pictures (<strong>membrane</strong> → “members only”).</p>
-        <p>The best stops already do the job: glass doors decide who gets in, just like the cell membrane.</p>
+        <p>The best stops already do the job: doors decide who gets in, just like the cell membrane.</p>
         <p>Read each scene once and picture it. Really picture it.</p>
       </>
     ),
