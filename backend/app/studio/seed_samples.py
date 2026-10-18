@@ -29,8 +29,12 @@ log = logging.getLogger("loci.seed")
 
 
 def files_version() -> str:
-    """Changes whenever route.json or example.json does, so pulling a new route rebuilds the shared palaces."""
-    return hashlib.sha256((DATA / "route.json").read_bytes() + (DATA / "example.json").read_bytes()).hexdigest()[:16]
+    """Changes whenever anything in app/data/reitz/ does (route, example, photos, doodles), so pulling
+    new files rebuilds the shared palaces."""
+    digest = hashlib.sha256()
+    for path in sorted(DATA.iterdir()):
+        digest.update(path.name.encode() + path.read_bytes())
+    return digest.hexdigest()[:16]
 
 
 def system_user(db) -> User:
