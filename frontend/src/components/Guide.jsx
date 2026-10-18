@@ -321,7 +321,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
                 <button className="btn accent big" disabled={busy} onClick={() => go(onStart)}>
                   <Sparkle size={20} /> {busy ? 'Setting up…' : 'Start memorizing in the Reitz'}
                 </button>
-                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the full Bill of Rights in 3D</button>}
+                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk another example in 3D</button>}
               </>
             ) : (
               <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Make my free account</button>
