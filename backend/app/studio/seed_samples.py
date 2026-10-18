@@ -1,17 +1,18 @@
 """The shared palaces everyone sees on the studio home screen, built from files in the repo
 (app/data/reitz/), so every teammate gets them without any Gemini calls:
 
-1. "Reitz Union" (built in): three panoramas with their stops, plus two 3D scans (compressed .ply, about 4× smaller),
+1. "Reitz Union" (built in): three panoramas (game room, atrium, barbershop hallway) with their stops,
    no facts. "Start memorizing" gives each user their own copy, so they can paste notes right away
    without taking any photos.
 2. "Sample: the Bill of Rights": the same route already filled with a real study example, amendment N
    at stop N (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
 
 They belong to the "system" user, so nobody can change or delete them. The backend creates them on
-startup if they're missing; to rebuild them by hand, from backend/:
+startup if they're missing or the files here changed; to rebuild them by hand, from backend/:
 
     python -m app.studio.seed_samples
 """
+import hashlib
 import json
 import logging
 import shutil
@@ -27,6 +28,11 @@ DATA = Path(__file__).resolve().parents[1] / "data" / "reitz"
 log = logging.getLogger("loci.seed")
 
 
+def files_version() -> str:
+    """Changes whenever route.json or example.json does, so pulling a new route rebuilds the shared palaces."""
+    return hashlib.sha256((DATA / "route.json").read_bytes() + (DATA / "example.json").read_bytes()).hexdigest()[:16]
+
+
 def system_user(db) -> User:
     user = db.scalars(select(User).where(User.auth0_sub == "system")).first()
     if not user:
@@ -37,7 +43,7 @@ def system_user(db) -> User:
 
 
 def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **fields) -> Palace:
-    palace = Palace(user_id=owner.id, title=title, template=True, **fields)
+    palace = Palace(user_id=owner.id, title=title, place="Reitz Union", template=True, **fields)
     db.add(palace)
     db.flush()
     folder = palace_dir(palace.id)
@@ -81,14 +87,18 @@ def seed(db) -> None:
                     style=example["style"], flavor=example["flavor"], source_text=example["notes"])
     sample.copied_from = reitz.id
     db.commit()
+    (palace_dir(reitz.id) / ".version").write_text(files_version())
     log.info("Shared palaces ready: Reitz Union (%s), example (%s)", reitz.id, sample.id)
 
 
 def seed_if_missing() -> None:
-    """On startup: build the shared palaces the first time (a fresh database, a new teammate)."""
+    """On startup: build the shared palaces the first time (a fresh database, a new teammate), and
+    rebuild them after a pull that changed them. Copies people already made keep their own rooms."""
     try:
         with SessionLocal() as db:
-            if not db.scalars(select(Palace).where(Palace.built_in)).first():
+            reitz = db.scalars(select(Palace).where(Palace.built_in)).first()
+            stamp = palace_dir(reitz.id) / ".version" if reitz else None
+            if not stamp or not stamp.exists() or stamp.read_text() != files_version():
                 seed(db)
     except Exception as err:  # e.g. the tables aren't there yet
         log.warning("Could not set up the shared palaces (%s). Did you run `alembic upgrade head`?", err)

@@ -26,7 +26,7 @@ The app currently has two modes that share the Auth0 login. We'll merge them int
 - **3D studio** (default, `frontend/src/`, `backend/app/studio/`): palaces inside real places. The
   built-in Reitz Union panoramas, or your own room / 3D scan.
   Gemini cuts your notes into ideas, finds a stop for each in the photos, and writes a vivid scene per
-  stop. Also: walk-through, two-way quiz, spaced review, note import from photos, PDFs and voice, and a
+  stop. Also: walk-through, two-round quiz, reusable places, note import from photos, PDFs and voice, and a
   1-minute onboarding tour. Details: [docs/how-it-works.md](docs/how-it-works.md).
 - **Campus mode** (`frontend/src/palace/`, the "Campus mode" button): the UF campus walk with photo
   signs, pins, dashboard, night mode and accessibility settings. Palaces are saved in the browser for now.

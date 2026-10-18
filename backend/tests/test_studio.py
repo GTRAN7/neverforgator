@@ -129,3 +129,16 @@ def test_pictures_and_weirder_in_batches(client):
     assert len(drawn) == 2 and all(s["image"] for s in drawn)
     rewritten = client.post(f"/api/palaces/{palace['id']}/weirder", json={"ids": ids}, headers=as_user("alice")).json()
     assert all(s["weirdness"] == 1 and s["image"] is None for s in rewritten)
+
+
+def test_palaces_are_named_after_their_topic_and_places_can_be_reused(client):
+    palace = new_palace(client)  # created as "Dorm"
+    assert palace["name"] == "Dorm" and palace["place"] == "Dorm"
+    filled = client.post(f"/api/palaces/{palace['id']}/fill", json={"notes": "Cell organelles:\nMitochondria make ATP."},
+                         headers=as_user("alice")).json()
+    assert filled["name"] == "Cell organelles" and filled["place"] == "Dorm"
+    # "New topic here": same place, same rooms and stops, nothing filled yet.
+    again = client.post(f"/api/palaces/{palace['id']}/copy", headers=as_user("alice")).json()
+    assert again["place"] == "Dorm" and again["name"] == "Dorm"
+    assert len(again["rooms"]) == 1 and len(again["spots"]) == len(filled["spots"])
+    assert not any(s["fact"] for s in again["spots"])

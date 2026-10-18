@@ -45,6 +45,7 @@ def palace_json(palace: Palace, user: User) -> dict:
     return {
         "id": palace.id,
         "name": palace.title,
+        "place": palace.place or palace.title,
         "createdAt": iso(palace.created_at),
         "notes": palace.source_text,
         "style": palace.style,
@@ -70,6 +71,7 @@ def summary_json(palace: Palace, user: User) -> dict:
     return {
         "id": palace.id,
         "name": palace.title,
+        "place": palace.place or palace.title,
         "createdAt": iso(palace.created_at),
         "roomCount": len(palace.rooms),
         "spotCount": len(spots),
