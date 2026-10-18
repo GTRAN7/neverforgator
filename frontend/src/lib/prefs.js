@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 // Study preferences, kept in this browser (localStorage). Small enough not to need the server yet.
 //   style:  default picture style for new palaces
-//   flavor: how wild the scenes get ('wild' | 'silly' | 'clean' for classroom-safe)
+//   flavor: how wild the scenes get ('silly' by default | 'wild' | 'clean' for classroom-safe)
 //   quiz:   'mix' (both ways) | 'type' (what lives here?) | 'tap' (where did you put it?)
 const KEY = 'neverforgator-prefs';
-export const DEFAULT_PREFS = { style: 'storybook', flavor: 'wild', quiz: 'mix' };
+export const DEFAULT_PREFS = { style: 'storybook', flavor: 'silly', quiz: 'mix' };
 
 export function readPrefs() {
   try {

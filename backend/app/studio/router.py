@@ -382,7 +382,7 @@ def edit_idea(palace_id: int, spot_id: int, body: IdeaIn, user: User = Depends(g
     stop = load_stop(palace, spot_id)
     number = studio_stops(palace).index(stop) + 1
     idea = {"text": fact, "kind": stop.kind or "fact", "keyTerms": key_terms_of(fact)}
-    [item] = gemini.write_scenes([idea], [stop.label or f"spot {number}"], palace.flavor or "wild")
+    [item] = gemini.write_scenes([idea], [stop.label or f"spot {number}"], palace.flavor or "silly")
     stop.concept, stop.key_terms = fact, idea["keyTerms"]
     stop.association, stop.hook, stop.image_prompt = item["scene"], item["hook"], item["imagePrompt"]
     stop.image, stop.weirdness = None, 0
@@ -405,7 +405,7 @@ def delete_spot(palace_id: int, spot_id: int, user: User = Depends(get_current_u
 class FillIn(BaseModel):
     notes: str = ""
     style: str = "storybook"
-    flavor: str = "wild"
+    flavor: str = "silly"
 
 
 @router.post("/palaces/{palace_id}/fill", dependencies=[Depends(quota("fill"))])
@@ -417,7 +417,7 @@ def fill(palace_id: int, body: FillIn, user: User = Depends(get_current_user), d
     if len(notes) > CAPS["notesChars"]:
         raise HTTPException(400, f"Notes are capped at {CAPS['notesChars']:,} characters. Split them into two palaces.")
     style = body.style if body.style in gemini.PICTURE_STYLES else "storybook"
-    flavor = body.flavor if body.flavor in gemini.FLAVORS else "wild"
+    flavor = body.flavor if body.flavor in gemini.FLAVORS else "silly"
     palace = load_palace(db, palace_id, user, write=True)
     fill_palace(db, palace, notes, style, flavor)
     return reload(db, palace, user)
@@ -526,7 +526,7 @@ def weirder_many(palace_id: int, body: WeirderIn, user: User = Depends(get_curre
     stops = [s for s in (load_stop(palace, i) for i in body.ids) if s.concept]
     asks = [{"fact": s.concept, "label": s.label or f"spot {path.index(s) + 1}", "scene": s.association or "",
              "level": min(5, s.weirdness + 1), "kind": s.kind or "fact"} for s in stops]
-    for stop, ask, result in zip(stops, asks, gemini.weirder_scenes(asks, palace.flavor or "wild")):
+    for stop, ask, result in zip(stops, asks, gemini.weirder_scenes(asks, palace.flavor or "silly")):
         if result:
             stop.association, stop.hook, stop.image_prompt = result["scene"], result["hook"], result["imagePrompt"]
             stop.image, stop.weirdness = None, ask["level"]
@@ -544,7 +544,7 @@ def weirder(palace_id: int, spot_id: int, user: User = Depends(get_current_user)
     level = min(5, stop.weirdness + 1)
     number = studio_stops(palace).index(stop) + 1
     result = gemini.weirder_scene(stop.concept, stop.label or f"spot {number}", stop.association or "", level,
-                                  stop.kind or "fact", palace.flavor or "wild")
+                                  stop.kind or "fact", palace.flavor or "silly")
     stop.association, stop.hook, stop.image_prompt = result["scene"], result["hook"], result["imagePrompt"]
     stop.image, stop.weirdness = None, level
     db.commit()

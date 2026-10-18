@@ -4,8 +4,8 @@
 1. "Reitz Union" (built in): three panoramas with their stops, plus two 3D scans (compressed .ply, about 4× smaller),
    no facts. "Start memorizing" gives each user their own copy, so they can paste notes right away
    without taking any photos.
-2. "Sample: the phases of mitosis": the same route already filled with a real study example
-   (scenes, hooks and doodles included). The onboarding tour opens it; anyone can walk and quiz it.
+2. "Sample: the Bill of Rights": the same route already filled with a real study example, amendment N
+   at stop N (scenes, hooks and doodles included). The tour opens it; anyone can walk and quiz it.
 
 They belong to the "system" user, so nobody can change or delete them. The backend creates them on
 startup if they're missing; to rebuild them by hand, from backend/:
@@ -76,12 +76,12 @@ def seed(db) -> None:
     route = json.loads((DATA / "route.json").read_text())
     reitz = _build(db, system, route["name"], route["rooms"], route["stops"], built_in=True)
 
-    example = json.loads((DATA / "mitosis.json").read_text(encoding="utf-8"))
+    example = json.loads((DATA / "example.json").read_text(encoding="utf-8"))
     sample = _build(db, system, example["name"], route["rooms"], example["stops"], sample=True,
                     style=example["style"], flavor=example["flavor"], source_text=example["notes"])
     sample.copied_from = reitz.id
     db.commit()
-    log.info("Shared palaces ready: Reitz Union (%s), mitosis example (%s)", reitz.id, sample.id)
+    log.info("Shared palaces ready: Reitz Union (%s), example (%s)", reitz.id, sample.id)
 
 
 def seed_if_missing() -> None:
