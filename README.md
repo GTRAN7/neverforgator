@@ -1,13 +1,11 @@
-# Never Forgator
-Make memorization easier with a AI assisted memory palace creation tool centered around UF campus.
-
-### Project description
-A memory palace maker built on the UF campus. Upload notes, a list or a topic, and AI pulls out the key concepts. Each concept is placed at a real campus location on an interactive map. A guided walkthrough helps you memorize the route, and a quiz helps the material stick. You can save your palaces and come back to them from a dashboard.
-
-> **Naming:** "Loci" was a temporary name. You'll still see it in code and config (`Loci API`, `https://loci-api`, `loci.db`). Those will be renamed later. Until then, use the names exactly as they appear in this README.
+# Never Forgator—Loci mind palace tool
+Make memorization easier with an AI-assisted memory palace maker centered around UF campus. Upload notes, a list, a goal, or a topic, and AI (using Gemini API) pulls out the key concepts. Each concept is placed at a real campus location on an interactive map (or upload your own 3D scan!). A guided walkthrough helps you memorize the route, and a quiz helps the material stick. You can save your palaces and come back to them from a user-friendly dashboard. 
 
 ### Team:
-Kira Luna Nichtawitz (UX Designer), Natasha Antoniuk (Frontend developer), Eric Tran (Gemini API Integration/middleware specialist), Thomas McLaughlin (Backend developer).
+* Kira Luna Nichtawitz: user authentication, UX, team management
+* Eric Tran: Gemini API integration & middleware
+* Natasha Antoniuk: React frontend and UI design
+* Thomas McLaughlin: Backend & database
 
 ## How it works
 
@@ -47,15 +45,15 @@ The app currently has two modes that share the Auth0 login. We'll merge them int
 | Area | Tool | Purpose |
 | --- | --- | --- |
 | Frontend | React + Vite | App UI, map, walkthrough, quiz, dashboard |
-| Map | Leaflet + OpenStreetMap *or* custom SVG campus map (TBD) | 2D interactive campus map |
-| Auth | Auth0 | Sign up, log in, access tokens for the API |
-| AI | Google Gemini API (Google Cloud) | Concept extraction, associations, quiz generation |
 | Backend | Python + FastAPI | API, Gemini calls, auth checks, database access |
+| Authentication | Auth0 | Sign up, log in, access tokens for the API |
+| AI | Google Gemini API (Google Cloud) | Concept extraction, associations, quiz generation |
+| Map | Custom SVG campus map | 2D interactive campus map |
+| Database | PostgreSQL (Neon hosted) | Users, campus route, palaces, stops, quiz questions, quiz scores |
 | Database access | SQLAlchemy + Alembic | Tables as Python classes; migrations that build and change the tables |
-| Database | PostgreSQL (Neon) for the shared database, SQLite locally | Users, campus route, palaces, stops, quiz questions, quiz scores |
-| Tests | pytest | Backend tests (use a throwaway database) |
-| Domain | GoDaddy | Production domain name |
-| Hosting | TBD | Running the frontend and backend (the database is on Neon) |
+| Tests | pytest | Backend tests (with a throwaway database) |
+| Domain | GoDaddy | https://neverforgator.study |
+| Hosting | TBD | Running the frontend and Neon backend |
 
 ### Architecture
 
