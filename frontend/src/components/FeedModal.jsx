@@ -39,6 +39,9 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
   const [fed, setFed] = useState(false); // scenes written during this visit
   const [error, setError] = useState('');
   const [usage, setUsage] = useState(null); // today's fair-use quotas (see backend/limits.js)
+  // Asked in this window, not with window.confirm: browsers can silently block that pop-up (it
+  // answers "Cancel" without showing anything), so refilling an existing palace did nothing.
+  const [confirming, setConfirming] = useState(false);
 
   const { spots, fillReport: report } = palace;
   const refreshUsage = () => api.usage().then(setUsage).catch(() => {});
@@ -56,18 +59,19 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
   const finished = fed && !writing;
   const hasScans = palace.rooms.some((r) => r.type === 'splat');
 
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // It only closes with the × or Done: a click outside or Escape could throw away notes you're writing.
 
-  async function hatch() {
-    if (spots.some((s) => s.fact) && !window.confirm('Replace your current friends with new ones?')) return;
+  // add: keep the current friends and hatch the notes as new ones next to them.
+  async function hatch({ replace = false, add = false } = {}) {
+    if (!replace && !add && spots.some((s) => s.fact)) {
+      setConfirming(true);
+      return;
+    }
+    setConfirming(false);
     setError('');
     setWriting(true);
     try {
-      const updated = await api.fill(palace.id, notes, style, readPrefs().flavor);
+      const updated = await api.fill(palace.id, notes, style, readPrefs().flavor, add);
       setPalace(updated);
       setFed(true);
       onReady?.(updated);
@@ -89,7 +93,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop">
       {CONFETTI.map(([x, y], i) => (
         <span key={i} className={`confetti ${i % 2 ? 'strip' : 'dot'}`}
           style={{ left: `${x}%`, top: `${y}%`, background: CONFETTI_COLORS[i % 5], transform: `rotate(${i * 37}deg)` }} />
@@ -100,7 +104,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
           <div className="feed-head">
             <div>
               <h2 className="card-title big">Feed your palace</h2>
-              <span className="scrawl subtitle">it turns notes into little friends</span>
+              <span className="scrawl subtitle">(It turns notes into little friends!)</span>
             </div>
             <button className="round-btn small" aria-label="Close" onClick={onClose}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -108,7 +112,7 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
           </div>
 
           {writing ? <Hatching /> : finished ? (
-            <Ready palace={palace} report={report} onWander={onDone} onQuiz={onQuiz} onAgain={() => setFed(false)} />
+            <Ready palace={palace} report={report} onWander={onDone} onQuiz={onQuiz} onAgain={() => setFed(false)} onClose={onClose} />
           ) : (
             <>
             <div className="field-label-row">
@@ -136,9 +140,23 @@ export default function FeedModal({ palace, setPalace, images, onClose, onDone, 
 
             {error && <p className="error-text">{error}</p>}
 
-            <button className="btn accent big" disabled={!notes.trim() || !palace.rooms.length || left('fill') === 0} onClick={hatch}>
-              <Sparkle size={20} /> Hatch my palace
-            </button>
+            {confirming ? (
+              <div className="replace-confirm" role="alertdialog" aria-label="Your palace already has friends">
+                <p><b>Your palace already has friends.</b> Add these notes as new friends at the end of your
+                  route, or replace them all (their old scenes and pictures are gone).</p>
+                <div className="btn-row">
+                  <button className="btn accent" autoFocus onClick={() => hatch({ add: true })}>
+                    <Sparkle size={18} /> Add them
+                  </button>
+                  <button className="btn ghost" onClick={() => hatch({ replace: true })}>Replace them</button>
+                </div>
+                <button className="link center-text" onClick={() => setConfirming(false)}>Cancel</button>
+              </div>
+            ) : (
+              <button className="btn accent big" disabled={!notes.trim() || !palace.rooms.length || left('fill') === 0} onClick={() => hatch()}>
+                <Sparkle size={20} /> Hatch my palace
+              </button>
+            )}
             {left('fill') !== null && (
               <span className="hint-text center-text">{left('fill')} of {usage.fill.limit} fills left today · takes about half a minute</span>
             )}
@@ -229,7 +247,7 @@ function Hatching() {
 }
 
 // Done: impossible to miss, with the next step right there.
-function Ready({ palace, report, onWander, onQuiz, onAgain }) {
+function Ready({ palace, report, onWander, onQuiz, onAgain, onClose }) {
   const friends = palace.spots.filter((s) => s.fact).length;
   const rooms = new Set(palace.spots.filter((s) => s.fact).map((s) => s.roomId)).size;
   return (
@@ -238,13 +256,16 @@ function Ready({ palace, report, onWander, onQuiz, onAgain }) {
         {[1, 2, 3, 4, 5].map((n) => <Creature key={n} number={n} state="happy" size="md" />)}
       </div>
       <h3 className="card-title huge">Your palace is ready!</h3>
-      <p>{friends} friend{friends === 1 ? '' : 's'} hatched across {rooms} room{rooms === 1 ? '' : 's'}.
+      <p>{report?.added != null
+        ? `${report.added} new friend${report.added === 1 ? '' : 's'} added: ${friends} in all, across ${rooms} room${rooms === 1 ? '' : 's'}.`
+        : `${friends} friend${friends === 1 ? '' : 's'} hatched across ${rooms} room${rooms === 1 ? '' : 's'}.`}
         {report?.waiting?.length ? ` ${report.waiting.length} more idea${report.waiting.length === 1 ? '' : 's'} need a stop (see the right).` : ''}</p>
       <button className="btn accent big" autoFocus onClick={onWander}>Go wander and meet them →</button>
       <div className="btn-row">
         <button className="btn ghost" onClick={onQuiz}>Quiz me right away</button>
         <button className="btn ghost" onClick={onAgain}>Change the notes</button>
       </div>
+      <button className="btn ink" onClick={onClose}>Done</button>
     </div>
   );
 }

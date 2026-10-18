@@ -82,7 +82,8 @@ export const api = {
   deleteSpot: (id, spotId) => request(spotUrl(id, spotId), { method: 'DELETE' }),
   reorderSpots: (id, ids) => request(`${palaceUrl(id)}/spots/order`, send('PUT', { ids })),
 
-  fill: (id, notes, style, flavor) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style, flavor })),
+  // add: keep the palace's friends and add the notes as new ones (otherwise they're replaced)
+  fill: (id, notes, style, flavor, add = false) => request(`${palaceUrl(id)}/fill`, send('POST', { notes, style, flavor, add })),
   generateImage: (id, spotId) => request(`${spotUrl(id, spotId)}/image`, { method: 'POST' }),
   // Pictures for a few stops at once (drawn a few per Gemini call).
   drawPictures: (id, ids) => request(`${palaceUrl(id)}/pictures`, send('POST', { ids })),

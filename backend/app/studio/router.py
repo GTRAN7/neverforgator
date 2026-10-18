@@ -409,11 +409,12 @@ class FillIn(BaseModel):
     notes: str = ""
     style: str = "storybook"
     flavor: str = "silly"
+    add: bool = False  # True: keep the palace's friends and add these notes as new ones
 
 
 @router.post("/palaces/{palace_id}/fill", dependencies=[Depends(quota("fill"))])
 def fill(palace_id: int, body: FillIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Notes -> the whole palace (see fill.py)."""
+    """Notes -> the whole palace, or (add) new friends next to the ones it has (see fill.py)."""
     notes = body.notes.strip()
     if not notes:
         raise HTTPException(400, "Paste some notes first")
@@ -422,7 +423,7 @@ def fill(palace_id: int, body: FillIn, user: User = Depends(get_current_user), d
     style = body.style if body.style in gemini.PICTURE_STYLES else "storybook"
     flavor = body.flavor if body.flavor in gemini.FLAVORS else "silly"
     palace = load_palace(db, palace_id, user, write=True)
-    fill_palace(db, palace, notes, style, flavor)
+    fill_palace(db, palace, notes, style, flavor, add=body.add)
     return reload(db, palace, user)
 
 
