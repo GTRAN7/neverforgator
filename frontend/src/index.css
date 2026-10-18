@@ -517,7 +517,7 @@ button { font: inherit; color: inherit; }
 .gear-btn svg { width: 24px; height: 24px; }
 .gear-btn.is-open, .gear-btn:hover { transform: rotate(45deg); }
 .gear-pop {
-  position: absolute; top: calc(100% + 10px); right: 0; z-index: 60; width: min(360px, calc(100vw - 32px));
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000; width: min(360px, calc(100vw - 32px));
   max-height: calc(100vh - 110px); overflow-y: auto; display: grid; gap: 4px; padding: 16px; text-align: left;
   background: var(--card); color: var(--ink); border: 2px solid var(--ink); border-radius: 20px; box-shadow: 0 6px 0 var(--edge);
   animation: gear-rise 0.2s cubic-bezier(.2,.8,.2,1);
@@ -562,7 +562,7 @@ button { font: inherit; color: inherit; }
 .account-btn .avatar { display: grid; place-items: center; background: #7FC28E; font-size: calc(14px * var(--ts)); }
 .account-btn .chev { font-size: calc(11px * var(--ts)); color: var(--muted); }
 .account-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-dropdown { top: calc(100% + 8px); min-width: 230px; }
+.account-menu .account-dropdown { top: calc(100% + 8px); min-width: 230px; z-index: 1000; }
 .account-who { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px 10px; margin-bottom: 4px; border-bottom: 1.5px dashed var(--line); }
 .account-who strong { font: 600 calc(15px * var(--ts)) var(--display); }
 .account-who span { font-size: calc(12px * var(--ts)); color: var(--muted); overflow-wrap: anywhere; }
@@ -973,10 +973,11 @@ button { font: inherit; color: inherit; }
 /* ---- Readability on the sky ----
    The sky is scenery: every piece of text sits on a surface (bar, card or tag), never on clouds. */
 .sky-page .home-nav, .sky-page .guide-nav, .sky-page .landing-nav {
-  position: relative; z-index: 2; padding: 8px 10px 8px 16px; margin-top: 12px;
+  position: relative; z-index: 100; padding: 8px 10px 8px 16px; margin-top: 12px;
   background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(6px);
   border: 2px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--edge);
 }
+.topbar { position: relative; z-index: 100; }
 .sky-page .home-nav .nav-pill, .sky-page .guide-nav .nav-pill, .sky-page .landing-nav .nav-pill,
 .sky-page .account-btn { box-shadow: none; }
 /* Page titles on a card. */

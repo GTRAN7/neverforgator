@@ -1,4 +1,4 @@
-# Never Forgator—Loci mind palace tool
+# NeverForgator—Loci mind palace tool
 Make memorization easier with an AI-assisted memory palace maker centered around UF campus. Upload notes, a list, a goal, or a topic, and AI (using Gemini API) pulls out the key concepts. Each concept is placed at a real campus location on an interactive map (or upload your own 3D scan!). A guided walkthrough helps you memorize the route, and a quiz helps the material stick. You can save your palaces and come back to them from a user-friendly dashboard. 
 
 ### Team:

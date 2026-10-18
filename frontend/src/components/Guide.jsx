@@ -217,9 +217,9 @@ const STEPS = [
     title: 'Step 2 · One idea per stop',
     body: (
       <>
-        <p>Let’s learn the <strong>Bill of Rights</strong> (the first 5 amendments). NeverForgator cuts your notes into
+        <p>Let’s learn the first 5 amendments of the <strong>Bill of Rights</strong>. NeverForgator cuts your notes into
           small ideas, each the size of one picture, and gives every idea its own stop: amendment 1 at stop 1, and so on.</p>
-        <p>Too many ideas for your route? It tells you to add a room instead of cramming. Crammed stops blur together.</p>
+        <p>Too many ideas for your route? It tells you to add a room instead of cramming, to avoid concepts blurring together.</p>
       </>
     ),
     art: () => (
@@ -326,7 +326,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
                 <button className="btn accent big" disabled={busy} onClick={() => go(onStart)}>
                   <Sparkle size={20} /> {busy ? 'Setting up…' : 'Start memorizing in the Reitz'}
                 </button>
-                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk the full Bill of Rights in 3D</button>}
+                {onSample && <button className="btn ghost big" disabled={busy} onClick={() => go(onSample)}>Walk another example in 3D</button>}
               </>
             ) : (
               <button className="btn accent big" onClick={onSignup}><Sparkle size={20} /> Make my free account</button>
