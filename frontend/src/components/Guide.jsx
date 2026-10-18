@@ -313,7 +313,7 @@ function GuideContent({ onStart, onSample, onSignup, onClose }) {
             {[1, 2, 3, 4, 5].map((n) => <Creature key={n} number={n} state="happy" size="md" />)}
           </div>
           <h1 className="landing-title">That’s it. Now do it with your notes.</h1>
-          <p className="landing-lead">Paste a chapter, snap a photo of your notes or just talk. NeverForgator builds the
+          <p className="landing-lead">Paste a chapter, snap a photo of your notes, or just talk! NeverForgator builds the
             palace in the Reitz in about half a minute.</p>
           <div className="hero-actions">
             {onStart ? (
