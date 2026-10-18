@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, fileUrl } from '../api.js';
 import { useAccount } from '../lib/account.js';
 import { firstBuiltIn, openPalace, startInBuiltIn, openSample } from '../lib/start.js';
@@ -21,6 +21,17 @@ function PalaceListContent() {
   // browsers can silently block those (they answer "no" without showing anything).
   const [renaming, setRenaming] = useState(null); // { id, name } while a name is being edited
   const [deletingId, setDeletingId] = useState(null); // this palace's row asks "Delete?"
+  const moreMenus = useRef(new Map());
+
+  useEffect(() => {
+    const closeOutside = (event) => {
+      moreMenus.current.forEach((menu) => {
+        if (!menu.contains(event.target)) menu.open = false;
+      });
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => document.removeEventListener('pointerdown', closeOutside);
+  }, []);
 
   useEffect(() => {
     // First visit ever: take the tour first.
@@ -133,7 +144,10 @@ function PalaceListContent() {
                           </span>
                           <span>{p.friendCount} friend{p.friendCount === 1 ? '' : 's'}</span>
                         </a>
-                        <details className="more-menu">
+                        <details className="more-menu" ref={(menu) => {
+                          if (menu) moreMenus.current.set(p.id, menu);
+                          else moreMenus.current.delete(p.id);
+                        }}>
                           <summary aria-label={`More for ${p.name}`}>⋯</summary>
                           <div className="more-items">
                             <button onClick={() => { setDeletingId(null); setRenaming({ id: p.id, name: p.name }); }}>Rename</button>
