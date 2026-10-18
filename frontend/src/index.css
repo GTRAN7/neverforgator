@@ -55,6 +55,21 @@ button { font: inherit; color: inherit; }
   color: var(--link); font: 600 calc(14px * var(--ts)) var(--body); text-decoration: underline; text-underline-offset: 3px;
 }
 .center { height: 100%; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; padding: 16px; color: var(--muted); }
+.loading-state { font: 700 calc(24px * var(--ts)) var(--display); }
+.loading-dots { display: inline-flex; gap: 5px; align-items: end; height: 1em; }
+.loading-dots i {
+  display: block; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+  animation: loading-dot-bounce 0.9s ease-in-out infinite;
+}
+.loading-dots i:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes loading-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-7px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i { animation: none; }
+}
 
 /* ---- Buttons, chips, inputs ---- */
 .btn {

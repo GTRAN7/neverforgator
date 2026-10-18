@@ -134,7 +134,7 @@ export default function Dashboard({ account, onOpen, prefs }) {
       return
     }
     deletePalace(sub, p.id)
-    setPalaces(listPalaces(sub))
+    setPalaces(current => current.filter(palace => palace.id !== p.id))
     setDoomed(null)
   }
 

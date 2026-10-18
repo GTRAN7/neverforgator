@@ -49,16 +49,16 @@ The app currently has two modes that share the Auth0 login. We'll merge them int
 | Authentication | Auth0 | Sign up, log in, access tokens for the API |
 | AI | Google Gemini API (Google Cloud) | Concept extraction, associations, quiz generation |
 | Map | Custom SVG campus map | 2D interactive campus map |
-| Database | PostgreSQL (Neon hosted) | Users, campus route, palaces, stops, quiz questions, quiz scores |
+| Database | PostgreSQL | Users, campus route, palaces, stops, quiz questions, quiz scores |
 | Database access | SQLAlchemy + Alembic | Tables as Python classes; migrations that build and change the tables |
 | Tests | pytest | Backend tests (with a throwaway database) |
 | Domain | GoDaddy | https://neverforgator.study |
-| Hosting | TBD | Running the frontend and Neon backend |
+| Hosting | DigitalOcean Droplets | Host backend + frontend |
 
 ### Architecture
 
 ```
-React app ──(Auth0 access token)──▶ FastAPI ──▶ PostgreSQL (Neon) / SQLite locally
+React app ──(Auth0 access token)──▶ FastAPI ──▶ PostgreSQL / SQLite locally
     │                                   │
     └──── Auth0 login ◀─────────────────┤ verifies tokens
                                         └──▶ Gemini API (server-side only)
@@ -104,7 +104,7 @@ It lives in `backend/app/data/locations.json`, with coordinates and descriptions
 | --- | --- | --- |
 | **Frontend** | Natasha | React pages and routing, interactive campus map, dashboard, connecting the UI to the API with Auth0 access tokens |
 | **Design / UX** | Kira | Wireframes, visual style, walkthrough and quiz screens, campus route (`locations.json`), demo flow, Auth0 tenant |
-| **Backend & database** | Thomas | FastAPI app, SQLAlchemy models and Alembic migrations, palace/quiz endpoints, Neon database, hosting and deployment |
+| **Backend & database** | Thomas | FastAPI app, SQLAlchemy models and Alembic migrations, palace/quiz endpoints, database, hosting and deployment |
 | **API integration** | Eric | Gemini prompts and structured JSON output (in Python, in the backend), turning Gemini output into the `POST /palaces` format and saving it with `create_palace_for_user`, input validation, rate limiting, error handling |
 
 ## API
@@ -168,7 +168,7 @@ Someone else's palace always returns **404**, so the API never confirms it exist
 6. **Map + walkthrough:** show the palace's stops on the map and step through them in order
 7. **Quiz:** questions in both directions, with scoring (saving scores is already in the API)
 8. **Dashboard:** list, open and delete saved palaces (endpoints done, UI to do)
-9. **Deploy:** pick a host for the frontend and backend, move to the Neon database, point the GoDaddy domain at them, add the production URL in Auth0
+9. **Deploy:** pick a host for the frontend and backend, move to DigitalOcean Droplets, point the GoDaddy domain at them, add the production URL in Auth0
 10. **Polish + demo:** sample palaces, error and loading states, pitch
 
 ## Progress
@@ -181,7 +181,7 @@ Someone else's palace always returns **404**, so the API never confirms it exist
 - [x] Auth0 API created (`Loci API`, identifier `https://loci-api`) and set in `backend/.env`
 - [x] Frontend sends Auth0 access tokens to the API (`VITE_AUTH0_AUDIENCE`, `main.jsx`, `frontend/src/palace/api.js`)
 - [x] Frontend bridge: save palaces to the account, open them from the dashboard, quiz scores saved (see "Frontend ↔ backend" below)
-- [ ] Shared Neon database
+- [ ] Host on DigitalOcean Droplets
 - [ ] Wireframes
 - [x] Gemini integration (`backend/app/studio/`: notes -> ideas -> stops -> scenes, imports, pictures, limits)
 - [ ] Map, walkthrough, quiz, dashboard
@@ -300,7 +300,7 @@ Then open **http://localhost:8000/docs**. With `DEV_AUTH=true`, type any name in
 
 | Variable | What it is |
 | --- | --- |
-| `DATABASE_URL` | Leave empty to use a local SQLite file (`loci.db`). Paste the Neon connection string to use Postgres |
+| `DATABASE_URL` | Leave empty to use a local SQLite file (`loci.db`). Paste the database connection string to use Postgres |
 | `AUTH0_DOMAIN` | `dev-sknccm5343cwp4hh.us.auth0.com` (same as the frontend) |
 | `AUTH0_AUDIENCE` | `https://loci-api` (the Auth0 API identifier) |
 | `DEV_AUTH` | `true` skips Auth0 for local testing. Must be `false` when deployed |
@@ -371,11 +371,11 @@ npx @auth0/auth0-mcp-server init
 
 ## Database
 
-### Switching to PostgreSQL (Neon)
+### Switching to PostgreSQL
 
 SQLite (`backend/loci.db`) is fine for local work. For the shared and deployed database:
 
-1. Create a free project at neon.tech and copy the connection string.
+1. Create a free project on hosting platform and copy the connection string.
 2. Paste it as `DATABASE_URL` in `backend/.env` (the code switches it to the `pg8000` driver and turns on SSL for you).
 3. `alembic upgrade head` then `python -m app.seed`.
 
@@ -396,7 +396,7 @@ Hosting isn't decided yet. Whatever we choose:
 
 - **Backend:** any Python host works. Build command `pip install -r requirements.txt`, start command
   `alembic upgrade head && python -m app.seed && uvicorn main:app --host 0.0.0.0 --port $PORT` (run from `backend/`).
-  Set `DATABASE_URL` (Neon), `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `CORS_ORIGINS` (the real frontend URL) and
+  Set `DATABASE_URL`, `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `CORS_ORIGINS` (the real frontend URL) and
   **`DEV_AUTH=false`**. Check it with `GET /me` and no token: it must return 401.
 - **Frontend:** set the same `VITE_` variables as `.env.local`, with `VITE_API_URL` pointing at the deployed backend.
 - **Auth0:** add the production frontend URL to **Allowed Callback URLs**, **Allowed Logout URLs** and **Allowed Web Origins**.

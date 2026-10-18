@@ -78,7 +78,16 @@ function LoginExpired({ onLogin }) {
 function AuthGate() {
   const { isLoading, isAuthenticated, error, user, loginWithRedirect, logout, getAccessTokenSilently } = useAuth0()
 
-  if (isLoading) return <div className="center">Loading…</div>
+  if (isLoading) return (
+    <div className="center loading-state">
+      <span>Loading</span>
+      <span className="loading-dots" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+    </div>
+  )
   if (!isAuthenticated) {
     const signup = () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })
     // The tour works before signing up too (the last step asks you to make an account).

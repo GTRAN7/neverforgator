@@ -99,7 +99,7 @@ output: it writes a newer SPZ version than our Spark (2.3) can read.
 frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI) ──▶ Gemini
    ├─ src/        3D studio                            ├─ app/routers/   Thomas's campus API (/palaces, /locations, /me)
    └─ src/palace/ campus mode (Natasha)                ├─ app/studio/    studio API (/api/...), Gemini, fill, limits
-                                                       ├─ SQLite / Neon Postgres (app/models.py, alembic/)
+                                                       ├─ SQLite / Postgres (app/models.py, alembic/)
                                                        └─ data/          room files, crops, pictures, AI cache
 ```
 
@@ -145,4 +145,4 @@ frontend/ (React + Vite + three.js) ──Auth0 token──▶ backend/ (FastAPI
 - [ ] **Auto-placed stops in 3D scans.** Fill only finds new stops in panoramas and photos; for scans,
       render a few views and ask Gemini the same way.
 - [ ] **Topic-only input.** If the notes are just a topic, have Gemini write the notes first.
-- [ ] **Deploy:** room files and pictures need a persistent disk (or object storage) next to Neon.
+- [ ] **Deploy:** room files and pictures need a persistent disk (or object storage).

@@ -50,7 +50,14 @@ function App() {
     return (
       <main className="landing">
         <Sky night={night} />
-        <p className="landing-loading">Loading…</p>
+        <p className="landing-loading loading-state">
+          <span>Loading</span>
+          <span className="loading-dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        </p>
       </main>
     )
   }
@@ -80,7 +87,7 @@ function App() {
       <div className="landing-content">
         <div className="sign landing-sign">
           <img src={signUrl} alt="" />
-          <h1 className="sign-name is-long">Never Forgator</h1>
+          <h1 className="sign-name is-long">NeverForgator</h1>
           <div className="sign-topic">
             <p className="sign-subject is-long">Walk through campus and learn the method of loci</p>
           </div>
