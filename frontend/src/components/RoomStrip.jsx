@@ -95,7 +95,7 @@ export default function RoomStrip({ palace, setPalace, room, setRoomId, run, bro
             <button className="thumb" onPointerDown={(e) => startDrag(e, r.id)}
               onClick={() => { if (!dragged.current) setRoomId(r.id); }}
               title={!browse && palace.rooms.length > 1 ? 'Click to open · drag to reorder' : undefined}
-              style={r.type !== 'splat' ? { backgroundImage: `url(${fileUrl(palace.id, r.file)})` } : undefined}>
+              style={r.type !== 'splat' ? { backgroundImage: `url(${fileUrl(palace.id, r.thumb ?? r.file)})` } : undefined}>
               {r.type === 'splat' && <span className="room-kind">3D scan</span>}
               <span className="room-name">{r.name}</span>
             </button>

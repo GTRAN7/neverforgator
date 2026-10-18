@@ -54,6 +54,8 @@ def _build(db, owner: User, title: str, rooms: list[dict], stops: list[dict], **
     room_ids = []
     for i, room in enumerate(rooms):
         link_or_copy(DATA / room["file"], folder / room["file"])
+        if (DATA / f"thumb-{room['file']}").exists():
+            link_or_copy(DATA / f"thumb-{room['file']}", folder / f"thumb-{room['file']}")
         new = Room(palace_id=palace.id, position=i, name=room["name"], type=room["type"], file=room["file"],
                    flipped=room.get("flipped", False))  # most scan exports come in upside down
         db.add(new)
